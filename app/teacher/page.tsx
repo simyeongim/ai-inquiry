@@ -90,6 +90,7 @@ export default function TeacherPage() {
   const [loading,  setLoading]  = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [fetchErr, setFetchErr] = useState('');
+  const [searchName, setSearchName] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true); setFetchErr('');
@@ -117,10 +118,16 @@ export default function TeacherPage() {
     return true;
   }), [rows, fClass, fProject, fLevel]);
 
+  const displayed = useMemo(() => {
+    const q = searchName.trim();
+    if (!q) return filtered;
+    return filtered.filter(r => r.name.includes(q));
+  }, [filtered, searchName]);
+
   function toggleOne(id: number) { setSel(p => { const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n; }); }
   function toggleAll() {
-    const all = filtered.length > 0 && filtered.every(r => sel.has(r.id));
-    setSel(all ? new Set() : new Set(filtered.map(r => r.id)));
+    const all = displayed.length > 0 && displayed.every(r => sel.has(r.id));
+    setSel(all ? new Set() : new Set(displayed.map(r => r.id)));
   }
 
   async function deleteRows(ids: number[]) {
@@ -170,8 +177,8 @@ export default function TeacherPage() {
 
   if (!authed) return <PinScreen onOk={() => setAuthed(true)} />;
 
-  const selInFil = filtered.filter(r => sel.has(r.id));
-  const allChecked = filtered.length > 0 && filtered.every(r => sel.has(r.id));
+  const selInFil = displayed.filter(r => sel.has(r.id));
+  const allChecked = displayed.length > 0 && displayed.every(r => sel.has(r.id));
 
   return (
     <div className="min-h-screen pb-16" style={{ background:'#f0f2f8', fontFamily:"'Noto Sans KR','맑은 고딕',sans-serif" }}>
@@ -324,20 +331,43 @@ export default function TeacherPage() {
 
         {/* ── 질문 목록 ──────────────────────────────────── */}
         <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-[#4a4a6a] text-sm m-0">
-              📝 질문 목록
-              <span className="ml-2 font-normal text-xs text-[#bbb]">{filtered.length}개</span>
-            </h2>
-            <div className="flex gap-2">
+          <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h2 className="font-bold text-[#4a4a6a] text-sm m-0">
+                📝 질문 목록
+                <span className="ml-2 font-normal text-xs text-[#bbb]">{displayed.length}개</span>
+              </h2>
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#bbb] text-xs">👤</span>
+                <input
+                  type="text" value={searchName} onChange={e=>setSearchName(e.target.value)}
+                  placeholder="작성자 검색..."
+                  className="pl-7 pr-3 py-1.5 text-xs border-2 border-[#e0e0f0] rounded-full focus:outline-none focus:border-[#667eea] w-36"
+                />
+                {searchName && (
+                  <button onClick={()=>setSearchName('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[#bbb] hover:text-[#555] border-none bg-transparent cursor-pointer text-xs p-0 leading-none">✕</button>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {displayed.length > 0 && (
+                <button onClick={toggleAll}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-full border-2 cursor-pointer transition-all"
+                  style={allChecked
+                    ? {background:'#e8eaf6', color:'#667eea', borderColor:'#667eea'}
+                    : {background:'white', color:'#777', borderColor:'#e0e0e0'}}>
+                  {allChecked ? '전체 선택 해제' : '전체 선택'}
+                </button>
+              )}
               {selInFil.length > 0 && (
                 <button onClick={()=>deleteRows(selInFil.map(r=>r.id))} disabled={deleting}
                   className="text-xs text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-full border-none cursor-pointer font-semibold disabled:opacity-50 transition-colors">
                   선택 삭제 ({selInFil.length})
                 </button>
               )}
-              {filtered.length > 0 && (
-                <button onClick={()=>deleteRows(filtered.map(r=>r.id))} disabled={deleting}
+              {displayed.length > 0 && (
+                <button onClick={()=>deleteRows(displayed.map(r=>r.id))} disabled={deleting}
                   className="text-xs text-white bg-red-400 hover:bg-red-500 px-3 py-1.5 rounded-full border-none cursor-pointer font-semibold disabled:opacity-50 transition-colors">
                   전체 삭제
                 </button>
@@ -345,21 +375,17 @@ export default function TeacherPage() {
             </div>
           </div>
 
-          {filtered.length > 0 && (
-            <label className="flex items-center gap-2 mb-3 pb-3 border-b border-[#f0f0f8] cursor-pointer select-none">
-              <input type="checkbox" checked={allChecked} onChange={toggleAll} className="w-4 h-4 accent-[#667eea]"/>
-              <span className="text-sm text-[#555]">{allChecked ? '전체 선택 해제' : '전체 선택'}</span>
-              {selInFil.length > 0 && <span className="text-xs text-[#667eea] font-semibold">{selInFil.length}개 선택됨</span>}
-            </label>
+          {selInFil.length > 0 && (
+            <p className="text-xs text-[#667eea] font-semibold mb-3">{selInFil.length}개 선택됨</p>
           )}
 
           {loading ? (
             <p className="text-center text-[#ccc] py-10 text-sm">불러오는 중...</p>
-          ) : filtered.length === 0 ? (
+          ) : displayed.length === 0 ? (
             <p className="text-center text-[#ccc] py-10 text-sm">조건에 맞는 질문이 없습니다.</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {filtered.map(row => {
+              {displayed.map(row => {
                 const lv   = (row.analysis?.level ?? 1) as Level;
                 const info = LV[lv];
                 const on   = sel.has(row.id);
