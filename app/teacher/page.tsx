@@ -30,18 +30,23 @@ const SW = new Set([
   // 보조동사·형용사 어간 (1자·2자 모두)
   '있','없','되','하','않','못','알','봐','해','살','나','오','가','크','작','많','적',
   '있는','없는','있을','없을','되는','하는','있어','없어','있고','없고',
+  // 동사 복합 어간 (벌어지다·달라지다·사라지다 어간 및 변형)
+  '달라','사라','이어','벌어','바뀌','생겨','변해','없어져','달라져','사라져',
+  '늘어','줄어','멀어','가까','굳어','서서','되어','해져',
+  '달라질','사라질','벌어질','없어질','이어질','바뀔','생겨날','멈추',
+  '살아가려','살아가','살아','우선되어야','우선되','필요할까','필요할',
   // 의미 없는 명사
   '것','때','곳','점','수','들','후','전','중','안','밖','위','속','옆','사이',
   // 질문 형식 잔류형
   '무엇인','무엇일','무엇이','어떤지','어떨까','어떤가','어디서','어디에','왜냐','왜냐면',
-  '그래서','따라서','하지만','그러나','그리고','또한','하지만',
+  '그래서','따라서','하지만','그러나','그리고','또한',
   // 질문 도우미 명사 (내용 없는 경우)
-  '나요','까요','뭔가','뭔지','어떤','어떻','어떻','있나','없나','할수','있을','없을',
+  '나요','까요','뭔가','뭔지','어떤','어떻','있나','없나','할수',
   // 단음절 대명사
   '나','너','저','우리','그','그녀',
 ]);
 const ENDS = [
-  // 길이 순 — 긴 것부터 (단일 pass로 greedy 매칭)
+  // 길이 순 — 긴 것부터 (반복 normalize에서 greedy 매칭)
   '는걸까요','는건가요','는건데요','는건지요',
   '하나요','인가요','일까요','될까요','할까요','을까요','는가요','는지요',
   '이에요','거예요','된건가요','겠어요','겠죠','겠지요',
@@ -49,7 +54,9 @@ const ENDS = [
   '이라는','이라고','이라서','이라면','이란','이라','이며','이고','이지',
   '라는','라고','라서','란','나요','까요','어요','아요','에요',
   '일까','을까','는가','인가','는지','인지','이죠','죠','요',
+  '어질','아질','이질',          // 벌어질·달라질·사라질 등 복합 동사 변형
   '지','고','며','서','면','지만',
+  '할','까','려',                // 단독 어미 (필요할까, 벌어질까, 살아가려 등)
 ];
 const PTCL = ['에서는','으로서','으로써','에서도','에서','으로','이나','에게','한테','에서의','으로의','과의','와의','은','는','이','가','을','를','의','에','로','도','만','와','과'];
 
@@ -75,18 +82,16 @@ function kws(text: string, max = 8): string[] {
 }
 
 function topicLabel(kw: string, qs: Row[]): string {
-  // 그룹 내 질문에서 kw와 함께 자주 등장하는 명사 찾기
+  // 그룹 내 2개 이상 질문에 공통으로 등장하는 키워드가 있으면 "A와 B" 형태
   const freq: Record<string, number> = {};
   qs.forEach(r => kws(r.question, 10).forEach(w => {
     if (w !== kw && w.length >= 2) freq[w] = (freq[w] ?? 0) + 1;
   }));
-  const ranked = Object.entries(freq).sort((a, b) => b[1] - a[1]);
-  if (!ranked.length) return kw;
-  // 받침 여부에 따라 '과'/'와' 선택
+  const partner = Object.entries(freq).sort((a, b) => b[1] - a[1]).find(([, c]) => c >= 2);
+  if (!partner) return kw;
   const code = kw.charCodeAt(kw.length - 1);
   const hasJong = code >= 0xAC00 && (code - 0xAC00) % 28 !== 0;
-  const top = ranked[0][0];
-  return `${kw}${hasJong ? '과 ' : '와 '}${top}`;
+  return `${kw}${hasJong ? '과 ' : '와 '}${partner[0]}`;
 }
 
 interface Row { id: number; class_room: string; project: string; name: string; question: string; analysis: { level: number; label: string; emoji: string; summary: string } | null; time: string; }
@@ -244,17 +249,37 @@ export default function TeacherPage() {
     const topKw  = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0, 5);
     const maxKw  = topKw[0]?.[1] ?? 1;
 
-    // 유사질문 묶음 (최대 3개, 자연스러운 주제명)
-    const groups: { label: string; kw: string; qs: Row[] }[] = [];
-    const used = new Set<number>();
-    for (const [kw] of topKw) {
-      if (groups.length >= 3) break;
-      const ms = filtered.filter(r => !used.has(r.id) && kws(r.question, 8).includes(kw));
-      if (ms.length >= 2) {
-        ms.forEach(r => used.add(r.id));
-        groups.push({ label: topicLabel(kw, ms), kw, qs: ms });
-      }
+    // IDF: 각 키워드가 몇 개 질문에 등장하는지 (document frequency)
+    const df: Record<string, number> = {};
+    filtered.forEach(r => {
+      const ks = new Set(kws(r.question, 10));
+      ks.forEach(k => { df[k] = (df[k] ?? 0) + 1; });
+    });
+    // 2개 이상 질문에 등장한 키워드만 주제 후보로 허용
+    const topicCandidates = new Set(Object.keys(df).filter(k => df[k] >= 2));
+
+    // 각 질문의 대표 주제 = 후보 키워드 중 df 가장 낮은 것(가장 구별력 있는 것)
+    function primaryKw(r: Row): string | null {
+      const ks = kws(r.question, 10).filter(k => topicCandidates.has(k));
+      if (!ks.length) return null;
+      return ks.reduce((best, k) => {
+        if (df[k] < df[best]) return k;
+        if (df[k] === df[best] && k.length > best.length) return k; // 동점이면 긴 단어 우선
+        return best;
+      });
     }
+
+    // 대표 주제별로 질문 묶기 → 최대 3그룹
+    const topicMap: Record<string, Row[]> = {};
+    filtered.forEach(r => {
+      const t = primaryKw(r);
+      if (t) { if (!topicMap[t]) topicMap[t] = []; topicMap[t].push(r); }
+    });
+    const groups = Object.entries(topicMap)
+      .filter(([, qs]) => qs.length >= 2)
+      .sort((a, b) => b[1].length - a[1].length)
+      .slice(0, 3)
+      .map(([kw, qs]) => ({ label: topicLabel(kw, qs), kw, qs }));
 
     // 대표 추천 (높은 단계 우선)
     const reco = [...filtered].sort((a,b)=>(b.analysis?.level??1)-(a.analysis?.level??1)).slice(0,5);
