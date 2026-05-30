@@ -20,15 +20,55 @@ const LV: Record<Level, { emoji: string; short: string; label: string; color: st
 };
 
 // ─── 키워드 추출 ─────────────────────────────────────
-const SW = new Set(['왜','어떻게','무엇','언제','어디','누가','어떤','얼마나','어느','만약','이런','그런','저런','같은','다른','은','는','이','가','을','를','의','에','로','도','만','와','과','랑','이것','그것','이거','그거','정말','매우','아주','너무','있','없','되','하','않','못','것','때','곳','점','수','할','될','더']);
-const ENDS = ['하나요','인가요','일까요','될까요','할까요','이에요','나요','까요','어요','아요'];
-const PTCL = ['에서는','으로서','이라면','에서도','에서','으로','이나','에게','한테','은','는','이','가','을','를','의','에','로','도','만','와','과'];
+const SW = new Set([
+  // 의문사·부사
+  '왜','어떻게','무엇','언제','어디','누가','어떤','얼마나','어느','만약','혹시','과연','정말','매우','아주','너무','많이','잘','못','꼭','모두','각각',
+  // 지시어
+  '이런','그런','저런','같은','다른','이것','그것','이거','그거','저것','저거',
+  // 조사 단독형
+  '은','는','이','가','을','를','의','에','로','도','만','와','과','랑','하고',
+  // 보조동사·형용사 어간
+  '있','없','되','하','않','못','알','봐','해','살','나','오','가','크','작','많','적',
+  // 의미 없는 명사
+  '것','때','곳','점','수','들','후','전','중','안','밖','위','속','옆','사이',
+  // 질문 형식 단어
+  '무엇인가','무엇인지','어떤지','어떨까','어떤가','어디서','어디에','왜냐','그래서','따라서','하지만',
+  // 동사 원형 어간
+  '필요','가능','중요','특징','이유','방법','종류','결과','영향',
+  // 단음절 대명사
+  '나','너','저','우리','그','그녀','이','그','저',
+]);
+const ENDS = [
+  // 길이 순 (긴 것 먼저)
+  '하나요','인가요','일까요','될까요','할까요','을까요','는걸까요','는건가요','는건데요',
+  '이에요','거예요','된건가요','는지요','겠어요','겠죠',
+  '습니다','ㅂ니다','입니다','합니다','됩니다',
+  '이라는','이라고','이라서','이라면','이란','이라','이며','이고','이지',
+  '라는','라고','라서','란','라','나요','까요','어요','아요','에요',
+  '이죠','죠','요','지','고','며','서','면','지만',
+];
+const PTCL = ['에서는','으로서','으로써','이라면','에서도','에서','으로','이나','에게','한테','에서','에서의','으로의','과의','와의','은','는','이','가','을','를','의','에','로','도','만','와','과'];
 
-function kws(text: string, max = 5): string[] {
-  return text.replace(/[?!.,~？！。「」[\]]/g, ' ').split(/\s+/).filter(w => w.length > 0)
-    .map(w => { for (const e of ENDS) if (w.endsWith(e) && w.length > e.length) return w.slice(0,-e.length); for (const p of PTCL) if (w.endsWith(p) && w.length > p.length) return w.slice(0,-p.length); return w; })
-    .filter(w => w.length >= 2 && !SW.has(w)).filter(w => !/[했됐졌갔왔겠]$/.test(w))
-    .filter((w,i,a) => a.indexOf(w) === i).slice(0, max);
+function kws(text: string, max = 8): string[] {
+  return text.replace(/[?!.,~？！。「」[\]()]/g, ' ').split(/\s+/).filter(w => w.length > 0)
+    .map(w => {
+      for (const e of ENDS) if (w.endsWith(e) && w.length > e.length + 1) return w.slice(0, -e.length);
+      for (const p of PTCL) if (w.endsWith(p) && w.length > p.length + 1) return w.slice(0, -p.length);
+      return w;
+    })
+    .filter(w => w.length >= 2 && !SW.has(w))
+    .filter(w => !/[했됐졌갔왔겠았었]$/.test(w))
+    .filter(w => !/[할건텐]$/.test(w))
+    .filter((w, i, a) => a.indexOf(w) === i)
+    .slice(0, max);
+}
+
+function topicLabel(kw: string, qs: Row[]): string {
+  const freq: Record<string, number> = {};
+  qs.forEach(r => kws(r.question, 10).forEach(w => { if (w !== kw && w.length >= 2) freq[w] = (freq[w] ?? 0) + 1; }));
+  const partner = Object.entries(freq).sort((a, b) => b[1] - a[1])[0];
+  if (!partner) return kw;
+  return `${kw}의 ${partner[0]}`;
 }
 
 interface Row { id: number; class_room: string; project: string; name: string; question: string; analysis: { level: number; label: string; emoji: string; summary: string } | null; time: string; }
@@ -155,19 +195,23 @@ export default function TeacherPage() {
     const avg    = filtered.reduce((s, r) => s + (r.analysis?.level ?? 1), 0) / n;
     const highPct = Math.round(lvDist.filter(d => d.l >= 3).reduce((s,d) => s+d.cnt, 0) / n * 100);
 
-    // 핵심어 빈도
+    // 핵심어 빈도 (최대 5개)
     const freq: Record<string,number> = {};
-    filtered.forEach(r => kws(r.question,5).forEach(k => { freq[k] = (freq[k]??0)+1; }));
-    const topKw  = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,12);
+    filtered.forEach(r => kws(r.question, 8).forEach(k => { freq[k] = (freq[k]??0)+1; }));
+    const topKw  = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0, 5);
     const maxKw  = topKw[0]?.[1] ?? 1;
 
-    // 유사질문 묶음
-    const groups: { kw: string; qs: Row[] }[] = [];
+    // 유사질문 묶음 (최대 3개, 자연스러운 주제명)
+    const groups: { label: string; kw: string; qs: Row[] }[] = [];
     const used = new Set<number>();
-    topKw.slice(0,6).forEach(([kw]) => {
-      const ms = filtered.filter(r => !used.has(r.id) && kws(r.question,5).includes(kw));
-      if (ms.length >= 2) { ms.forEach(r=>used.add(r.id)); groups.push({ kw, qs: ms }); }
-    });
+    for (const [kw] of topKw) {
+      if (groups.length >= 3) break;
+      const ms = filtered.filter(r => !used.has(r.id) && kws(r.question, 8).includes(kw));
+      if (ms.length >= 2) {
+        ms.forEach(r => used.add(r.id));
+        groups.push({ label: topicLabel(kw, ms), kw, qs: ms });
+      }
+    }
 
     // 대표 추천 (높은 단계 우선)
     const reco = [...filtered].sort((a,b)=>(b.analysis?.level??1)-(a.analysis?.level??1)).slice(0,5);
@@ -280,9 +324,9 @@ export default function TeacherPage() {
                   ? <p className="text-xs text-[#ccc]">유사 질문 그룹 없음</p>
                   : (
                     <div className="space-y-2.5">
-                      {stats.groups.map(({ kw, qs }) => (
+                      {stats.groups.map(({ label, kw, qs }) => (
                         <div key={kw} className="bg-[#f8f9ff] rounded-xl p-3">
-                          <div className="text-xs font-bold text-[#667eea] mb-1.5">🔗 &apos;{kw}&apos; 관련 ({qs.length}개)</div>
+                          <div className="text-xs font-bold text-[#667eea] mb-1.5">🔗 {label} ({qs.length}개)</div>
                           <ul className="space-y-1">
                             {qs.slice(0,3).map(q => (
                               <li key={q.id} className="text-xs text-[#555] flex gap-1">
