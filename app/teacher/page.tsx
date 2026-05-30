@@ -333,17 +333,19 @@ export default function TeacherPage() {
             <div className="bg-white rounded-2xl p-5 shadow-sm">
               <h2 className="font-bold text-[#4a4a6a] text-sm mb-5">📈 질문 현황</h2>
 
-              {/* 평균 단계 강조 카드 */}
-              <div className="flex gap-3 mb-5">
-                <div className="flex-1 rounded-xl p-3 text-center" style={{background:'linear-gradient(135deg,#667eea22,#764ba222)'}}>
-                  <div className="text-xs text-[#888] mb-1">평균 질문 단계</div>
-                  <div className="text-3xl font-black" style={{color:'#667eea'}}>{stats.avg.toFixed(1)}</div>
-                  <div className="text-xs text-[#888] mt-0.5">/ 4단계</div>
+              {/* 요약 카드 3개 */}
+              <div className="grid grid-cols-3 gap-2 mb-5">
+                <div className="rounded-xl p-3 text-center" style={{background:'#f0f2f8'}}>
+                  <div className="text-[10px] text-[#999] mb-1">총 질문</div>
+                  <div className="text-2xl font-black text-[#4a4a6a]">{stats.n}<span className="text-xs font-normal ml-0.5">개</span></div>
                 </div>
-                <div className="flex-1 rounded-xl p-3 text-center" style={{background:'#f0f2f8'}}>
-                  <div className="text-xs text-[#888] mb-1">3·4단계 비율</div>
-                  <div className="text-3xl font-black" style={{color: stats.highPct >= 60 ? '#2e7d32' : stats.highPct >= 30 ? '#e65100' : '#9e9e9e'}}>{stats.highPct}%</div>
-                  <div className="text-xs text-[#888] mt-0.5">심화 탐구 질문</div>
+                <div className="rounded-xl p-3 text-center" style={{background:'linear-gradient(135deg,#667eea18,#764ba218)'}}>
+                  <div className="text-[10px] text-[#999] mb-1">평균 단계</div>
+                  <div className="text-2xl font-black" style={{color:'#667eea'}}>{stats.avg.toFixed(1)}<span className="text-xs font-normal ml-0.5">단계</span></div>
+                </div>
+                <div className="rounded-xl p-3 text-center" style={{background: stats.highPct >= 50 ? '#e8f5e9' : '#f0f2f8'}}>
+                  <div className="text-[10px] text-[#999] mb-1">3·4단계</div>
+                  <div className="text-2xl font-black" style={{color: stats.highPct >= 50 ? '#2e7d32' : '#9e9e9e'}}>{stats.highPct}<span className="text-xs font-normal ml-0.5">%</span></div>
                 </div>
               </div>
 
@@ -414,25 +416,7 @@ export default function TeacherPage() {
             <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-col gap-4">
               <h2 className="font-bold text-[#4a4a6a] text-sm m-0">💡 수업 활용</h2>
 
-              {/* ① 정적 요약 — 항상 표시 */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="rounded-xl p-3 text-center" style={{background:'#f0f2f8'}}>
-                  <div className="text-[10px] text-[#999] mb-0.5">총 질문</div>
-                  <div className="text-xl font-black text-[#4a4a6a]">{stats.n}<span className="text-xs font-normal ml-0.5">개</span></div>
-                </div>
-                <div className="rounded-xl p-3 text-center" style={{background:'linear-gradient(135deg,#667eea18,#764ba218)'}}>
-                  <div className="text-[10px] text-[#999] mb-0.5">평균 단계</div>
-                  <div className="text-xl font-black" style={{color:'#667eea'}}>{stats.avg.toFixed(1)}<span className="text-xs font-normal ml-0.5">단계</span></div>
-                </div>
-                <div className="rounded-xl p-3 text-center" style={{background: stats.highPct >= 50 ? '#e8f5e9' : '#f0f2f8'}}>
-                  <div className="text-[10px] text-[#999] mb-0.5">심화(3·4단계)</div>
-                  <div className="text-xl font-black" style={{color: stats.highPct >= 50 ? '#2e7d32' : '#9e9e9e'}}>{stats.highPct}<span className="text-xs font-normal ml-0.5">%</span></div>
-                </div>
-              </div>
-
-              <hr className="border-[#f0f0f8] m-0"/>
-
-              {/* ② AI 분석 — 버튼 + 결과 */}
+              {/* AI 분석 — 버튼 + 결과 */}
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-bold text-[#999] uppercase tracking-wider">AI 분석</span>
