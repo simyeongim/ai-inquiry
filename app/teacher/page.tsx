@@ -131,6 +131,8 @@ export default function TeacherPage() {
   const [deleting, setDeleting] = useState(false);
   const [fetchErr, setFetchErr] = useState('');
   const [searchName, setSearchName] = useState('');
+  const [aiReport,  setAiReport]  = useState<{ report: string; deepQuestions: string[]; suggestions: string[] } | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true); setFetchErr('');
@@ -146,6 +148,27 @@ export default function TeacherPage() {
   }, []);
 
   useEffect(() => { if (authed) load(); }, [authed, load]);
+
+  async function generateAiReport() {
+    if (!filtered.length || !stats) return;
+    setAiLoading(true);
+    try {
+      const body = {
+        questions:   filtered.map(r => r.question),
+        topKeywords: stats.topKw.map(([k]) => k),
+        levelDist:   Object.fromEntries(LEVEL_OPTS.map(l => [l, stats.lvDist.find(d => d.l === l)?.cnt ?? 0])),
+        avg:         stats.avg,
+      };
+      const res = await fetch('/api/teacher-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error();
+      setAiReport(await res.json());
+    } catch { alert('AI 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'); }
+    setAiLoading(false);
+  }
 
   function tog<T>(a: T[], v: T): T[] { return a.includes(v) ? a.filter(x=>x!==v) : [...a,v]; }
   function clearFilters() { setFClass([]); setFProject([]); setFLevel([]); }
@@ -163,6 +186,8 @@ export default function TeacherPage() {
     if (!q) return filtered;
     return filtered.filter(r => r.name.includes(q));
   }, [filtered, searchName]);
+
+  useEffect(() => { setAiReport(null); }, [filtered]);
 
   function toggleOne(id: number) { setSel(p => { const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n; }); }
   function toggleAll() {
@@ -342,46 +367,71 @@ export default function TeacherPage() {
               </div>
             </div>
 
-            {/* 수업 활용 */}
-            <div className="bg-white rounded-2xl p-5 shadow-sm">
-              <h2 className="font-bold text-[#4a4a6a] text-sm mb-5">💡 수업 활용</h2>
-
-              {/* 요약 리포트 */}
-              <div className="mb-5">
-                <div className="text-sm font-semibold text-[#555] mb-2">교사용 요약 리포트</div>
-                <div className="bg-[#f8f9ff] rounded-xl p-4 space-y-1.5">
-                  {report(stats.n, stats.avg, stats.highPct, stats.lvDist).map((line,i) => (
-                    <p key={i} className="text-sm text-[#444] leading-relaxed m-0">{line}</p>
-                  ))}
-                </div>
+            {/* 수업 활용 — AI 분석 */}
+            <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-col">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="font-bold text-[#4a4a6a] text-sm m-0">💡 수업 활용</h2>
+                <button onClick={generateAiReport} disabled={aiLoading || !stats}
+                  className="text-xs px-4 py-1.5 rounded-full border-none cursor-pointer font-semibold text-white disabled:opacity-50 transition-all"
+                  style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)' }}>
+                  {aiLoading ? '분석 중…' : aiReport ? '🤖 다시 분석' : '🤖 AI 분석 생성'}
+                </button>
               </div>
 
-              {/* 대표 탐구 질문 */}
-              <div className="mb-5">
-                <div className="text-sm font-semibold text-[#555] mb-2">대표 탐구 질문 추천</div>
-                <div className="space-y-2">
-                  {stats.reco.map(r => {
-                    const lv = (r.analysis?.level ?? 1) as Level;
-                    return (
-                      <div key={r.id} className="flex items-start gap-2.5 bg-[#f8f9ff] rounded-xl p-3">
-                        <span className="shrink-0 text-xs font-bold px-2 py-0.5 rounded-full"
-                          style={{background:LV[lv].bg, color:LV[lv].color}}>{LV[lv].emoji}</span>
-                        <span className="text-sm text-[#333] leading-relaxed">{r.question}</span>
+              {/* 대기 상태 */}
+              {!aiReport && !aiLoading && (
+                <div className="flex-1 flex flex-col items-center justify-center py-12 text-center text-[#ccc]">
+                  <div className="text-4xl mb-3">🤖</div>
+                  <p className="text-sm leading-relaxed">AI 분석 생성을 누르면<br/>학생 질문을 바탕으로<br/>맞춤 수업 분석을 제공합니다.</p>
+                </div>
+              )}
+
+              {/* 로딩 */}
+              {aiLoading && (
+                <div className="flex-1 flex flex-col items-center justify-center py-12 text-[#999]">
+                  <div className="text-3xl mb-3 animate-pulse">🤖</div>
+                  <p className="text-sm">학생 질문 분석 중입니다…</p>
+                </div>
+              )}
+
+              {/* AI 결과 */}
+              {aiReport && !aiLoading && (
+                <div className="space-y-5">
+                  {/* 질문 분석 리포트 */}
+                  <div>
+                    <div className="text-sm font-semibold text-[#555] mb-2">📋 질문 분석 리포트</div>
+                    <div className="bg-[#f8f9ff] rounded-xl p-4">
+                      <p className="text-sm text-[#444] leading-relaxed m-0">{aiReport.report}</p>
+                    </div>
+                  </div>
+
+                  {/* 대표 탐구 질문 추천 */}
+                  {aiReport.deepQuestions.length > 0 && (
+                    <div>
+                      <div className="text-sm font-semibold text-[#555] mb-2">⭐ 대표 탐구 질문 추천</div>
+                      <div className="space-y-2">
+                        {aiReport.deepQuestions.map((q, i) => (
+                          <div key={i} className="bg-[#fff8e1] border-l-4 border-[#f59e0b] rounded-r-xl p-3">
+                            <p className="text-sm text-[#333] leading-relaxed m-0">{q}</p>
+                          </div>
+                        ))}
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
+                    </div>
+                  )}
 
-              {/* 수업 활용 제안 */}
-              <div>
-                <div className="text-sm font-semibold text-[#555] mb-2">다음 수업 활용 제안</div>
-                <div className="bg-[#fffbea] border-l-4 border-[#fbbf24] rounded-r-xl p-4 space-y-1.5">
-                  {suggest(stats.avg, stats.lvDist).map((line,i) => (
-                    <p key={i} className="text-sm text-[#78350f] leading-relaxed m-0">{line}</p>
-                  ))}
+                  {/* 다음 수업 활용 제안 */}
+                  {aiReport.suggestions.length > 0 && (
+                    <div>
+                      <div className="text-sm font-semibold text-[#555] mb-2">🗓 다음 수업 활용 제안</div>
+                      <div className="bg-[#fffbea] border-l-4 border-[#fbbf24] rounded-r-xl p-4 space-y-2">
+                        {aiReport.suggestions.map((s, i) => (
+                          <p key={i} className="text-sm text-[#78350f] leading-relaxed m-0">{s}</p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
             </div>
           </div>
         )}
@@ -476,25 +526,3 @@ export default function TeacherPage() {
   );
 }
 
-// ─── 리포트 / 제안 생성 함수 ─────────────────────────
-function report(n: number, avg: number, highPct: number, dist: {l:number; cnt:number; short:string}[]): string[] {
-  const mc = dist.reduce((a,b) => b.cnt>a.cnt?b:a);
-  const lines = [
-    `📋 총 ${n}개의 질문이 수집되었습니다.`,
-    `📊 평균 질문 수준은 ${avg.toFixed(1)}단계입니다.`,
-  ];
-  if      (highPct >= 60) lines.push(`✅ 3·4단계 질문이 ${highPct}%로 높게 형성되어 있습니다.`);
-  else if (highPct >= 30) lines.push(`📈 3·4단계 질문이 ${highPct}%입니다. 더 깊은 탐구 질문으로 안내해 보세요.`);
-  else                    lines.push(`💬 1·2단계 질문이 주를 이룹니다. 조건 변화와 가치 판단 질문으로 발전시키는 안내가 필요합니다.`);
-  if (mc.cnt > 0) lines.push(`🔢 가장 많이 나온 수준은 ${mc.short}(${mc.cnt}개)입니다.`);
-  return lines;
-}
-
-function suggest(avg: number, dist: {l:number; cnt:number}[]): string[] {
-  const lv4 = dist.find(d=>d.l===4)?.cnt ?? 0;
-  const tag  = lv4>0 ? [`⭐ 4단계 질문 ${lv4}개를 수업 토론 주제로 활용하세요.`] : [];
-  if (avg < 2) return ['💡 "왜?" "어떤 특징이 있을까?"로 질문을 바꾸도록 안내해 보세요.', '📖 개념 이해 질문을 예시로 보여주는 수업을 권장합니다.', ...tag];
-  if (avg < 3) return ['💡 "만약 ~라면?" "조건이 달라지면?" 형태의 질문을 소개해 보세요.', '🔬 비교·조건 실험 활동과 연계하면 3단계 질문 생성을 자연스럽게 유도할 수 있습니다.', ...tag];
-  if (avg < 3.5) return ['💡 "무엇이 더 중요할까?" "어떻게 해야 할까?" 가치 판단 질문으로 이어지도록 유도해 보세요.', '🗣️ 학생 질문을 바탕으로 찬반 토론 활동을 구성해 보세요.', ...tag];
-  return ['🎉 학생들이 가치 판단·토론 수준의 탐구 질문을 잘 만들고 있습니다!', '🗣️ 우수 질문을 전체 학급과 공유하고 모둠 토론으로 발전시켜 보세요.', ...tag];
-}
