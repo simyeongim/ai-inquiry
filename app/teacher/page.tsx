@@ -181,6 +181,7 @@ export default function TeacherPage() {
         topKeywords: stats.topKw.map(([k]) => k),
         levelDist:   Object.fromEntries(LEVEL_OPTS.map(l => [l, stats.lvDist.find(d => d.l === l)?.cnt ?? 0])),
         avg:         stats.avg,
+        topicGroups: stats.groups.map(g => ({ topic: g.label, questions: g.qs.map(r => r.question) })),
       };
       const res = await fetch('/api/teacher-report', {
         method: 'POST',
@@ -414,54 +415,54 @@ export default function TeacherPage() {
 
             {/* 수업 활용 */}
             <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-col">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-5">
                 <h2 className="font-bold text-[#4a4a6a] text-sm m-0">💡 수업 활용</h2>
                 <button onClick={generateAiReport} disabled={aiLoading || !stats}
-                  className="text-xs px-4 py-1.5 rounded-full border-none cursor-pointer font-bold text-white disabled:opacity-50 transition-all"
+                  className="text-sm px-4 py-2 rounded-full border-none cursor-pointer font-bold text-white disabled:opacity-50 transition-all"
                   style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)' }}>
                   {aiLoading ? '분석 중…' : aiReport ? '↺ 다시 분석' : '🤖 분석 생성'}
                 </button>
               </div>
 
               {!aiReport && !aiLoading && (
-                <div className="flex-1 flex flex-col items-center justify-center py-10 gap-2">
-                  <span className="text-3xl">🤖</span>
-                  <p className="text-xs text-[#bbb] text-center m-0">분석 생성을 누르면<br/>AI가 수업 설계를 도와드립니다.</p>
+                <div className="flex-1 flex flex-col items-center justify-center py-12 gap-3">
+                  <span className="text-4xl">🤖</span>
+                  <p className="text-sm text-[#bbb] text-center m-0 leading-relaxed">분석 생성을 누르면<br/>AI가 수업 설계를 도와드립니다.</p>
                 </div>
               )}
 
               {aiLoading && (
-                <div className="flex-1 flex flex-col items-center justify-center py-10 gap-2">
-                  <span className="text-2xl animate-spin">⚙️</span>
-                  <p className="text-xs text-[#aaa] text-center m-0 animate-pulse">AI가 질문을 분석하고 있습니다…</p>
+                <div className="flex-1 flex flex-col items-center justify-center py-12 gap-3">
+                  <span className="text-3xl animate-spin">⚙️</span>
+                  <p className="text-sm text-[#aaa] text-center m-0 animate-pulse">AI가 질문을 분석하고 있습니다…</p>
                 </div>
               )}
 
               {aiReport && !aiLoading && (
-                <div className="space-y-4">
+                <div className="space-y-5">
 
                   {/* 질문 분석 리포트 */}
-                  <div className="rounded-xl p-4" style={{background:'linear-gradient(135deg,#667eea0d,#764ba20d)', border:'1px solid #667eea22'}}>
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <span className="text-xs font-black text-[#667eea]">📋</span>
-                      <span className="text-[10px] font-black text-[#667eea] uppercase tracking-widest">질문 분석 리포트</span>
+                  <div className="rounded-xl p-4" style={{background:'linear-gradient(135deg,#667eea0d,#764ba20d)', border:'1.5px solid #667eea30'}}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-base">📋</span>
+                      <span className="text-sm font-black text-[#667eea]">질문 분석 리포트</span>
                     </div>
-                    <p className="text-sm text-[#333] leading-relaxed m-0">{aiReport.report}</p>
+                    <p className="text-[15px] text-[#2a2a3a] leading-relaxed m-0">{aiReport.report}</p>
                   </div>
 
                   {/* 대표 탐구 질문 */}
                   {aiReport.deepQuestions.length > 0 && (
                     <div>
-                      <div className="flex items-center gap-1.5 mb-2">
-                        <span className="text-xs">⭐</span>
-                        <span className="text-[10px] font-black text-[#d97706] uppercase tracking-widest">대표 탐구 질문</span>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-base">⭐</span>
+                        <span className="text-sm font-black text-[#d97706]">대표 탐구 질문</span>
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-2.5">
                         {aiReport.deepQuestions.slice(0, 2).map((q, i) => (
-                          <div key={i} className="rounded-xl p-3.5 flex gap-3 items-start"
-                            style={{background:'#fffbeb', border:'1px solid #fde68a'}}>
-                            <span className="text-sm font-black text-[#f59e0b] shrink-0 leading-snug">{i + 1}</span>
-                            <p className="text-sm text-[#333] leading-snug m-0 font-medium">{q}</p>
+                          <div key={i} className="rounded-xl p-4 flex gap-3 items-start"
+                            style={{background:'#fffbeb', border:'1.5px solid #fde68a'}}>
+                            <span className="text-base font-black text-[#f59e0b] shrink-0 leading-tight mt-0.5">{i + 1}</span>
+                            <p className="text-[15px] text-[#333] leading-snug m-0 font-semibold">{q}</p>
                           </div>
                         ))}
                       </div>
@@ -471,16 +472,16 @@ export default function TeacherPage() {
                   {/* 다음 차시 활동 제안 */}
                   {aiReport.suggestions.length > 0 && (
                     <div>
-                      <div className="flex items-center gap-1.5 mb-2">
-                        <span className="text-xs">🗓</span>
-                        <span className="text-[10px] font-black text-[#059669] uppercase tracking-widest">다음 차시 활동 제안</span>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-base">🗓</span>
+                        <span className="text-sm font-black text-[#059669]">다음 차시 활동 제안</span>
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-2.5">
                         {aiReport.suggestions.slice(0, 2).map((s, i) => (
-                          <div key={i} className="rounded-xl p-3.5 flex gap-3 items-center"
-                            style={{background:'#f0fdf4', border:'1px solid #bbf7d0'}}>
-                            <span className="text-[#059669] font-black text-xs shrink-0">▶</span>
-                            <p className="text-sm text-[#166534] leading-snug m-0 font-semibold">{s}</p>
+                          <div key={i} className="rounded-xl p-4 flex gap-3 items-center"
+                            style={{background:'#f0fdf4', border:'1.5px solid #86efac'}}>
+                            <span className="text-[#059669] font-black text-sm shrink-0">▶</span>
+                            <p className="text-[15px] text-[#166534] leading-snug m-0 font-bold">{s}</p>
                           </div>
                         ))}
                       </div>
