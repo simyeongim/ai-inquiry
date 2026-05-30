@@ -394,10 +394,16 @@ export default function TeacherPage() {
                             {info.emoji} {info.short}
                           </span>
                         </div>
-                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[#bbb]">
-                          <span>🏫 {row.class_room}</span>
-                          <span>👤 {row.name}</span>
-                          <span>📁 {row.project}</span>
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{background:'#f0f2f8', color:'#555'}}>
+                            {row.class_room}
+                          </span>
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-md" style={{background:'#e8eaf6', color:'#3949ab'}}>
+                            {row.name}
+                          </span>
+                          <span className="text-xs px-2 py-0.5 rounded-md" style={{background:'#f3f0ff', color:'#6b21a8'}}>
+                            {row.project}
+                          </span>
                         </div>
                       </div>
                     </div>
