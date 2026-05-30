@@ -121,16 +121,11 @@ export default function QuestionPage() {
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   }
 
-  function insertHint(phrase: string) {
-    const next = question + phrase;
-    if (next.length <= 150) { setQuestion(next); setQError(''); }
-  }
-
   const HINTS = [
-    { text: '🟢 무엇일까?',      cls: 'text-[#2e7d32] border-[#a5d6a7] bg-[#f1f8e9]' },
-    { text: '🔵 왜 그럴까?',     cls: 'text-[#1565c0] border-[#90caf9] bg-[#e3f2fd]' },
-    { text: '🟠 만약 ~라면?',    cls: 'text-[#e65100] border-[#ffcc80] bg-[#fff8f0]' },
-    { text: '🔴 더 중요한 것은?', cls: 'text-[#c62828] border-[#ef9a9a] bg-[#ffebee]' },
+    { text: '🟢 무엇일까?',          cls: 'text-[#2e7d32] border-[#a5d6a7] bg-[#f1f8e9]' },
+    { text: '🔵 어떤 특징이 있을까?', cls: 'text-[#1565c0] border-[#90caf9] bg-[#e3f2fd]' },
+    { text: '🟠 만약 ~라면?',        cls: 'text-[#e65100] border-[#ffcc80] bg-[#fff8f0]' },
+    { text: '🔴 무엇이 더 중요할까?', cls: 'text-[#c62828] border-[#ef9a9a] bg-[#ffebee]' },
   ];
 
   return (
@@ -191,10 +186,10 @@ export default function QuestionPage() {
           <Label>내 질문</Label>
           <div className="flex flex-wrap gap-1.5 mb-2.5">
             {HINTS.map(({ text, cls }) => (
-              <button key={text} type="button" onClick={() => insertHint(text.replace(/^[🟢🔵🟠🔴]\s/, ''))}
-                className={`text-[0.8rem] font-semibold px-3 py-1.5 rounded-full border-[1.5px] cursor-pointer hover:opacity-80 active:scale-95 transition-all ${cls}`}>
+              <span key={text}
+                className={`text-[0.8rem] font-semibold px-3 py-1.5 rounded-full border-[1.5px] select-none ${cls}`}>
                 {text}
-              </button>
+              </span>
             ))}
           </div>
           <textarea value={question} onChange={e => { setQuestion(e.target.value.slice(0, 150)); setQError(''); }}
