@@ -80,8 +80,8 @@ export async function POST(request: NextRequest) {
   let info  = LEVEL_DATA[level];
   const methods = getMethods(level, question);
 
-  let desc       = info.desc;
-  let goodPoints = info.goodPoints;
+  let desc: string       = info.desc;
+  let goodPoints: string = info.goodPoints;
   if (level === 4 && isCompareChoice(question)) {
     desc       = '두 가치를 비교하고 무엇을 더 우선해야 할지 토론할 수 있는 최고 수준의 탐구질문이에요!';
     goodPoints = '정답이 하나로 정해지지 않는, 두 가치를 비교하고 우선순위를 생각해야 하는 훌륭한 탐구질문이에요!';
@@ -122,8 +122,8 @@ JSON으로만 응답. thinkingQuestions는 초등학생 수준 심화 질문 2�
         if (parsed.level >= 1 && parsed.level <= 4) {
           level = parsed.level as 1 | 2 | 3 | 4;
           info  = LEVEL_DATA[level];
-          desc       = info.desc;
-          goodPoints = info.goodPoints;
+          desc       = info.desc as string;
+          goodPoints = info.goodPoints as string;
           if (level === 4 && isCompareChoice(question)) {
             desc = '두 가치를 비교하고 무엇을 더 우선해야 할지 토론할 수 있는 최고 수준의 탐구질문이에요!';
             goodPoints = '정답이 하나로 정해지지 않는, 두 가치를 비교하고 우선순위를 생각해야 하는 훌륭한 탐구질문이에요!';
