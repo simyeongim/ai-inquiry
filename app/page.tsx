@@ -1,6 +1,5 @@
 'use client';
 
-import Image from "next/image";
 import Link from "next/link";
 
 const NAV_ITEMS = [
@@ -16,28 +15,26 @@ export default function Home() {
   }
 
   return (
-    <div className="fixed inset-0">
-      {/* 전체 화면 이미지 */}
-      <Image
-        src="/deeping.png"
-        alt="디핑 DEEPING"
-        fill
-        priority
-        className="object-contain bg-white"
-      />
-
-      {/* 하단 그라디언트 오버레이 */}
-      <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-white/80 to-transparent pointer-events-none" />
+    <div className="flex flex-col items-center justify-center w-full h-screen bg-white">
+      {/* 이미지 영역 */}
+      <div className="flex-1 flex items-center justify-center w-full overflow-hidden px-4">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/deeping.png"
+          alt="디핑 DEEPING"
+          className="max-w-full max-h-full object-contain"
+        />
+      </div>
 
       {/* 하단 내비게이션 */}
-      <nav className="absolute inset-x-0 bottom-0 flex gap-3 px-4 pb-8 pt-4 max-w-lg mx-auto">
+      <nav className="w-full flex gap-3 px-4 pb-8 pt-3 max-w-lg mx-auto">
         {NAV_ITEMS.map(({ emoji, label, href }) =>
           href ? (
             <Link
               key={label}
               href={href}
               className="flex-1 flex flex-col items-center gap-1.5 py-3 rounded-2xl
-                         bg-black/10 backdrop-blur border border-black/15 text-gray-800
+                         bg-black/10 border border-black/15 text-gray-800
                          hover:bg-black/20 active:scale-95 transition-all duration-150"
             >
               <span className="text-2xl leading-none">{emoji}</span>
