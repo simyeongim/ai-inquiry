@@ -170,7 +170,7 @@ export default function QuestionPage() {
           <Label className="mt-4">프로젝트</Label>
           <Select value={project} onChange={e => setProject(e.target.value)}>
             <option value="">-- 프로젝트를 선택하세요 --</option>
-            {['1번째 프로젝트','2번째 프로젝트','3번째 프로젝트'].map(v => <option key={v}>{v}</option>)}
+            {['세계는 어떻게 움직이는가','지구와 어떻게 함께 살아갈 것인가','우리는 어떻게 자신을 조직하는가'].map(v => <option key={v}>{v}</option>)}
           </Select>
         </Card>
 
