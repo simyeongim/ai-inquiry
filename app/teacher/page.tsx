@@ -445,7 +445,7 @@ export default function TeacherPage() {
                   <div className="rounded-xl p-4" style={{background:'linear-gradient(135deg,#667eea0d,#764ba20d)', border:'1.5px solid #667eea30'}}>
                     <div className="flex items-center gap-2 mb-3">
                       <span className="text-base">📋</span>
-                      <span className="text-sm font-black text-[#667eea]">질문 분석 리포트</span>
+                      <span className="text-base font-black text-[#667eea]">질문 분석 리포트</span>
                     </div>
                     <p className="text-[15px] text-[#2a2a3a] leading-relaxed m-0">{aiReport.report}</p>
                   </div>
@@ -455,7 +455,7 @@ export default function TeacherPage() {
                     <div>
                       <div className="flex items-center gap-2 mb-3">
                         <span className="text-base">⭐</span>
-                        <span className="text-sm font-black text-[#d97706]">대표 탐구 질문</span>
+                        <span className="text-base font-black text-[#d97706]">대표 탐구 질문</span>
                       </div>
                       <div className="space-y-2.5">
                         {aiReport.deepQuestions.slice(0, 2).map((q, i) => (
@@ -474,7 +474,7 @@ export default function TeacherPage() {
                     <div>
                       <div className="flex items-center gap-2 mb-3">
                         <span className="text-base">🗓</span>
-                        <span className="text-sm font-black text-[#059669]">다음 차시 활동 제안</span>
+                        <span className="text-base font-black text-[#059669]">다음 차시 활동 제안</span>
                       </div>
                       <div className="space-y-2.5">
                         {aiReport.suggestions.slice(0, 2).map((s, i) => (
