@@ -360,24 +360,14 @@ export default function TeacherPage() {
                   {allChecked ? '전체 선택 해제' : '전체 선택'}
                 </button>
               )}
-              {selInFil.length > 0 && (
-                <button onClick={()=>deleteRows(selInFil.map(r=>r.id))} disabled={deleting}
-                  className="text-xs text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-full border-none cursor-pointer font-semibold disabled:opacity-50 transition-colors">
-                  선택 삭제 ({selInFil.length})
-                </button>
-              )}
               {displayed.length > 0 && (
-                <button onClick={()=>deleteRows(displayed.map(r=>r.id))} disabled={deleting}
+                <button onClick={()=>deleteRows(selInFil.length > 0 ? selInFil.map(r=>r.id) : displayed.map(r=>r.id))} disabled={deleting}
                   className="text-xs text-white bg-red-400 hover:bg-red-500 px-3 py-1.5 rounded-full border-none cursor-pointer font-semibold disabled:opacity-50 transition-colors">
-                  전체 삭제
+                  삭제{selInFil.length > 0 ? ` (${selInFil.length})` : ''}
                 </button>
               )}
             </div>
           </div>
-
-          {selInFil.length > 0 && (
-            <p className="text-xs text-[#667eea] font-semibold mb-3">{selInFil.length}개 선택됨</p>
-          )}
 
           {loading ? (
             <p className="text-center text-[#ccc] py-10 text-sm">불러오는 중...</p>
