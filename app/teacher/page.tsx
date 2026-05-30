@@ -221,11 +221,24 @@ export default function TeacherPage() {
             <div className="bg-white rounded-2xl p-5 shadow-sm">
               <h2 className="font-bold text-[#4a4a6a] text-sm mb-5">📈 질문 현황</h2>
 
+              {/* 평균 단계 강조 카드 */}
+              <div className="flex gap-3 mb-5">
+                <div className="flex-1 rounded-xl p-3 text-center" style={{background:'linear-gradient(135deg,#667eea22,#764ba222)'}}>
+                  <div className="text-xs text-[#888] mb-1">평균 질문 단계</div>
+                  <div className="text-3xl font-black" style={{color:'#667eea'}}>{stats.avg.toFixed(1)}</div>
+                  <div className="text-xs text-[#888] mt-0.5">/ 4단계</div>
+                </div>
+                <div className="flex-1 rounded-xl p-3 text-center" style={{background:'#f0f2f8'}}>
+                  <div className="text-xs text-[#888] mb-1">3·4단계 비율</div>
+                  <div className="text-3xl font-black" style={{color: stats.highPct >= 60 ? '#2e7d32' : stats.highPct >= 30 ? '#e65100' : '#9e9e9e'}}>{stats.highPct}%</div>
+                  <div className="text-xs text-[#888] mt-0.5">심화 탐구 질문</div>
+                </div>
+              </div>
+
               {/* 수준 분포 */}
               <div className="mb-5">
-                <div className="flex items-center justify-between mb-3">
+                <div className="mb-3">
                   <span className="text-sm font-semibold text-[#555]">수준 분포</span>
-                  <span className="text-xs text-[#999]">평균 단계 <strong className="text-[#667eea]">{stats.avg.toFixed(1)}</strong></span>
                 </div>
                 <div className="space-y-2">
                   {stats.lvDist.map(({ l, emoji, short, color, cnt }) => (
