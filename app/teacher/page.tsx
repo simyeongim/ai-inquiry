@@ -27,48 +27,66 @@ const SW = new Set([
   '이런','그런','저런','같은','다른','이것','그것','이거','그거','저것','저거',
   // 조사 단독형
   '은','는','이','가','을','를','의','에','로','도','만','와','과','랑','하고',
-  // 보조동사·형용사 어간
+  // 보조동사·형용사 어간 (1자·2자 모두)
   '있','없','되','하','않','못','알','봐','해','살','나','오','가','크','작','많','적',
+  '있는','없는','있을','없을','되는','하는','있어','없어','있고','없고',
   // 의미 없는 명사
   '것','때','곳','점','수','들','후','전','중','안','밖','위','속','옆','사이',
-  // 질문 형식 단어
-  '무엇인가','무엇인지','어떤지','어떨까','어떤가','어디서','어디에','왜냐','그래서','따라서','하지만',
-  // 동사 원형 어간
-  '필요','가능','중요','특징','이유','방법','종류','결과','영향',
+  // 질문 형식 잔류형
+  '무엇인','무엇일','무엇이','어떤지','어떨까','어떤가','어디서','어디에','왜냐','왜냐면',
+  '그래서','따라서','하지만','그러나','그리고','또한','하지만',
+  // 질문 도우미 명사 (내용 없는 경우)
+  '나요','까요','뭔가','뭔지','어떤','어떻','어떻','있나','없나','할수','있을','없을',
   // 단음절 대명사
-  '나','너','저','우리','그','그녀','이','그','저',
+  '나','너','저','우리','그','그녀',
 ]);
 const ENDS = [
-  // 길이 순 (긴 것 먼저)
-  '하나요','인가요','일까요','될까요','할까요','을까요','는걸까요','는건가요','는건데요',
-  '이에요','거예요','된건가요','는지요','겠어요','겠죠',
+  // 길이 순 — 긴 것부터 (단일 pass로 greedy 매칭)
+  '는걸까요','는건가요','는건데요','는건지요',
+  '하나요','인가요','일까요','될까요','할까요','을까요','는가요','는지요',
+  '이에요','거예요','된건가요','겠어요','겠죠','겠지요',
   '습니다','ㅂ니다','입니다','합니다','됩니다',
   '이라는','이라고','이라서','이라면','이란','이라','이며','이고','이지',
-  '라는','라고','라서','란','라','나요','까요','어요','아요','에요',
-  '이죠','죠','요','지','고','며','서','면','지만',
+  '라는','라고','라서','란','나요','까요','어요','아요','에요',
+  '일까','을까','는가','인가','는지','인지','이죠','죠','요',
+  '지','고','며','서','면','지만',
 ];
-const PTCL = ['에서는','으로서','으로써','이라면','에서도','에서','으로','이나','에게','한테','에서','에서의','으로의','과의','와의','은','는','이','가','을','를','의','에','로','도','만','와','과'];
+const PTCL = ['에서는','으로서','으로써','에서도','에서','으로','이나','에게','한테','에서의','으로의','과의','와의','은','는','이','가','을','를','의','에','로','도','만','와','과'];
+
+function normalize(w: string): string {
+  let prev = '';
+  while (prev !== w) {
+    prev = w;
+    for (const e of ENDS) if (w.endsWith(e) && w.length > e.length) { w = w.slice(0, -e.length); break; }
+    for (const p of PTCL) if (w.endsWith(p) && w.length > p.length) { w = w.slice(0, -p.length); break; }
+  }
+  return w;
+}
 
 function kws(text: string, max = 8): string[] {
   return text.replace(/[?!.,~？！。「」[\]()]/g, ' ').split(/\s+/).filter(w => w.length > 0)
-    .map(w => {
-      for (const e of ENDS) if (w.endsWith(e) && w.length > e.length + 1) return w.slice(0, -e.length);
-      for (const p of PTCL) if (w.endsWith(p) && w.length > p.length + 1) return w.slice(0, -p.length);
-      return w;
-    })
+    .map(normalize)
     .filter(w => w.length >= 2 && !SW.has(w))
     .filter(w => !/[했됐졌갔왔겠았었]$/.test(w))
     .filter(w => !/[할건텐]$/.test(w))
+    .filter(w => !/[을를이가은는]$/.test(w))
     .filter((w, i, a) => a.indexOf(w) === i)
     .slice(0, max);
 }
 
 function topicLabel(kw: string, qs: Row[]): string {
+  // 그룹 내 질문에서 kw와 함께 자주 등장하는 명사 찾기
   const freq: Record<string, number> = {};
-  qs.forEach(r => kws(r.question, 10).forEach(w => { if (w !== kw && w.length >= 2) freq[w] = (freq[w] ?? 0) + 1; }));
-  const partner = Object.entries(freq).sort((a, b) => b[1] - a[1])[0];
-  if (!partner) return kw;
-  return `${kw}의 ${partner[0]}`;
+  qs.forEach(r => kws(r.question, 10).forEach(w => {
+    if (w !== kw && w.length >= 2) freq[w] = (freq[w] ?? 0) + 1;
+  }));
+  const ranked = Object.entries(freq).sort((a, b) => b[1] - a[1]);
+  if (!ranked.length) return kw;
+  // 받침 여부에 따라 '과'/'와' 선택
+  const code = kw.charCodeAt(kw.length - 1);
+  const hasJong = code >= 0xAC00 && (code - 0xAC00) % 28 !== 0;
+  const top = ranked[0][0];
+  return `${kw}${hasJong ? '과 ' : '와 '}${top}`;
 }
 
 interface Row { id: number; class_room: string; project: string; name: string; question: string; analysis: { level: number; label: string; emoji: string; summary: string } | null; time: string; }
