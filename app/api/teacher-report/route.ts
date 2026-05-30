@@ -12,25 +12,24 @@ export async function POST(req: NextRequest) {
   const distStr = Object.entries(levelDist as Record<string, number>)
     .map(([l, c]) => `${l}단계 ${c}개`).join(', ');
 
-  const prompt = `당신은 IB 프로그램을 운영하는 초등학교 교사를 돕는 교육 AI입니다.
+  const prompt = `당신은 초등학교 IB 탐구 수업을 운영하는 교사를 돕는 교육 AI입니다.
+목적: 교사가 10초 안에 읽고 수업 의사결정에 바로 활용할 수 있는 간결한 분석.
 
-학생들이 제출한 탐구 질문:
+학생 탐구 질문 (${(questions as string[]).length}개):
 ${qList}
 
-분석 정보:
-- 핵심 탐구 주제어: ${kwStr}
-- 질문 수준 분포: ${distStr}
-- 평균 단계: ${(avg as number).toFixed(1)}단계
+핵심 주제어: ${kwStr}
+질문 수준 분포: ${distStr} / 평균 ${(avg as number).toFixed(1)}단계
 
-아래 세 가지를 JSON 형식으로만 응답하세요. 반드시 한국어로 작성.
+JSON으로만 응답. 한국어. 통계 수치 반복 금지.
 
-1. "report": 학생들의 탐구 주제와 사고 수준을 2~3문장으로 분석. 어떤 주제에 관심이 많은지, 어떤 수준의 사고를 하고 있는지 교사가 한눈에 파악할 수 있도록 구체적으로 작성.
+"report": 2문장만. ①많이 나온 주제, ②질문 수준 특징과 수업 시사점. 이미 화면에 있는 숫자(총 개수, 평균, 비율)는 언급하지 말 것.
 
-2. "deepQuestions": 학생 질문 중 가장 탐구적인 것을 골라 더 깊고 성찰적인 질문으로 발전시켜 1~2개 작성. 학생 질문을 그대로 복사하지 말고, 핵심 가치나 개념을 확장하여 새로 작성. 배열로 반환.
+"deepQuestions": 최대 2개. 학생 질문 전체를 종합해 재구성. 학생 질문 그대로 복사 절대 금지. 한 문장으로 간결하게.
 
-3. "suggestions": 수집된 학생 질문 데이터를 근거로 다음 차시에 활용 가능한 구체적인 수업 활동 제안 2~3개. 일반적인 템플릿이 아니라 실제 학생들의 관심 주제와 질문 내용을 반영할 것. 배열로 반환.
+"suggestions": 최대 2개. 학생 질문 전체 패턴을 분석해 다음 차시 구체적 활동 제안. 특정 질문 하나만 기반으로 작성하지 말 것. 한 문장씩.
 
-{"report":"...","deepQuestions":["질문1","질문2"],"suggestions":["제안1","제안2","제안3"]}`;
+{"report":"문장1. 문장2.","deepQuestions":["질문1","질문2"],"suggestions":["제안1","제안2"]}`;
 
   try {
     const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -42,8 +41,8 @@ ${qList}
       body: JSON.stringify({
         model: 'llama-3.1-8b-instant',
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 900,
+        temperature: 0.5,
+        max_tokens: 500,
       }),
     });
 

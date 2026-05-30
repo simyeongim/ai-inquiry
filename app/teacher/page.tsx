@@ -385,71 +385,85 @@ export default function TeacherPage() {
               </div>
             </div>
 
-            {/* 수업 활용 — AI 분석 */}
-            <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-col">
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="font-bold text-[#4a4a6a] text-sm m-0">💡 수업 활용</h2>
-                <button onClick={generateAiReport} disabled={aiLoading || !stats}
-                  className="text-xs px-4 py-1.5 rounded-full border-none cursor-pointer font-semibold text-white disabled:opacity-50 transition-all"
-                  style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)' }}>
-                  {aiLoading ? '분석 중…' : aiReport ? '🤖 다시 분석' : '🤖 AI 분석 생성'}
-                </button>
+            {/* 수업 활용 */}
+            <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-col gap-4">
+              <h2 className="font-bold text-[#4a4a6a] text-sm m-0">💡 수업 활용</h2>
+
+              {/* ① 정적 요약 — 항상 표시 */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-xl p-3 text-center" style={{background:'#f0f2f8'}}>
+                  <div className="text-[10px] text-[#999] mb-0.5">총 질문</div>
+                  <div className="text-xl font-black text-[#4a4a6a]">{stats.n}<span className="text-xs font-normal ml-0.5">개</span></div>
+                </div>
+                <div className="rounded-xl p-3 text-center" style={{background:'linear-gradient(135deg,#667eea18,#764ba218)'}}>
+                  <div className="text-[10px] text-[#999] mb-0.5">평균 단계</div>
+                  <div className="text-xl font-black" style={{color:'#667eea'}}>{stats.avg.toFixed(1)}<span className="text-xs font-normal ml-0.5">단계</span></div>
+                </div>
+                <div className="rounded-xl p-3 text-center" style={{background: stats.highPct >= 50 ? '#e8f5e9' : '#f0f2f8'}}>
+                  <div className="text-[10px] text-[#999] mb-0.5">심화(3·4단계)</div>
+                  <div className="text-xl font-black" style={{color: stats.highPct >= 50 ? '#2e7d32' : '#9e9e9e'}}>{stats.highPct}<span className="text-xs font-normal ml-0.5">%</span></div>
+                </div>
               </div>
 
-              {/* 대기 상태 */}
-              {!aiReport && !aiLoading && (
-                <div className="flex-1 flex flex-col items-center justify-center py-12 text-center text-[#ccc]">
-                  <div className="text-4xl mb-3">🤖</div>
-                  <p className="text-sm leading-relaxed">AI 분석 생성을 누르면<br/>학생 질문을 바탕으로<br/>맞춤 수업 분석을 제공합니다.</p>
-                </div>
-              )}
+              <hr className="border-[#f0f0f8] m-0"/>
 
-              {/* 로딩 */}
-              {aiLoading && (
-                <div className="flex-1 flex flex-col items-center justify-center py-12 text-[#999]">
-                  <div className="text-3xl mb-3 animate-pulse">🤖</div>
-                  <p className="text-sm">학생 질문 분석 중입니다…</p>
+              {/* ② AI 분석 — 버튼 + 결과 */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold text-[#999] uppercase tracking-wider">AI 분석</span>
+                  <button onClick={generateAiReport} disabled={aiLoading || !stats}
+                    className="text-xs px-3 py-1.5 rounded-full border-none cursor-pointer font-semibold text-white disabled:opacity-50 transition-all"
+                    style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)' }}>
+                    {aiLoading ? '분석 중…' : aiReport ? '다시 분석' : '🤖 분석 생성'}
+                  </button>
                 </div>
-              )}
 
-              {/* AI 결과 */}
-              {aiReport && !aiLoading && (
-                <div className="space-y-5">
-                  {/* 질문 분석 리포트 */}
-                  <div>
-                    <div className="text-sm font-semibold text-[#555] mb-2">📋 질문 분석 리포트</div>
-                    <div className="bg-[#f8f9ff] rounded-xl p-4">
+                {!aiReport && !aiLoading && (
+                  <p className="text-xs text-[#ccc] text-center py-6">분석 생성 버튼을 누르면 AI가 수업 의사결정을 도와드립니다.</p>
+                )}
+
+                {aiLoading && (
+                  <p className="text-xs text-[#aaa] text-center py-6 animate-pulse">분석 중입니다…</p>
+                )}
+
+                {aiReport && !aiLoading && (
+                  <div className="space-y-3">
+                    {/* 질문 분석 */}
+                    <div className="bg-[#f8f9ff] rounded-xl p-3">
+                      <div className="text-[10px] font-bold text-[#667eea] uppercase tracking-wider mb-1.5">질문 분석</div>
                       <p className="text-sm text-[#444] leading-relaxed m-0">{aiReport.report}</p>
                     </div>
+
+                    {/* 대표 탐구 질문 */}
+                    {aiReport.deepQuestions.length > 0 && (
+                      <div>
+                        <div className="text-[10px] font-bold text-[#f59e0b] uppercase tracking-wider mb-1.5">⭐ 대표 탐구 질문</div>
+                        <div className="space-y-1.5">
+                          {aiReport.deepQuestions.slice(0, 2).map((q, i) => (
+                            <div key={i} className="bg-[#fffbeb] border-l-3 border-[#f59e0b] rounded-r-lg pl-3 pr-2 py-2">
+                              <p className="text-sm text-[#333] leading-snug m-0">{q}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 수업 활용 제안 */}
+                    {aiReport.suggestions.length > 0 && (
+                      <div>
+                        <div className="text-[10px] font-bold text-[#f59e0b] uppercase tracking-wider mb-1.5">🗓 수업 활용 제안</div>
+                        <div className="space-y-1.5">
+                          {aiReport.suggestions.slice(0, 2).map((s, i) => (
+                            <div key={i} className="bg-[#fffbea] border-l-3 border-[#fbbf24] rounded-r-lg pl-3 pr-2 py-2">
+                              <p className="text-sm text-[#78350f] leading-snug m-0">{s}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-
-                  {/* 대표 탐구 질문 추천 */}
-                  {aiReport.deepQuestions.length > 0 && (
-                    <div>
-                      <div className="text-sm font-semibold text-[#555] mb-2">⭐ 대표 탐구 질문 추천</div>
-                      <div className="space-y-2">
-                        {aiReport.deepQuestions.map((q, i) => (
-                          <div key={i} className="bg-[#fff8e1] border-l-4 border-[#f59e0b] rounded-r-xl p-3">
-                            <p className="text-sm text-[#333] leading-relaxed m-0">{q}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 다음 수업 활용 제안 */}
-                  {aiReport.suggestions.length > 0 && (
-                    <div>
-                      <div className="text-sm font-semibold text-[#555] mb-2">🗓 다음 수업 활용 제안</div>
-                      <div className="bg-[#fffbea] border-l-4 border-[#fbbf24] rounded-r-xl p-4 space-y-2">
-                        {aiReport.suggestions.map((s, i) => (
-                          <p key={i} className="text-sm text-[#78350f] leading-relaxed m-0">{s}</p>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         )}
