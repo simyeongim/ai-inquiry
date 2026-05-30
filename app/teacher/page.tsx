@@ -1,239 +1,389 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 
 const SUPABASE_URL = 'https://fsrrtopndcrdnqwnspnp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_z7LexdeBdGJqEy5Z8IAyNA_LEGAxPf_';
-const TEACHER_PIN  = '1234'; // 필요 시 이 값을 변경하세요
+const TEACHER_PIN  = '1234teacher';
 
-const CLASS_LIST = ['3학년 1반','3학년 4반','4학년 4반','6학년 1반','6학년 2반','6학년 3반','6학년 3반 과학','6학년 4반','6학년 5반','6학년 6반'];
-const PROJECT_LIST = ['세계는 어떻게 움직이는가','지구와 어떻게 함께 살아갈 것인가','우리는 어떻게 자신을 조직하는가'];
+const CLASS_LIST    = ['3학년 1반','3학년 4반','4학년 4반','6학년 1반','6학년 2반','6학년 3반','6학년 3반 과학','6학년 4반','6학년 5반','6학년 6반'] as const;
+const PROJECT_LIST  = ['세계는 어떻게 움직이는가','지구와 어떻게 함께 살아갈 것인가','우리는 어떻게 자신을 조직하는가'] as const;
+const LEVEL_OPTS    = [1, 2, 3, 4] as const;
+type  Level         = 1 | 2 | 3 | 4;
 
-const LEVEL_INFO = {
-  1: { emoji: '🟢', short: '1단계', label: '단순 사실 확인', color: '#2e7d32', bg: '#e8f5e9' },
-  2: { emoji: '🔵', short: '2단계', label: '개념 이해',      color: '#1565c0', bg: '#e3f2fd' },
-  3: { emoji: '🟠', short: '3단계', label: '비교/조건/영향', color: '#e65100', bg: '#fff3e0' },
-  4: { emoji: '🔴', short: '4단계', label: '가치판단/토론',  color: '#c62828', bg: '#ffebee' },
-} as const;
+const LV: Record<Level, { emoji: string; short: string; label: string; color: string; bg: string }> = {
+  1: { emoji:'🟢', short:'1단계', label:'단순 사실 확인', color:'#2e7d32', bg:'#e8f5e9' },
+  2: { emoji:'🔵', short:'2단계', label:'개념 이해',      color:'#1565c0', bg:'#e3f2fd' },
+  3: { emoji:'🟠', short:'3단계', label:'비교/조건/영향', color:'#e65100', bg:'#fff3e0' },
+  4: { emoji:'🔴', short:'4단계', label:'가치판단/토론',  color:'#c62828', bg:'#ffebee' },
+};
 
-interface QuestionRow {
-  id: number;
-  class_room: string;
-  project: string;
-  name: string;
-  question: string;
-  analysis: { level: number; label: string; emoji: string; summary: string } | null;
-  time: string;
+// ─── 키워드 추출 ─────────────────────────────────────
+const SW = new Set(['왜','어떻게','무엇','언제','어디','누가','어떤','얼마나','어느','만약','이런','그런','저런','같은','다른','은','는','이','가','을','를','의','에','로','도','만','와','과','랑','이것','그것','이거','그거','정말','매우','아주','너무','있','없','되','하','않','못','것','때','곳','점','수','할','될','더']);
+const ENDS = ['하나요','인가요','일까요','될까요','할까요','이에요','나요','까요','어요','아요'];
+const PTCL = ['에서는','으로서','이라면','에서도','에서','으로','이나','에게','한테','은','는','이','가','을','를','의','에','로','도','만','와','과'];
+
+function kws(text: string, max = 5): string[] {
+  return text.replace(/[?!.,~？！。「」[\]]/g, ' ').split(/\s+/).filter(w => w.length > 0)
+    .map(w => { for (const e of ENDS) if (w.endsWith(e) && w.length > e.length) return w.slice(0,-e.length); for (const p of PTCL) if (w.endsWith(p) && w.length > p.length) return w.slice(0,-p.length); return w; })
+    .filter(w => w.length >= 2 && !SW.has(w)).filter(w => !/[했됐졌갔왔겠]$/.test(w))
+    .filter((w,i,a) => a.indexOf(w) === i).slice(0, max);
 }
 
-// ─── 인증 화면 ────────────────────────────────────────
-function PinScreen({ onSuccess }: { onSuccess: () => void }) {
-  const [pin, setPin] = useState('');
+interface Row { id: number; class_room: string; project: string; name: string; question: string; analysis: { level: number; label: string; emoji: string; summary: string } | null; time: string; }
+
+// ─── 비밀번호 화면 ────────────────────────────────────
+function PinScreen({ onOk }: { onOk: () => void }) {
+  const [v, setV] = useState('');
   const [err, setErr] = useState('');
-
-  function submit() {
-    if (pin === TEACHER_PIN) { onSuccess(); }
-    else { setErr('비밀번호가 올바르지 않습니다.'); setPin(''); }
-  }
-
+  function go() { if (v === TEACHER_PIN) onOk(); else { setErr('비밀번호가 올바르지 않습니다.'); setV(''); } }
   return (
-    <div className="min-h-screen flex items-center justify-center"
-      style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+    <div className="min-h-screen flex items-center justify-center" style={{ background:'linear-gradient(135deg,#667eea,#764ba2)' }}>
       <div className="bg-white rounded-2xl p-8 w-80 shadow-xl">
-        <div className="text-center mb-6">
-          <div className="text-4xl mb-3">🔒</div>
+        <div className="text-center mb-6"><div className="text-4xl mb-2">🔒</div>
           <h1 className="text-xl font-bold text-[#4a4a6a]">교사용 대시보드</h1>
           <p className="text-[#888] text-sm mt-1">비밀번호를 입력하세요</p>
         </div>
-        <input
-          type="password" value={pin}
-          onChange={e => { setPin(e.target.value); setErr(''); }}
-          onKeyDown={e => e.key === 'Enter' && submit()}
-          placeholder="비밀번호"
-          className="w-full border-2 border-[#e0e0f0] rounded-xl p-3 text-base focus:outline-none focus:border-[#667eea] mb-2"
-          autoFocus
-        />
+        <input type="password" value={v} onChange={e=>{setV(e.target.value);setErr('');}} onKeyDown={e=>e.key==='Enter'&&go()} placeholder="비밀번호" autoFocus className="w-full border-2 border-[#e0e0f0] rounded-xl p-3 text-base focus:outline-none focus:border-[#667eea] mb-2"/>
         {err && <p className="text-red-500 text-sm mb-2">{err}</p>}
-        <button onClick={submit}
-          className="w-full py-3 rounded-xl text-white font-bold cursor-pointer border-none"
-          style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
-          확인
-        </button>
-        <div className="text-center mt-4">
-          <Link href="/question" className="text-[#667eea] text-sm hover:underline">
-            ← 학생 화면으로 돌아가기
-          </Link>
-        </div>
+        <button onClick={go} className="w-full py-3 rounded-xl text-white font-bold cursor-pointer border-none" style={{background:'linear-gradient(135deg,#667eea,#764ba2)'}}>확인</button>
+        <div className="text-center mt-4"><Link href="/question" className="text-[#667eea] text-sm hover:underline">← 학생 화면으로</Link></div>
       </div>
     </div>
   );
 }
 
-// ─── 대시보드 본체 ────────────────────────────────────
-export default function TeacherPage() {
-  const [authed,         setAuthed]         = useState(false);
-  const [filterClass,    setFilterClass]    = useState('');
-  const [filterProject,  setFilterProject]  = useState('');
-  const [filterLevel,    setFilterLevel]    = useState('');
-  const [rows,           setRows]           = useState<QuestionRow[]>([]);
-  const [loading,        setLoading]        = useState(false);
-  const [fetchError,     setFetchError]     = useState('');
+// ─── 필터 토글 버튼 그룹 ───────────────────────────────
+function Pills({ label, opts, sel, onToggle, getLabel, getStyle }: {
+  label: string; opts: readonly (string|number)[]; sel: (string|number)[];
+  onToggle: (v: string|number) => void; getLabel: (v: string|number) => string;
+  getStyle?: (v: string|number) => { color: string; bg: string } | undefined;
+}) {
+  return (
+    <div>
+      <div className="text-xs font-bold text-[#999] uppercase tracking-wider mb-2">{label}</div>
+      <div className="flex flex-wrap gap-2">
+        {opts.map(o => {
+          const on = sel.includes(o); const s = getStyle?.(o);
+          return (
+            <button key={String(o)} onClick={()=>onToggle(o)}
+              className="text-xs font-semibold px-3 py-1.5 rounded-full border-2 transition-all cursor-pointer"
+              style={on ? {background:s?.bg??'#e8eaf6', color:s?.color??'#667eea', borderColor:s?.color??'#667eea'} : {background:'white', color:'#777', borderColor:'#e0e0e0'}}>
+              {getLabel(o)}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setFetchError('');
-    let url = `${SUPABASE_URL}/rest/v1/questions?select=*&order=id.desc&limit=500`;
-    if (filterClass)   url += `&class_room=eq.${encodeURIComponent(filterClass)}`;
-    if (filterProject) url += `&project=eq.${encodeURIComponent(filterProject)}`;
+// ─── 메인 대시보드 ────────────────────────────────────
+export default function TeacherPage() {
+  const [authed,   setAuthed]   = useState(false);
+  const [fClass,   setFClass]   = useState<string[]>([]);
+  const [fProject, setFProject] = useState<string[]>([]);
+  const [fLevel,   setFLevel]   = useState<number[]>([]);
+  const [rows,     setRows]     = useState<Row[]>([]);
+  const [sel,      setSel]      = useState<Set<number>>(new Set());
+  const [loading,  setLoading]  = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [fetchErr, setFetchErr] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true); setFetchErr('');
     try {
-      const res = await fetch(url, {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/questions?select=*&order=id.desc&limit=1000`, {
         headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setRows(Array.isArray(data) ? data : []);
-    } catch (e) {
-      setFetchError('데이터를 불러오지 못했습니다. 네트워크를 확인해 주세요.');
-      setRows([]);
-      console.error(e);
-    }
+      const d = await res.json();
+      setRows(Array.isArray(d) ? d : []);
+    } catch { setFetchErr('데이터를 불러오지 못했습니다.'); setRows([]); }
     setLoading(false);
-  }, [filterClass, filterProject]);
+  }, []);
 
-  useEffect(() => { if (authed) fetchData(); }, [authed, fetchData]);
+  useEffect(() => { if (authed) load(); }, [authed, load]);
 
-  if (!authed) return <PinScreen onSuccess={() => setAuthed(true)} />;
+  function tog<T>(a: T[], v: T): T[] { return a.includes(v) ? a.filter(x=>x!==v) : [...a,v]; }
+  function clearFilters() { setFClass([]); setFProject([]); setFLevel([]); }
+  const hasFilter = fClass.length > 0 || fProject.length > 0 || fLevel.length > 0;
 
-  // 레벨 필터 적용 (클라이언트 측 필터링)
-  const displayed = filterLevel
-    ? rows.filter(r => String(r.analysis?.level) === filterLevel)
-    : rows;
+  const filtered = useMemo(() => rows.filter(r => {
+    if (fClass.length   && !fClass.includes(r.class_room))           return false;
+    if (fProject.length && !fProject.includes(r.project))            return false;
+    if (fLevel.length   && !fLevel.includes(r.analysis?.level ?? 0)) return false;
+    return true;
+  }), [rows, fClass, fProject, fLevel]);
 
-  const levelCounts = ([1, 2, 3, 4] as const).map(l => ({
-    ...LEVEL_INFO[l],
-    level: l,
-    count: rows.filter(r => r.analysis?.level === l).length,
-  }));
+  function toggleOne(id: number) { setSel(p => { const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n; }); }
+  function toggleAll() {
+    const all = filtered.length > 0 && filtered.every(r => sel.has(r.id));
+    setSel(all ? new Set() : new Set(filtered.map(r => r.id)));
+  }
+
+  async function deleteRows(ids: number[]) {
+    if (!ids.length || !confirm(`${ids.length}개의 질문을 삭제하시겠습니까?`)) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/questions?id=in.(${ids.join(',')})`, {
+        method: 'DELETE',
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Prefer: 'return=minimal' },
+      });
+      if (!res.ok) throw new Error();
+      setRows(p => p.filter(r => !ids.includes(r.id)));
+      setSel(p => { const n=new Set(p); ids.forEach(id=>n.delete(id)); return n; });
+    } catch { alert('삭제에 실패했습니다.\nSupabase 대시보드에서 DELETE 정책을 확인해 주세요.'); }
+    setDeleting(false);
+  }
+
+  // ─── 분석 계산 ──────────────────────────────────────
+  const stats = useMemo(() => {
+    const n = filtered.length;
+    if (!n) return null;
+
+    const lvDist = LEVEL_OPTS.map(l => ({ ...LV[l], l, cnt: filtered.filter(r => r.analysis?.level === l).length }));
+    const maxC   = Math.max(...lvDist.map(d => d.cnt), 1);
+    const avg    = filtered.reduce((s, r) => s + (r.analysis?.level ?? 1), 0) / n;
+    const highPct = Math.round(lvDist.filter(d => d.l >= 3).reduce((s,d) => s+d.cnt, 0) / n * 100);
+
+    // 핵심어 빈도
+    const freq: Record<string,number> = {};
+    filtered.forEach(r => kws(r.question,5).forEach(k => { freq[k] = (freq[k]??0)+1; }));
+    const topKw  = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,12);
+    const maxKw  = topKw[0]?.[1] ?? 1;
+
+    // 유사질문 묶음
+    const groups: { kw: string; qs: Row[] }[] = [];
+    const used = new Set<number>();
+    topKw.slice(0,6).forEach(([kw]) => {
+      const ms = filtered.filter(r => !used.has(r.id) && kws(r.question,5).includes(kw));
+      if (ms.length >= 2) { ms.forEach(r=>used.add(r.id)); groups.push({ kw, qs: ms }); }
+    });
+
+    // 대표 추천 (높은 단계 우선)
+    const reco = [...filtered].sort((a,b)=>(b.analysis?.level??1)-(a.analysis?.level??1)).slice(0,5);
+
+    return { lvDist, maxC, avg, highPct, topKw, maxKw, groups, reco, n };
+  }, [filtered]);
+
+  if (!authed) return <PinScreen onOk={() => setAuthed(true)} />;
+
+  const selInFil = filtered.filter(r => sel.has(r.id));
+  const allChecked = filtered.length > 0 && filtered.every(r => sel.has(r.id));
 
   return (
-    <div className="min-h-screen pb-16"
-      style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', fontFamily: "'Noto Sans KR', '맑은 고딕', sans-serif" }}>
-      <div className="max-w-[960px] mx-auto px-4">
+    <div className="min-h-screen pb-16" style={{ background:'#f0f2f8', fontFamily:"'Noto Sans KR','맑은 고딕',sans-serif" }}>
 
-        {/* 헤더 */}
-        <div className="text-center text-white pt-8 pb-8 relative">
-          <Link href="/question"
-            className="absolute top-6 left-0 text-white/80 text-sm font-semibold bg-white/10 border border-white/30 px-4 py-1.5 rounded-full hover:bg-white/20 transition-colors no-underline">
-            ← 학생 화면
-          </Link>
-          <h1 className="text-3xl font-bold m-0">📊 교사용 대시보드</h1>
-          <p className="text-white/80 mt-1.5 mb-0 text-sm">학생 탐구 질문 현황</p>
+      {/* 헤더 */}
+      <div className="sticky top-0 z-20 text-white py-4 px-5 flex items-center justify-between shadow-md"
+        style={{ background:'linear-gradient(135deg,#667eea,#764ba2)' }}>
+        <div className="flex items-center gap-3">
+          <Link href="/question" className="text-white/80 text-sm bg-white/10 border border-white/30 px-3 py-1.5 rounded-full hover:bg-white/20 no-underline transition-colors">← 학생 화면</Link>
+          <h1 className="text-lg font-bold m-0">📊 교사용 대시보드</h1>
         </div>
+        <button onClick={load} disabled={loading}
+          className="text-sm bg-white/20 border border-white/30 text-white px-4 py-1.5 rounded-full cursor-pointer hover:bg-white/30 disabled:opacity-50 transition-colors">
+          {loading ? '로딩...' : '새로고침'}
+        </button>
+      </div>
 
-        {/* 필터 */}
-        <div className="bg-white rounded-2xl p-5 mb-4 shadow-lg">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block font-bold text-[#4a4a6a] text-sm mb-1.5">학년/반</label>
-              <select value={filterClass} onChange={e => setFilterClass(e.target.value)}
-                className="w-full border-2 border-[#e0e0f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] bg-white">
-                <option value="">전체</option>
-                {CLASS_LIST.map(v => <option key={v}>{v}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block font-bold text-[#4a4a6a] text-sm mb-1.5">프로젝트</label>
-              <select value={filterProject} onChange={e => setFilterProject(e.target.value)}
-                className="w-full border-2 border-[#e0e0f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] bg-white">
-                <option value="">전체</option>
-                {PROJECT_LIST.map(v => <option key={v}>{v}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block font-bold text-[#4a4a6a] text-sm mb-1.5">질문 수준</label>
-              <select value={filterLevel} onChange={e => setFilterLevel(e.target.value)}
-                className="w-full border-2 border-[#e0e0f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] bg-white">
-                <option value="">전체</option>
-                {([1,2,3,4] as const).map(l => (
-                  <option key={l} value={l}>{LEVEL_INFO[l].emoji} {LEVEL_INFO[l].short} {LEVEL_INFO[l].label}</option>
-                ))}
-              </select>
-            </div>
+      <div className="max-w-[1200px] mx-auto px-4 pt-5 space-y-4">
+
+        {/* ── 필터 ─────────────────────────────────────── */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bold text-[#4a4a6a] text-sm m-0">🔍 필터 <span className="font-normal text-[#bbb]">(다중 선택 가능)</span></h2>
+            {hasFilter && <button onClick={clearFilters} className="text-xs text-[#667eea] border-none bg-transparent cursor-pointer font-semibold hover:underline">초기화</button>}
           </div>
-          <div className="mt-3 flex items-center justify-between">
-            <span className="text-[#888] text-sm">
-              {filterLevel ? `${displayed.length}개 표시 (전체 ${rows.length}개)` : `총 ${rows.length}개`}
-            </span>
-            <button onClick={fetchData}
-              className="text-sm text-white px-4 py-1.5 rounded-full cursor-pointer border-none hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
-              새로고침
-            </button>
+          <div className="space-y-4">
+            <Pills label="학년/반"   opts={CLASS_LIST}   sel={fClass}   onToggle={v=>setFClass(tog(fClass,v as string))}   getLabel={v=>v as string}/>
+            <Pills label="프로젝트"  opts={PROJECT_LIST} sel={fProject} onToggle={v=>setFProject(tog(fProject,v as string))} getLabel={v=>v as string}/>
+            <Pills label="질문 수준" opts={LEVEL_OPTS}   sel={fLevel}   onToggle={v=>setFLevel(tog(fLevel,v as number))}
+              getLabel={v=>`${LV[v as Level].emoji} ${LV[v as Level].short}`} getStyle={v=>LV[v as Level]}/>
           </div>
-          {fetchError && <p className="text-red-500 text-sm mt-2">{fetchError}</p>}
+          {fetchErr && <p className="text-red-500 text-sm mt-3">{fetchErr}</p>}
         </div>
 
-        {/* 수준별 통계 */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          {levelCounts.map(({ level, emoji, short, label, color, bg, count }) => (
-            <button key={level}
-              onClick={() => setFilterLevel(filterLevel === String(level) ? '' : String(level))}
-              className="rounded-2xl p-4 text-center shadow-lg cursor-pointer border-2 transition-all"
-              style={{
-                background: filterLevel === String(level) ? bg : 'white',
-                borderColor: filterLevel === String(level) ? color : 'transparent',
-              }}>
-              <div className="text-2xl mb-1">{emoji}</div>
-              <div className="text-2xl font-bold" style={{ color }}>{count}</div>
-              <div className="text-xs font-bold mt-0.5" style={{ color }}>{short}</div>
-              <div className="text-xs text-[#888] mt-0.5">{label}</div>
-            </button>
-          ))}
-        </div>
+        {/* ── 분석 영역 ─────────────────────────────────── */}
+        {stats && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-        {/* 질문 목록 */}
-        <div className="bg-white rounded-2xl p-5 shadow-lg">
-          <h2 className="text-base font-bold text-[#4a4a6a] mb-4">
-            질문 목록
-            {filterLevel && (
-              <span className="ml-2 text-sm font-normal text-[#888]">
-                — {LEVEL_INFO[Number(filterLevel) as 1|2|3|4].short} 필터 중
-                <button onClick={() => setFilterLevel('')} className="ml-1 text-[#667eea] cursor-pointer bg-none border-none text-sm">✕</button>
-              </span>
-            )}
-          </h2>
+            {/* 질문 현황 */}
+            <div className="bg-white rounded-2xl p-5 shadow-sm">
+              <h2 className="font-bold text-[#4a4a6a] text-sm mb-5">📈 질문 현황</h2>
 
-          {loading ? (
-            <p className="text-center text-[#888] py-10 text-sm">불러오는 중...</p>
-          ) : displayed.length === 0 ? (
-            <p className="text-center text-[#888] py-10 text-sm">조건에 맞는 질문이 없습니다.</p>
-          ) : (
-            <div className="space-y-2.5">
-              {displayed.map(row => {
-                const level = row.analysis?.level as 1|2|3|4 | undefined;
-                const info  = level ? LEVEL_INFO[level] : null;
-                return (
-                  <div key={row.id}
-                    className="border border-[#e8e8f0] rounded-xl p-4 hover:border-[#667eea] transition-colors">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[#222] font-medium text-sm leading-relaxed m-0 mb-2">
-                          {row.question}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#999]">
-                          <span>👤 {row.name}</span>
-                          <span>🏫 {row.class_room}</span>
-                          <span>📁 {row.project}</span>
-                          <span>🕐 {row.time}</span>
+              {/* 수준 분포 */}
+              <div className="mb-5">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-semibold text-[#555]">수준 분포</span>
+                  <span className="text-xs text-[#999]">평균 단계 <strong className="text-[#667eea]">{stats.avg.toFixed(1)}</strong></span>
+                </div>
+                <div className="space-y-2">
+                  {stats.lvDist.map(({ l, emoji, short, color, cnt }) => (
+                    <div key={l} className="flex items-center gap-2">
+                      <span className="text-xs w-16 shrink-0 font-medium" style={{color}}>{emoji} {short}</span>
+                      <div className="flex-1 bg-[#f0f2f8] rounded-full h-5 overflow-hidden">
+                        <div className="h-full rounded-full flex items-center justify-end pr-2 transition-all duration-500"
+                          style={{width:`${Math.max(cnt>0?6:0,(cnt/stats.maxC)*100)}%`, background:color}}>
+                          {cnt > 0 && <span className="text-white text-[10px] font-bold">{cnt}</span>}
                         </div>
                       </div>
-                      {info && (
-                        <span className="shrink-0 text-xs font-bold px-2.5 py-1.5 rounded-full whitespace-nowrap"
-                          style={{ background: info.bg, color: info.color }}>
-                          {info.emoji} {info.short}
+                      <span className="text-xs text-[#bbb] w-5 text-right shrink-0">{cnt}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 핵심어 */}
+              <div className="mb-5">
+                <div className="text-sm font-semibold text-[#555] mb-2">많이 나온 핵심어</div>
+                {stats.topKw.length === 0
+                  ? <p className="text-xs text-[#ccc]">핵심어 없음</p>
+                  : (
+                    <div className="flex flex-wrap gap-2">
+                      {stats.topKw.map(([kw, cnt]) => (
+                        <span key={kw} className="px-2.5 py-1 rounded-full font-semibold"
+                          style={{background:'#e8eaf6', color:'#3949ab', fontSize:`${Math.min(0.88,0.64+(cnt/stats.maxKw)*0.24)}rem`}}>
+                          {kw} <span className="opacity-50 text-[10px]">×{cnt}</span>
                         </span>
-                      )}
+                      ))}
+                    </div>
+                  )}
+              </div>
+
+              {/* 유사질문 묶음 */}
+              <div>
+                <div className="text-sm font-semibold text-[#555] mb-2">유사질문 묶음</div>
+                {stats.groups.length === 0
+                  ? <p className="text-xs text-[#ccc]">유사 질문 그룹 없음</p>
+                  : (
+                    <div className="space-y-2.5">
+                      {stats.groups.map(({ kw, qs }) => (
+                        <div key={kw} className="bg-[#f8f9ff] rounded-xl p-3">
+                          <div className="text-xs font-bold text-[#667eea] mb-1.5">🔗 &apos;{kw}&apos; 관련 ({qs.length}개)</div>
+                          <ul className="space-y-1">
+                            {qs.slice(0,3).map(q => (
+                              <li key={q.id} className="text-xs text-[#555] flex gap-1">
+                                <span className="text-[#ddd] shrink-0">·</span><span>{q.question}</span>
+                              </li>
+                            ))}
+                            {qs.length > 3 && <li className="text-xs text-[#bbb]">외 {qs.length-3}개</li>}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+              </div>
+            </div>
+
+            {/* 수업 활용 */}
+            <div className="bg-white rounded-2xl p-5 shadow-sm">
+              <h2 className="font-bold text-[#4a4a6a] text-sm mb-5">💡 수업 활용</h2>
+
+              {/* 요약 리포트 */}
+              <div className="mb-5">
+                <div className="text-sm font-semibold text-[#555] mb-2">교사용 요약 리포트</div>
+                <div className="bg-[#f8f9ff] rounded-xl p-4 space-y-1.5">
+                  {report(stats.n, stats.avg, stats.highPct, stats.lvDist).map((line,i) => (
+                    <p key={i} className="text-sm text-[#444] leading-relaxed m-0">{line}</p>
+                  ))}
+                </div>
+              </div>
+
+              {/* 대표 탐구 질문 */}
+              <div className="mb-5">
+                <div className="text-sm font-semibold text-[#555] mb-2">대표 탐구 질문 추천</div>
+                <div className="space-y-2">
+                  {stats.reco.map(r => {
+                    const lv = (r.analysis?.level ?? 1) as Level;
+                    return (
+                      <div key={r.id} className="flex items-start gap-2.5 bg-[#f8f9ff] rounded-xl p-3">
+                        <span className="shrink-0 text-xs font-bold px-2 py-0.5 rounded-full"
+                          style={{background:LV[lv].bg, color:LV[lv].color}}>{LV[lv].emoji}</span>
+                        <span className="text-sm text-[#333] leading-relaxed">{r.question}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 수업 활용 제안 */}
+              <div>
+                <div className="text-sm font-semibold text-[#555] mb-2">다음 수업 활용 제안</div>
+                <div className="bg-[#fffbea] border-l-4 border-[#fbbf24] rounded-r-xl p-4 space-y-1.5">
+                  {suggest(stats.avg, stats.lvDist).map((line,i) => (
+                    <p key={i} className="text-sm text-[#78350f] leading-relaxed m-0">{line}</p>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── 질문 목록 ──────────────────────────────────── */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bold text-[#4a4a6a] text-sm m-0">
+              📝 질문 목록
+              <span className="ml-2 font-normal text-xs text-[#bbb]">{filtered.length}개</span>
+            </h2>
+            <div className="flex gap-2">
+              {selInFil.length > 0 && (
+                <button onClick={()=>deleteRows(selInFil.map(r=>r.id))} disabled={deleting}
+                  className="text-xs text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-full border-none cursor-pointer font-semibold disabled:opacity-50 transition-colors">
+                  선택 삭제 ({selInFil.length})
+                </button>
+              )}
+              {filtered.length > 0 && (
+                <button onClick={()=>deleteRows(filtered.map(r=>r.id))} disabled={deleting}
+                  className="text-xs text-white bg-red-400 hover:bg-red-500 px-3 py-1.5 rounded-full border-none cursor-pointer font-semibold disabled:opacity-50 transition-colors">
+                  전체 삭제
+                </button>
+              )}
+            </div>
+          </div>
+
+          {filtered.length > 0 && (
+            <label className="flex items-center gap-2 mb-3 pb-3 border-b border-[#f0f0f8] cursor-pointer select-none">
+              <input type="checkbox" checked={allChecked} onChange={toggleAll} className="w-4 h-4 accent-[#667eea]"/>
+              <span className="text-sm text-[#555]">{allChecked ? '전체 선택 해제' : '전체 선택'}</span>
+              {selInFil.length > 0 && <span className="text-xs text-[#667eea] font-semibold">{selInFil.length}개 선택됨</span>}
+            </label>
+          )}
+
+          {loading ? (
+            <p className="text-center text-[#ccc] py-10 text-sm">불러오는 중...</p>
+          ) : filtered.length === 0 ? (
+            <p className="text-center text-[#ccc] py-10 text-sm">조건에 맞는 질문이 없습니다.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {filtered.map(row => {
+                const lv   = (row.analysis?.level ?? 1) as Level;
+                const info = LV[lv];
+                const on   = sel.has(row.id);
+                return (
+                  <div key={row.id} onClick={()=>toggleOne(row.id)}
+                    className="border-2 rounded-xl p-4 cursor-pointer transition-colors"
+                    style={{borderColor:on?'#667eea':'#ebebf5', background:on?'#f5f5ff':'white'}}>
+                    <div className="flex items-start gap-3">
+                      <input type="checkbox" checked={on} onChange={()=>toggleOne(row.id)} onClick={e=>e.stopPropagation()}
+                        className="mt-0.5 w-4 h-4 accent-[#667eea] shrink-0 cursor-pointer"/>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <p className="text-[#222] text-sm leading-relaxed m-0 flex-1">{row.question}</p>
+                          <span className="shrink-0 text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap"
+                            style={{background:info.bg, color:info.color}}>
+                            {info.emoji} {info.short}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[#bbb]">
+                          <span>🏫 {row.class_room}</span>
+                          <span>👤 {row.name}</span>
+                          <span>📁 {row.project}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );
@@ -245,4 +395,27 @@ export default function TeacherPage() {
       </div>
     </div>
   );
+}
+
+// ─── 리포트 / 제안 생성 함수 ─────────────────────────
+function report(n: number, avg: number, highPct: number, dist: {l:number; cnt:number; short:string}[]): string[] {
+  const mc = dist.reduce((a,b) => b.cnt>a.cnt?b:a);
+  const lines = [
+    `📋 총 ${n}개의 질문이 수집되었습니다.`,
+    `📊 평균 질문 수준은 ${avg.toFixed(1)}단계입니다.`,
+  ];
+  if      (highPct >= 60) lines.push(`✅ 3·4단계 질문이 ${highPct}%로 높게 형성되어 있습니다.`);
+  else if (highPct >= 30) lines.push(`📈 3·4단계 질문이 ${highPct}%입니다. 더 깊은 탐구 질문으로 안내해 보세요.`);
+  else                    lines.push(`💬 1·2단계 질문이 주를 이룹니다. 조건 변화와 가치 판단 질문으로 발전시키는 안내가 필요합니다.`);
+  if (mc.cnt > 0) lines.push(`🔢 가장 많이 나온 수준은 ${mc.short}(${mc.cnt}개)입니다.`);
+  return lines;
+}
+
+function suggest(avg: number, dist: {l:number; cnt:number}[]): string[] {
+  const lv4 = dist.find(d=>d.l===4)?.cnt ?? 0;
+  const tag  = lv4>0 ? [`⭐ 4단계 질문 ${lv4}개를 수업 토론 주제로 활용하세요.`] : [];
+  if (avg < 2) return ['💡 "왜?" "어떤 특징이 있을까?"로 질문을 바꾸도록 안내해 보세요.', '📖 개념 이해 질문을 예시로 보여주는 수업을 권장합니다.', ...tag];
+  if (avg < 3) return ['💡 "만약 ~라면?" "조건이 달라지면?" 형태의 질문을 소개해 보세요.', '🔬 비교·조건 실험 활동과 연계하면 3단계 질문 생성을 자연스럽게 유도할 수 있습니다.', ...tag];
+  if (avg < 3.5) return ['💡 "무엇이 더 중요할까?" "어떻게 해야 할까?" 가치 판단 질문으로 이어지도록 유도해 보세요.', '🗣️ 학생 질문을 바탕으로 찬반 토론 활동을 구성해 보세요.', ...tag];
+  return ['🎉 학생들이 가치 판단·토론 수준의 탐구 질문을 잘 만들고 있습니다!', '🗣️ 우수 질문을 전체 학급과 공유하고 모둠 토론으로 발전시켜 보세요.', ...tag];
 }
