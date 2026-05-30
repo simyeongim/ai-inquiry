@@ -23,11 +23,11 @@ export default function Home() {
         alt="디핑 DEEPING"
         fill
         priority
-        className="object-cover"
+        className="object-contain bg-white"
       />
 
       {/* 하단 그라디언트 오버레이 */}
-      <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+      <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-white/80 to-transparent pointer-events-none" />
 
       {/* 하단 내비게이션 */}
       <nav className="absolute inset-x-0 bottom-0 flex gap-3 px-4 pb-8 pt-4 max-w-lg mx-auto">
@@ -37,8 +37,8 @@ export default function Home() {
               key={label}
               href={href}
               className="flex-1 flex flex-col items-center gap-1.5 py-3 rounded-2xl
-                         bg-white/15 backdrop-blur border border-white/25 text-white
-                         hover:bg-white/25 active:scale-95 transition-all duration-150"
+                         bg-black/10 backdrop-blur border border-black/15 text-gray-800
+                         hover:bg-black/20 active:scale-95 transition-all duration-150"
             >
               <span className="text-2xl leading-none">{emoji}</span>
               <span className="text-xs font-bold tracking-wide">{label}</span>
@@ -48,7 +48,7 @@ export default function Home() {
               key={label}
               onClick={() => comingSoon(label)}
               className="flex-1 flex flex-col items-center gap-1.5 py-3 rounded-2xl
-                         bg-white/8 border border-white/15 text-white/50
+                         bg-black/5 border border-black/10 text-gray-400
                          active:scale-95 transition-all duration-150"
             >
               <span className="text-2xl leading-none">{emoji}</span>
