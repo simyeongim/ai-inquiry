@@ -52,23 +52,23 @@ export default function Home() {
           draggable={false}
         />
 
-        {/* 투명 클릭 오버레이 */}
+        {/* 투명 클릭 오버레이 — z-index를 이미지(z-0)보다 높게 설정 */}
         {MENU_AREAS.map(({ label, href, pos }) =>
           href ? (
             <Link
               key={label}
               href={href}
-              className="absolute cursor-pointer"
-              style={pos}
               aria-label={label}
+              className="absolute z-10 cursor-pointer hover:bg-green-400/20 transition-colors duration-150"
+              style={pos}
             />
           ) : (
             <div
               key={label}
-              className="absolute cursor-pointer"
+              aria-label={label}
+              className="absolute z-10 cursor-pointer"
               style={pos}
               onClick={() => comingSoon(label)}
-              aria-label={label}
             />
           )
         )}
