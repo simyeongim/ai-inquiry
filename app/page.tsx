@@ -59,7 +59,7 @@ export default function Home() {
               key={label}
               href={href}
               aria-label={label}
-              className="absolute z-10 cursor-pointer hover:bg-green-400/20 transition-colors duration-150"
+              className="absolute z-10 cursor-pointer"
               style={pos}
             />
           ) : (
