@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 
 const SUPABASE_URL = 'https://fsrrtopndcrdnqwnspnp.supabase.co';
@@ -186,6 +186,50 @@ function Pills({ label, opts, sel, onToggle, getLabel, getStyle }: {
   );
 }
 
+// ─── 학년/반 드롭다운 ─────────────────────────────────
+function ClassDropdown({ opts, sel, onToggle }: {
+  opts: readonly string[]; sel: string[]; onToggle: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handle(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, []);
+  return (
+    <div ref={ref} className="relative">
+      <button onClick={() => setOpen(p => !p)}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-xl border-2 text-sm font-semibold cursor-pointer transition-all"
+        style={sel.length > 0
+          ? { borderColor:'#667eea', background:'#e8eaf6', color:'#667eea' }
+          : { borderColor:'#e0e0e0', background:'white', color:'#666' }}>
+        <span>{sel.length > 0 ? `${sel.length}개 선택` : '전체'}</span>
+        <span className="text-xs opacity-50">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-lg border border-[#e0e0f0] z-20 max-h-52 overflow-y-auto">
+          {opts.map(o => {
+            const on = sel.includes(o);
+            return (
+              <div key={o} onClick={() => onToggle(o)}
+                className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-[#f5f5ff] transition-colors select-none">
+                <div className="w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors"
+                  style={on ? { borderColor:'#667eea', background:'#667eea' } : { borderColor:'#ccc', background:'white' }}>
+                  {on && <span className="text-white text-[9px] font-black leading-none">✓</span>}
+                </div>
+                <span className="text-sm text-[#333]">{o}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── 메인 대시보드 ────────────────────────────────────
 export default function TeacherPage() {
   const [authed,   setAuthed]   = useState(false);
@@ -365,13 +409,16 @@ export default function TeacherPage() {
       <div className="max-w-[1200px] mx-auto px-4 pt-5 space-y-4">
 
         {/* ── 필터 ─────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-[#4a4a6a] text-sm m-0">🔍 필터 <span className="font-normal text-[#bbb]">(다중 선택 가능)</span></h2>
+        <div className="bg-white rounded-2xl p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-[#4a4a6a] text-sm m-0">🔍 필터</h2>
             {hasFilter && <button onClick={clearFilters} className="text-xs text-[#667eea] border-none bg-transparent cursor-pointer font-semibold hover:underline">초기화</button>}
           </div>
-          <div className="space-y-4">
-            <Pills label="학년/반"   opts={CLASS_LIST}   sel={fClass}   onToggle={v=>setFClass(tog(fClass,v as string))}   getLabel={v=>v as string}/>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+            <div>
+              <div className="text-xs font-bold text-[#999] uppercase tracking-wider mb-2">학년/반</div>
+              <ClassDropdown opts={CLASS_LIST} sel={fClass} onToggle={v => setFClass(tog(fClass, v))} />
+            </div>
             <Pills label="프로젝트"  opts={PROJECT_LIST} sel={fProject} onToggle={v=>setFProject(tog(fProject,v as string))} getLabel={v=>v as string}/>
             <Pills label="질문 수준" opts={LEVEL_OPTS}   sel={fLevel}   onToggle={v=>setFLevel(tog(fLevel,v as number))}
               getLabel={v=>`${LV[v as Level].emoji} ${LV[v as Level].short}`} getStyle={v=>LV[v as Level]}/>
