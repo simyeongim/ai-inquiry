@@ -129,134 +129,138 @@ export default function QuestionPage() {
   ];
 
   return (
-    <div className="min-h-screen p-5 pb-12"
-      style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', fontFamily: "'Noto Sans KR', '맑은 고딕', sans-serif" }}>
-      <div className="max-w-[680px] mx-auto">
+    <div className="min-h-screen pb-16"
+      style={{ background: '#f0edff', fontFamily: "'Noto Sans KR','맑은 고딕',sans-serif" }}>
 
-        {/* 헤더 */}
-        <div className="text-center text-white pt-8 pb-10 mb-1 relative">
+      {/* ── 헤더 ─────────────────────────────────────────── */}
+      <div className="text-center text-white"
+        style={{ background: 'linear-gradient(135deg, #3dd6c8 0%, #667eea 55%, #764ba2 100%)', borderRadius: '0 0 28px 28px', paddingBottom: '2rem' }}>
+        <div className="flex justify-between items-center px-5 pt-5 pb-0">
           <Link href="/"
-            className="absolute top-5 left-0 text-white/80 text-[0.95rem] font-semibold bg-white/10 border border-white/30 px-4 py-1.5 rounded-full hover:bg-white/20 transition-colors no-underline">
+            className="text-white/80 text-sm font-semibold bg-white/15 border border-white/30 px-3 py-1.5 rounded-full hover:bg-white/25 no-underline transition-colors">
             ← 홈
           </Link>
           <a href="/teacher"
-            className="absolute top-5 right-0 text-white/80 text-[0.95rem] font-semibold bg-white/10 border border-white/30 px-4 py-1.5 rounded-full hover:bg-white/20 transition-colors no-underline">
+            className="text-white/80 text-sm font-semibold bg-white/15 border border-white/30 px-3 py-1.5 rounded-full hover:bg-white/25 no-underline transition-colors">
             🔒 교사용
           </a>
-          <div className="flex items-center justify-center gap-3.5 mb-2.5">
-            <svg width="80" height="75" viewBox="0 0 96 90" fill="none">
-              <circle cx="56" cy="34" r="32" fill="#43A047" stroke="white" strokeWidth="2.5"/>
-              <text x="56" y="48" textAnchor="middle" fontFamily="Arial Black,Arial,sans-serif" fontSize="30" fontWeight="900" fill="white">D</text>
-              <polygon points="8,68 1,80 22,68" fill="#6c63ff" stroke="white" strokeWidth="2" strokeLinejoin="round"/>
-              <rect x="2" y="38" width="40" height="30" rx="10" fill="#6c63ff" stroke="white" strokeWidth="2.5"/>
-              <text x="22" y="59" textAnchor="middle" fontFamily="Arial,sans-serif" fontSize="19" fontWeight="900" fill="white">?</text>
-              <circle cx="77" cy="64" r="13" stroke="white" strokeWidth="4" fill="rgba(255,255,255,0.25)"/>
-              <line x1="87" y1="74" x2="95" y2="82" stroke="white" strokeWidth="4" strokeLinecap="round"/>
-            </svg>
-            <h1 style={{ fontFamily: "'Jua', sans-serif", fontSize: '3rem', fontWeight: 400, letterSpacing: '0.5px', textShadow: '0 2px 14px rgba(0,0,0,0.28)', margin: 0, lineHeight: 1.1 }}>
-              질문 발견
-            </h1>
-          </div>
-          <p className="text-white/95 text-[1.05rem] m-0">질문을 발견하고 생각을 넓혀요.</p>
         </div>
+        <div className="pt-5 pb-1">
+          <div className="w-28 h-28 mx-auto mb-4 rounded-3xl overflow-hidden shadow-xl"
+            style={{ border: '4px solid rgba(255,255,255,0.5)' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/deeping.png" alt="디핑"
+              className="w-full h-full object-cover"
+              style={{ objectPosition: 'center 12%' }} />
+          </div>
+          <h1 className="m-0 text-4xl font-bold"
+            style={{ fontFamily: "'Jua',sans-serif", textShadow: '0 2px 16px rgba(0,0,0,0.2)' }}>
+            질문 발견
+          </h1>
+          <p className="m-0 mt-2 text-base" style={{ color: 'rgba(255,255,255,0.9)' }}>
+            질문을 발견하고 생각을 넓혀요
+          </p>
+        </div>
+      </div>
 
-        {/* 학년/반 & 프로젝트 */}
-        <Card>
+      {/* ── 폼 영역 ──────────────────────────────────────── */}
+      <div className="max-w-[600px] mx-auto px-4 pt-5 space-y-3">
+
+        {/* 수업 정보 */}
+        <Card icon="🏫" title="수업 정보">
           <Label>학년/반</Label>
           <Select value={classRoom} onChange={e => setClassRoom(e.target.value)}>
-            <option value="">-- 학년/반을 선택하세요 --</option>
+            <option value="">선택하세요</option>
             {['3학년 1반','3학년 4반','4학년 4반','6학년 1반','6학년 2반','6학년 3반','6학년 3반 과학','6학년 4반','6학년 5반','6학년 6반'].map(v => <option key={v}>{v}</option>)}
           </Select>
           <Label className="mt-4">프로젝트</Label>
           <Select value={project} onChange={e => setProject(e.target.value)}>
-            <option value="">-- 프로젝트를 선택하세요 --</option>
+            <option value="">선택하세요</option>
             {['세계는 어떻게 움직이는가','지구와 어떻게 함께 살아갈 것인가','우리는 어떻게 자신을 조직하는가'].map(v => <option key={v}>{v}</option>)}
           </Select>
         </Card>
 
-        {/* 이름 */}
-        <Card>
-          <Label>내 이름</Label>
-          <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="이름을 입력하세요"
-            className="w-full border-2 border-[#e0e0f0] rounded-[10px] p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] transition-colors" />
+        {/* 내 이름 */}
+        <Card icon="👤" title="내 이름">
+          <input type="text" value={name} onChange={e => setName(e.target.value)}
+            placeholder="이름을 입력하세요"
+            className="w-full border-2 border-[#e8e4f8] rounded-xl p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] transition-colors" />
         </Card>
 
-        {/* 질문 입력 */}
-        <Card>
-          <Label>내 질문</Label>
-          <div className="flex flex-wrap gap-1.5 mb-2.5">
+        {/* 내 질문 */}
+        <Card icon="💭" title="내 질문">
+          <div className="flex flex-wrap gap-1.5 mb-3">
             {HINTS.map(({ text, cls }) => (
               <span key={text}
-                className={`text-[0.8rem] font-semibold px-3 py-1.5 rounded-full border-[1.5px] select-none ${cls}`}>
+                className={`text-[0.78rem] font-semibold px-2.5 py-1 rounded-full border-[1.5px] select-none ${cls}`}>
                 {text}
               </span>
             ))}
           </div>
-          <textarea value={question} onChange={e => { setQuestion(e.target.value.slice(0, 150)); setQError(''); }}
+          <textarea value={question}
+            onChange={e => { setQuestion(e.target.value.slice(0, 150)); setQError(''); }}
             placeholder="무엇이 궁금한가요? 자유롭게 써보세요!" rows={4} maxLength={150}
-            className="w-full border-2 border-[#e0e0f0] rounded-[10px] p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors" />
+            className="w-full border-2 border-[#e8e4f8] rounded-xl p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors" />
           <div className={`text-right text-sm mt-1 ${question.length > 100 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
             {question.length} / 100
           </div>
-          {qError && <p className="text-red-600 text-sm mt-1.5 min-h-[1.2em]">{qError}</p>}
+          {qError && <p className="text-red-600 text-sm mt-1.5">{qError}</p>}
           <button onClick={handleSubmit} disabled={loading}
-            className="mt-3.5 w-full text-white font-bold text-[1.1rem] py-3.5 rounded-[10px] border-none cursor-pointer bg-gradient-to-br from-[#667eea] to-[#764ba2] hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+            className="mt-3 w-full text-white font-bold text-[1.05rem] py-3.5 rounded-xl border-none cursor-pointer hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            style={{ background: 'linear-gradient(135deg, #3dd6c8 0%, #667eea 55%, #764ba2 100%)' }}>
             {loading ? '분석 중...' : '질문 보내기 ✨'}
           </button>
         </Card>
 
         {/* 로딩 */}
         {loading && (
-          <div className="text-center text-white text-[1.1rem] py-5 animate-pulse">
-            AI가 생각 중이에요...
+          <div className="text-center py-5 animate-pulse">
+            <span className="text-[#667eea] font-semibold text-base">AI가 생각 중이에요...</span>
           </div>
         )}
 
         {/* 결과 */}
         {result && (
-          <div ref={resultRef}
-            className="bg-white rounded-[20px] p-6 mb-3.5 shadow-[0_4px_24px_rgba(80,60,160,0.13)] border-l-4 border-[#667eea]">
-            <h2 className="text-xl font-bold text-[#4a4a6a] mb-4">🤖 AI 분석 결과</h2>
-
-            {result._fallback && (
-              <div className="bg-[#fff8e1] border-l-4 border-[#ffc107] p-3 rounded-md mb-4 text-sm text-[#795548]">
-                AI 연결이 잠시 원활하지 않아 기본 분석으로 결과를 보여드릴게요.
-              </div>
-            )}
-
-            <ResultSection>
-              <span className="inline-block font-bold text-base px-4 py-2 rounded-full"
-                style={{ background: result.bgColor, color: result.textColor }}>
-                {result.emoji} {result.label}
-              </span>
-              <p className="text-[#555] text-[0.95rem] mt-2 mb-0">{result.desc}</p>
-            </ResultSection>
-
-            <ResultSection title="👍 현재 질문의 좋은 점">
-              <p className="text-[#555] leading-[1.7] m-0 bg-[#f8f8ff] p-3 rounded-lg">{result.goodPoints}</p>
-            </ResultSection>
-
-            <ResultSection title="💡 이렇게 더 깊게 만들어 보세요">
-              <p className="text-[#555] leading-[1.7] m-0 bg-[#f8f8ff] p-3 rounded-lg">{result.improvements}</p>
-            </ResultSection>
-
-            <ResultSection title="🤔 더 생각해볼 질문">
-              <ul className="list-none m-0 p-0 space-y-2">
-                {result.thinkingQuestions.map((q, i) => (
-                  <li key={i} className="bg-[#f8f8ff] border-l-[3px] border-[#667eea] px-3.5 py-2.5 rounded-r-lg text-[#333] leading-relaxed">
-                    {q}
-                  </li>
-                ))}
-              </ul>
-            </ResultSection>
-
-            <ResultSection title="🔬 추천 탐구 방법" last>
-              <div className="flex flex-wrap gap-2">
-                {result.methods.map((m, i) => (
-                  <span key={i} className="bg-[#667eea] text-white text-sm font-bold px-3.5 py-1.5 rounded-full">{m}</span>
-                ))}
-              </div>
-            </ResultSection>
+          <div ref={resultRef}>
+            <Card icon="🤖" title="AI 분석 결과">
+              {result._fallback && (
+                <div className="bg-[#fff8e1] border-l-4 border-[#ffc107] p-3 rounded-xl mb-4 text-sm text-[#795548]">
+                  AI 연결이 잠시 원활하지 않아 기본 분석으로 결과를 보여드릴게요.
+                </div>
+              )}
+              <ResultSection>
+                <span className="inline-block font-bold text-base px-4 py-2 rounded-full"
+                  style={{ background: result.bgColor, color: result.textColor }}>
+                  {result.emoji} {result.label}
+                </span>
+                <p className="text-[#555] text-[0.95rem] mt-2 mb-0">{result.desc}</p>
+              </ResultSection>
+              <ResultSection title="👍 현재 질문의 좋은 점">
+                <p className="text-[#555] leading-[1.7] m-0 bg-[#f8f6ff] p-3 rounded-xl">{result.goodPoints}</p>
+              </ResultSection>
+              <ResultSection title="💡 이렇게 더 깊게 만들어 보세요">
+                <p className="text-[#555] leading-[1.7] m-0 bg-[#f8f6ff] p-3 rounded-xl">{result.improvements}</p>
+              </ResultSection>
+              <ResultSection title="🤔 더 생각해볼 질문">
+                <ul className="list-none m-0 p-0 space-y-2">
+                  {result.thinkingQuestions.map((q, i) => (
+                    <li key={i} className="bg-[#f8f6ff] border-l-[3px] border-[#667eea] px-3.5 py-2.5 rounded-r-xl text-[#333] leading-relaxed">
+                      {q}
+                    </li>
+                  ))}
+                </ul>
+              </ResultSection>
+              <ResultSection title="🔬 추천 탐구 방법" last>
+                <div className="flex flex-wrap gap-2">
+                  {result.methods.map((m, i) => (
+                    <span key={i} className="text-white text-sm font-bold px-3.5 py-1.5 rounded-full"
+                      style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
+                      {m}
+                    </span>
+                  ))}
+                </div>
+              </ResultSection>
+            </Card>
           </div>
         )}
       </div>
@@ -265,16 +269,27 @@ export default function QuestionPage() {
 }
 
 // ─── 공통 UI 서브컴포넌트 ────────────────────────────
-function Card({ children }: { children: React.ReactNode }) {
-  return <div className="bg-white rounded-[20px] p-6 mb-3.5 shadow-[0_4px_24px_rgba(80,60,160,0.13)]">{children}</div>;
+function Card({ children, icon, title }: { children: React.ReactNode; icon?: string; title?: string }) {
+  return (
+    <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 20px rgba(102,126,234,0.12)' }}>
+      {(icon || title) && (
+        <div className="flex items-center gap-2 px-5 py-3.5"
+          style={{ background: 'linear-gradient(135deg, #f8f6ff, #ede9ff)', borderBottom: '1.5px solid #e8e4f8' }}>
+          {icon && <span className="text-lg leading-none">{icon}</span>}
+          {title && <span className="font-bold text-[#4a4a6a] text-[0.95rem]">{title}</span>}
+        </div>
+      )}
+      <div className="p-5">{children}</div>
+    </div>
+  );
 }
 function Label({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <label className={`block font-bold text-[#4a4a6a] mb-2 text-[0.95rem] ${className}`}>{children}</label>;
+  return <label className={`block font-bold text-[#4a4a6a] mb-2 text-[0.9rem] ${className}`}>{children}</label>;
 }
 function Select({ children, value, onChange }: { children: React.ReactNode; value: string; onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void }) {
   return (
     <select value={value} onChange={onChange}
-      className="w-full border-2 border-[#e0e0f0] rounded-[10px] p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] bg-white cursor-pointer transition-colors appearance-none">
+      className="w-full border-2 border-[#e8e4f8] rounded-xl p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] bg-white cursor-pointer transition-colors appearance-none">
       {children}
     </select>
   );
