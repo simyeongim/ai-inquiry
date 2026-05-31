@@ -160,7 +160,7 @@ export default function QuestionPage() {
               </Select>
             </div>
             <div>
-              <Label>내 이름</Label>
+              <Label>이름</Label>
               <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="이름 입력"
                 className="w-full border-2 border-[#e0e0f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] transition-colors" />
             </div>
@@ -178,7 +178,7 @@ export default function QuestionPage() {
 
         {/* 질문 입력 */}
         <Card>
-          <Label>내 질문</Label>
+          <Label>궁금한 내용</Label>
           <div className="flex flex-wrap gap-1.5 mb-2">
             {HINTS.map(({ text, cls }) => (
               <span key={text}
