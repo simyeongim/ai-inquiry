@@ -147,7 +147,7 @@ export default function QuestionPage() {
 
         {/* 배너 이미지 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/discover.png" alt="질문 발견" className="w-full rounded-2xl mb-4 block" style={{ maxHeight: '28vh', objectFit: 'cover', objectPosition: 'center top' }} />
+        <img src="/discover.png" alt="질문 발견" className="w-full rounded-2xl mb-3 block" style={{ maxHeight: '22vh', objectFit: 'cover', objectPosition: 'center top' }} />
 
         {/* 학년/반 & 프로젝트 */}
         <Card>
@@ -255,7 +255,7 @@ export default function QuestionPage() {
 
 // ─── 공통 UI 서브컴포넌트 ────────────────────────────
 function Card({ children }: { children: React.ReactNode }) {
-  return <div className="bg-white rounded-[20px] p-6 mb-3.5 shadow-[0_4px_24px_rgba(80,60,160,0.13)]">{children}</div>;
+  return <div className="bg-white rounded-[20px] p-6 mb-2 shadow-[0_4px_24px_rgba(80,60,160,0.13)]">{children}</div>;
 }
 function Label({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return <label className={`block font-bold text-[#4a4a6a] mb-2 text-[0.95rem] ${className}`}>{children}</label>;
