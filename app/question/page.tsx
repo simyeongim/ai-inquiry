@@ -134,7 +134,7 @@ export default function QuestionPage() {
       <div className="max-w-[680px] mx-auto">
 
         {/* 네비게이션 */}
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-2">
           <Link href="/"
             className="text-[#667eea] text-[0.96rem] font-semibold border border-[#667eea]/30 bg-[#667eea]/5 px-[1.1rem] py-[0.41rem] rounded-full hover:bg-[#667eea]/10 transition-colors no-underline">
             ← 홈
@@ -147,7 +147,7 @@ export default function QuestionPage() {
 
         {/* 배너 이미지 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/discover.png" alt="질문 발견" className="w-full rounded-2xl mb-3 block" style={{ maxHeight: '22vh', objectFit: 'cover', objectPosition: 'center top' }} />
+        <img src="/discover.png" alt="질문 발견" className="w-full rounded-2xl mb-2 block" style={{ maxHeight: '15vh', objectFit: 'cover', objectPosition: 'center top' }} />
 
         {/* 학년/반 & 프로젝트 */}
         <Card>
