@@ -81,17 +81,59 @@ function kws(text: string, max = 8): string[] {
     .slice(0, max);
 }
 
-function topicLabel(kw: string, qs: Row[]): string {
-  // 그룹 내 2개 이상 질문에 공통으로 등장하는 키워드가 있으면 "A와 B" 형태
-  const freq: Record<string, number> = {};
-  qs.forEach(r => kws(r.question, 10).forEach(w => {
-    if (w !== kw && w.length >= 2) freq[w] = (freq[w] ?? 0) + 1;
-  }));
-  const partner = Object.entries(freq).sort((a, b) => b[1] - a[1]).find(([, c]) => c >= 2);
-  if (!partner) return kw;
-  const code = kw.charCodeAt(kw.length - 1);
-  const hasJong = code >= 0xAC00 && (code - 0xAC00) % 28 !== 0;
-  return `${kw}${hasJong ? '과 ' : '와 '}${partner[0]}`;
+// ─── 주제 인식 ──────────────────────────────────────────
+const SUBJECT_KWS: Record<string, string[]> = {
+  plant:               ['식물', '뿌리', '줄기', '잎', '꽃', '열매', '씨앗', '성장', '번식', '광합성', '싹'],
+  animal:              ['동물', '곤충', '물고기', '포유류', '조류', '파충류', '사자', '호랑이', '상어', '펭귄', '고래', '개미', '나비'],
+  life:                ['생물', '생명', '세포', '미생물', '세균', '바이러스', '수명', '노화', '진화'],
+  earth_space:         ['지구', '우주', '달', '태양', '별', '행성', '자전', '공전', '중력', '계절', '낮', '밤', '화성', '목성'],
+  material_energy:     ['자석', '철', '금속', '물질', '빛', '소리', '열', '전기', '에너지', '자기', '도체'],
+  weather_climate:     ['날씨', '구름', '비', '눈', '바람', '번개', '태풍', '기온', '기후', '강수', '백야'],
+  environment_ecology: ['환경', '생태계', '오염', '쓰레기', '재활용', '탄소', '숲', '멸종위기', '플라스틱', '온난화'],
+  agriculture_food:    ['농업', '농사', '농부', '벼', '쌀', '채소', '과일', '식량', '스마트팜', '작물'],
+  geography_world:     ['우리나라', '세계', '대륙', '국가', '나라', '지역', '도시', '농촌', '국경', '지도', '위치', '한국'],
+  society_life:        ['인구', '고령화', '저출산', '복지', '일자리', '직업', '교육', '문화', '다문화', '사회'],
+  economy_development: ['경제', '개발', '산업', '무역', '소비', '생산', '세금', '기업'],
+  technology_ai:       ['로봇', '인공지능', 'AI', '컴퓨터', '인터넷', '드론', '자동화', '스마트폰', '기술'],
+  safety_health:       ['건강', '질병', '운동', '수면', '위생', '안전', '사고', '약'],
+  disaster:            ['지진', '화산', '홍수', '가뭄', '산불', '재난'],
+  ethics_value:        ['동물원', '보호', '공정', '권리', '책임', '찬성', '반대', '가치', '윤리', '선택'],
+};
+
+const SUBJECT_LABEL: Record<string, string> = {
+  plant:               '식물',
+  animal:              '동물',
+  life:                '생명',
+  earth_space:         '우주·지구',
+  material_energy:     '물질·에너지',
+  weather_climate:     '날씨·기후',
+  environment_ecology: '환경',
+  agriculture_food:    '농업·식량',
+  geography_world:     '세계·지리',
+  society_life:        '사회·생활',
+  economy_development: '경제',
+  technology_ai:       '기술·AI',
+  safety_health:       '건강·안전',
+  disaster:            '자연재해',
+  ethics_value:        '가치·윤리',
+};
+
+function detectTopics(text: string): string[] {
+  const hits: { topic: string; pos: number }[] = [];
+  for (const [topic, kwList] of Object.entries(SUBJECT_KWS)) {
+    let first = Infinity;
+    for (const kw of kwList) { const i = text.indexOf(kw); if (i !== -1 && i < first) first = i; }
+    if (first !== Infinity) hits.push({ topic, pos: first });
+  }
+  return hits.sort((a, b) => a.pos - b.pos).map(h => h.topic);
+}
+
+function topicComboLabel(topics: string[]): string {
+  if (!topics.length) return '기타';
+  if (topics.length === 1) return SUBJECT_LABEL[topics[0]];
+  const a = SUBJECT_LABEL[topics[0]], b = SUBJECT_LABEL[topics[1]];
+  const hasJong = (a.charCodeAt(a.length - 1) - 0xAC00) % 28 !== 0;
+  return `${a}${hasJong ? '과 ' : '와 '}${b}`;
 }
 
 interface Row { id: number; class_room: string; project: string; name: string; question: string; analysis: { level: number; label: string; emoji: string; summary: string } | null; time: string; }
@@ -156,6 +198,7 @@ export default function TeacherPage() {
   const [searchName, setSearchName] = useState('');
   const [aiReport,  setAiReport]  = useState<{ report: string; deepQuestions: string[]; suggestions: string[] } | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [refinedLabels, setRefinedLabels] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setLoading(true); setFetchErr('');
@@ -211,8 +254,6 @@ export default function TeacherPage() {
     return filtered.filter(r => r.name.includes(q));
   }, [filtered, searchName]);
 
-  useEffect(() => { setAiReport(null); }, [filtered]);
-
   function toggleOne(id: number) { setSel(p => { const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n; }); }
   function toggleAll() {
     const all = displayed.length > 0 && displayed.every(r => sel.has(r.id));
@@ -250,43 +291,53 @@ export default function TeacherPage() {
     const topKw  = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0, 5);
     const maxKw  = topKw[0]?.[1] ?? 1;
 
-    // IDF: 각 키워드가 몇 개 질문에 등장하는지 (document frequency)
-    const df: Record<string, number> = {};
-    filtered.forEach(r => {
-      const ks = new Set(kws(r.question, 10));
-      ks.forEach(k => { df[k] = (df[k] ?? 0) + 1; });
-    });
-    // 2개 이상 질문에 등장한 키워드만 주제 후보로 허용
-    const topicCandidates = new Set(Object.keys(df).filter(k => df[k] >= 2));
-
-    // 각 질문의 대표 주제 = 후보 키워드 중 df 가장 낮은 것(가장 구별력 있는 것)
-    function primaryKw(r: Row): string | null {
-      const ks = kws(r.question, 10).filter(k => topicCandidates.has(k));
-      if (!ks.length) return null;
-      return ks.reduce((best, k) => {
-        if (df[k] < df[best]) return k;
-        if (df[k] === df[best] && k.length > best.length) return k; // 동점이면 긴 단어 우선
-        return best;
-      });
-    }
-
-    // 대표 주제별로 질문 묶기 → 최대 3그룹
+    // 주제 인식 기반 그룹핑
     const topicMap: Record<string, Row[]> = {};
     filtered.forEach(r => {
-      const t = primaryKw(r);
-      if (t) { if (!topicMap[t]) topicMap[t] = []; topicMap[t].push(r); }
+      const topics = detectTopics(r.question);
+      if (!topics.length) return;
+      const primary = topics[0];
+      if (!topicMap[primary]) topicMap[primary] = [];
+      topicMap[primary].push(r);
     });
+
     const groups = Object.entries(topicMap)
       .filter(([, qs]) => qs.length >= 2)
       .sort((a, b) => b[1].length - a[1].length)
       .slice(0, 3)
-      .map(([kw, qs]) => ({ label: topicLabel(kw, qs), kw, qs }));
+      .map(([primary, qs]) => {
+        const secFreq: Record<string, number> = {};
+        qs.forEach(r => {
+          detectTopics(r.question).filter(t => t !== primary)
+            .forEach(t => { secFreq[t] = (secFreq[t] ?? 0) + 1; });
+        });
+        const secondary = Object.entries(secFreq).sort((a, b) => b[1] - a[1])[0]?.[0];
+        return { label: topicComboLabel(secondary ? [primary, secondary] : [primary]), key: primary, qs };
+      });
 
     // 대표 추천 (높은 단계 우선)
     const reco = [...filtered].sort((a,b)=>(b.analysis?.level??1)-(a.analysis?.level??1)).slice(0,5);
 
     return { lvDist, maxC, avg, highPct, topKw, maxKw, groups, reco, n };
   }, [filtered]);
+
+  useEffect(() => {
+    setAiReport(null);
+    setRefinedLabels({});
+    if (!stats?.groups.length) return;
+    const payload = stats.groups.map(g => ({
+      key: g.key, label: g.label,
+      samples: g.qs.slice(0, 3).map(r => r.question),
+    }));
+    fetch('/api/refine-topics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ groups: payload }),
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setRefinedLabels(data); })
+      .catch(() => {});
+  }, [stats]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!authed) return <PinScreen onOk={() => setAuthed(true)} />;
 
@@ -388,16 +439,16 @@ export default function TeacherPage() {
                   )}
               </div>
 
-              {/* 유사질문 묶음 */}
+              {/* 탐구 주제별 묶음 */}
               <div>
-                <div className="text-sm font-semibold text-[#555] mb-2">유사질문 묶음</div>
+                <div className="text-sm font-semibold text-[#555] mb-2">탐구 주제별 묶음</div>
                 {stats.groups.length === 0
                   ? <p className="text-xs text-[#ccc]">유사 질문 그룹 없음</p>
                   : (
                     <div className="space-y-2.5">
-                      {stats.groups.map(({ label, kw, qs }) => (
-                        <div key={kw} className="bg-[#f8f9ff] rounded-xl p-3">
-                          <div className="text-xs font-bold text-[#667eea] mb-1.5">🔗 {label} ({qs.length}개)</div>
+                      {stats.groups.map(({ label, key, qs }) => (
+                        <div key={key} className="bg-[#f8f9ff] rounded-xl p-3">
+                          <div className="text-xs font-bold text-[#667eea] mb-1.5">🔗 {refinedLabels[key] ?? label} ({qs.length}개)</div>
                           <ul className="space-y-1">
                             {qs.slice(0,3).map(q => (
                               <li key={q.id} className="text-xs text-[#555] flex gap-1">
