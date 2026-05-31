@@ -147,7 +147,7 @@ export default function QuestionPage() {
 
         {/* 배너 이미지 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/discover.png" alt="질문 발견" className="w-full rounded-2xl mb-3 block" style={{ maxHeight: '200px', objectFit: 'contain' }} />
+        <img src="/discover.png" alt="질문 발견" className="w-full rounded-2xl mb-3 block" style={{ maxHeight: '280px', objectFit: 'contain' }} />
 
         {/* 학년/반 + 이름 — 2열 */}
         <Card>
@@ -189,7 +189,8 @@ export default function QuestionPage() {
           </div>
           <textarea value={question} onChange={e => { setQuestion(e.target.value.slice(0, 150)); setQError(''); }}
             placeholder="무엇이 궁금한가요? 자유롭게 써보세요!" rows={3} maxLength={150}
-            className="w-full border-2 border-[#e0e0f0] rounded-xl p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors" />
+            className="w-full border-2 border-[#e0e0f0] rounded-xl p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
+            style={{ minHeight: '110px' }} />
           <div className={`text-right text-sm mt-1 ${question.length > 100 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
             {question.length} / 100
           </div>
