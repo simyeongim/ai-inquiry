@@ -129,9 +129,9 @@ export default function QuestionPage() {
   ];
 
   return (
-    <div className="min-h-screen px-5 pt-2 pb-4"
+    <div className="min-h-screen px-4 pt-3 pb-8"
       style={{ background: '#ffffff', fontFamily: "'Noto Sans KR', '맑은 고딕', sans-serif" }}>
-      <div className="max-w-[680px] mx-auto">
+      <div className="max-w-[600px] mx-auto">
 
         {/* 네비게이션 */}
         <div className="flex justify-between items-center mb-2">
@@ -147,9 +147,9 @@ export default function QuestionPage() {
 
         {/* 배너 이미지 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/discover.png" alt="질문 발견" className="w-full rounded-xl mb-2 block" style={{ maxHeight: '160px', objectFit: 'contain' }} />
+        <img src="/discover.png" alt="질문 발견" className="w-full rounded-2xl mb-3 block" style={{ maxHeight: '200px', objectFit: 'contain' }} />
 
-        {/* 학년/반 & 프로젝트 */}
+        {/* 학년/반 + 이름 — 2열 */}
         <Card>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -160,42 +160,42 @@ export default function QuestionPage() {
               </Select>
             </div>
             <div>
-              <Label>프로젝트</Label>
-              <Select value={project} onChange={e => setProject(e.target.value)}>
-                <option value="">프로젝트 선택</option>
-                {['세계는 어떻게 움직이는가','지구와 어떻게 함께 살아갈 것인가','우리는 어떻게 자신을 조직하는가'].map(v => <option key={v}>{v}</option>)}
-              </Select>
+              <Label>내 이름</Label>
+              <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="이름 입력"
+                className="w-full border-2 border-[#e0e0f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] transition-colors" />
             </div>
           </div>
         </Card>
 
-        {/* 이름 */}
+        {/* 프로젝트 */}
         <Card>
-          <Label>내 이름</Label>
-          <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="이름을 입력하세요"
-            className="w-full border-2 border-[#e0e0f0] rounded-[10px] p-2 text-base text-gray-700 focus:outline-none focus:border-[#667eea] transition-colors" />
+          <Label>프로젝트</Label>
+          <Select value={project} onChange={e => setProject(e.target.value)}>
+            <option value="">프로젝트를 선택하세요</option>
+            {['세계는 어떻게 움직이는가','지구와 어떻게 함께 살아갈 것인가','우리는 어떻게 자신을 조직하는가'].map(v => <option key={v}>{v}</option>)}
+          </Select>
         </Card>
 
         {/* 질문 입력 */}
         <Card>
           <Label>내 질문</Label>
-          <div className="flex flex-wrap gap-1 mb-1.5">
+          <div className="flex flex-wrap gap-1.5 mb-2">
             {HINTS.map(({ text, cls }) => (
               <span key={text}
-                className={`text-[0.78rem] font-semibold px-2 py-1 rounded-full border-[1.5px] select-none ${cls}`}>
+                className={`text-[0.8rem] font-semibold px-2.5 py-1 rounded-full border-[1.5px] select-none ${cls}`}>
                 {text}
               </span>
             ))}
           </div>
           <textarea value={question} onChange={e => { setQuestion(e.target.value.slice(0, 150)); setQError(''); }}
             placeholder="무엇이 궁금한가요? 자유롭게 써보세요!" rows={3} maxLength={150}
-            className="w-full border-2 border-[#e0e0f0] rounded-[10px] p-2 text-base text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors" />
+            className="w-full border-2 border-[#e0e0f0] rounded-xl p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors" />
           <div className={`text-right text-sm mt-1 ${question.length > 100 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
             {question.length} / 100
           </div>
-          {qError && <p className="text-red-600 text-sm mt-1.5 min-h-[1.2em]">{qError}</p>}
+          {qError && <p className="text-red-600 text-sm mt-1.5">{qError}</p>}
           <button onClick={handleSubmit} disabled={loading}
-            className="mt-2 w-full text-white font-bold text-[1rem] py-2.5 rounded-[10px] border-none cursor-pointer bg-gradient-to-br from-[#667eea] to-[#764ba2] hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+            className="mt-3 w-full text-white font-bold text-[1rem] py-3 rounded-xl border-none cursor-pointer bg-gradient-to-br from-[#667eea] to-[#764ba2] hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
             {loading ? '분석 중...' : '질문 보내기 ✨'}
           </button>
         </Card>
@@ -261,15 +261,15 @@ export default function QuestionPage() {
 
 // ─── 공통 UI 서브컴포넌트 ────────────────────────────
 function Card({ children }: { children: React.ReactNode }) {
-  return <div className="bg-white rounded-[16px] p-3 mb-1.5 shadow-[0_3px_16px_rgba(80,60,160,0.10)]">{children}</div>;
+  return <div className="bg-white rounded-2xl p-4 mb-2 shadow-[0_4px_20px_rgba(80,60,160,0.10)]">{children}</div>;
 }
 function Label({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <label className={`block font-bold text-[#4a4a6a] mb-1 text-[0.88rem] ${className}`}>{children}</label>;
+  return <label className={`block font-bold text-[#4a4a6a] mb-1.5 text-[0.9rem] ${className}`}>{children}</label>;
 }
 function Select({ children, value, onChange }: { children: React.ReactNode; value: string; onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void }) {
   return (
     <select value={value} onChange={onChange}
-      className="w-full border-2 border-[#e0e0f0] rounded-[10px] p-2 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] bg-white cursor-pointer transition-colors appearance-none">
+      className="w-full border-2 border-[#e0e0f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] bg-white cursor-pointer transition-colors appearance-none">
       {children}
     </select>
   );
