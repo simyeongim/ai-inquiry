@@ -421,7 +421,7 @@ export default function TeacherPage() {
               <div className="text-xs font-bold text-[#999] uppercase tracking-wider mb-2">학년/반</div>
               <ClassDropdown opts={CLASS_LIST} sel={fClass} onToggle={v => setFClass(tog(fClass, v))} />
             </div>
-            <div className="pl-3">
+            <div className="pl-6">
               <Pills label="프로젝트" opts={PROJECT_LIST} sel={fProject} onToggle={v=>setFProject(tog(fProject,v as string))} getLabel={v=>v as string}/>
             </div>
             <Pills label="질문 수준" opts={LEVEL_OPTS}   sel={fLevel}   onToggle={v=>setFLevel(tog(fLevel,v as number))}
