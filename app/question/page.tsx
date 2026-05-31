@@ -129,36 +129,25 @@ export default function QuestionPage() {
   ];
 
   return (
-    <div className="min-h-screen p-5 pb-12"
-      style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', fontFamily: "'Noto Sans KR', '맑은 고딕', sans-serif" }}>
+    <div className="min-h-screen px-5 pt-4 pb-12"
+      style={{ background: '#ffffff', fontFamily: "'Noto Sans KR', '맑은 고딕', sans-serif" }}>
       <div className="max-w-[680px] mx-auto">
 
-        {/* 헤더 */}
-        <div className="text-center text-white pt-8 pb-10 mb-1 relative">
+        {/* 네비게이션 */}
+        <div className="flex justify-between items-center mb-4">
           <Link href="/"
-            className="absolute top-5 left-0 text-white/80 text-[0.95rem] font-semibold bg-white/10 border border-white/30 px-4 py-1.5 rounded-full hover:bg-white/20 transition-colors no-underline">
+            className="text-[#667eea] text-sm font-semibold border border-[#667eea]/30 bg-[#667eea]/5 px-4 py-1.5 rounded-full hover:bg-[#667eea]/10 transition-colors no-underline">
             ← 홈
           </Link>
           <a href="/teacher"
-            className="absolute top-5 right-0 text-white/80 text-[0.95rem] font-semibold bg-white/10 border border-white/30 px-4 py-1.5 rounded-full hover:bg-white/20 transition-colors no-underline">
+            className="text-[#667eea] text-sm font-semibold border border-[#667eea]/30 bg-[#667eea]/5 px-4 py-1.5 rounded-full hover:bg-[#667eea]/10 transition-colors no-underline">
             🔒 교사용
           </a>
-          <div className="flex items-center justify-center gap-3.5 mb-2.5">
-            <svg width="80" height="75" viewBox="0 0 96 90" fill="none">
-              <circle cx="56" cy="34" r="32" fill="#43A047" stroke="white" strokeWidth="2.5"/>
-              <text x="56" y="48" textAnchor="middle" fontFamily="Arial Black,Arial,sans-serif" fontSize="30" fontWeight="900" fill="white">D</text>
-              <polygon points="8,68 1,80 22,68" fill="#6c63ff" stroke="white" strokeWidth="2" strokeLinejoin="round"/>
-              <rect x="2" y="38" width="40" height="30" rx="10" fill="#6c63ff" stroke="white" strokeWidth="2.5"/>
-              <text x="22" y="59" textAnchor="middle" fontFamily="Arial,sans-serif" fontSize="19" fontWeight="900" fill="white">?</text>
-              <circle cx="77" cy="64" r="13" stroke="white" strokeWidth="4" fill="rgba(255,255,255,0.25)"/>
-              <line x1="87" y1="74" x2="95" y2="82" stroke="white" strokeWidth="4" strokeLinecap="round"/>
-            </svg>
-            <h1 style={{ fontFamily: "'Jua', sans-serif", fontSize: '3rem', fontWeight: 400, letterSpacing: '0.5px', textShadow: '0 2px 14px rgba(0,0,0,0.28)', margin: 0, lineHeight: 1.1 }}>
-              질문 발견
-            </h1>
-          </div>
-          <p className="text-white/95 text-[1.05rem] m-0">질문을 발견하고 생각을 넓혀요.</p>
         </div>
+
+        {/* 배너 이미지 */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/discover.png" alt="질문 발견" className="w-full rounded-2xl mb-5 block" />
 
         {/* 학년/반 & 프로젝트 */}
         <Card>
