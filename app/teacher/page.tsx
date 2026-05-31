@@ -397,13 +397,12 @@ export default function TeacherPage() {
     <div className="min-h-screen pb-16" style={{ background:'#f0f2f8', fontFamily:"'Noto Sans KR','맑은 고딕',sans-serif" }}>
 
       {/* 헤더 */}
-      <div className="sticky top-0 z-20 text-white py-4 px-5 shadow-md relative flex items-center"
-        style={{ background:'linear-gradient(135deg,#667eea,#764ba2)' }}>
-        <Link href="/question" className="text-white/80 text-sm bg-white/10 border border-white/30 px-3 py-1.5 rounded-full hover:bg-white/20 no-underline transition-colors shrink-0">← 학생 화면</Link>
-        <h1 className="text-lg font-bold m-0 absolute left-1/2 -translate-x-1/2">📊 교사용 질문 분석</h1>
-        <div className="ml-auto shrink-0">
+      <div className="sticky top-0 z-20 text-white shadow-md" style={{ background:'linear-gradient(135deg,#667eea,#764ba2)' }}>
+        <div className="max-w-[1200px] mx-auto px-4 py-4 flex items-center gap-3">
+          <Link href="/question" className="text-white/80 text-sm bg-white/10 border border-white/30 px-3 py-1.5 rounded-full hover:bg-white/20 no-underline transition-colors shrink-0">← 학생 화면</Link>
+          <h1 className="text-lg font-bold m-0 flex-1 text-center">📊 교사용 질문 분석</h1>
           <button onClick={load} disabled={loading}
-            className="text-sm bg-white/20 border border-white/30 text-white px-4 py-1.5 rounded-full cursor-pointer hover:bg-white/30 disabled:opacity-50 transition-colors">
+            className="text-sm bg-white/20 border border-white/30 text-white px-4 py-1.5 rounded-full cursor-pointer hover:bg-white/30 disabled:opacity-50 transition-colors shrink-0">
             {loading ? '로딩...' : '새로고침'}
           </button>
         </div>
