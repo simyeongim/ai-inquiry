@@ -147,7 +147,7 @@ export default function QuestionPage() {
 
         {/* 배너 이미지 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/discover.png" alt="질문 발견" className="w-full rounded-2xl mb-5 block" />
+        <img src="/discover.png" alt="질문 발견" className="w-full rounded-2xl mb-4 block" style={{ maxHeight: '28vh', objectFit: 'cover', objectPosition: 'center top' }} />
 
         {/* 학년/반 & 프로젝트 */}
         <Card>
