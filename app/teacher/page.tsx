@@ -451,7 +451,8 @@ export default function TeacherPage() {
       {/* 헤더 */}
       <div className="sticky top-0 z-20 text-white shadow-md" style={{ background:'linear-gradient(135deg,#667eea,#764ba2)' }}>
         <div className="max-w-[1200px] mx-auto px-4 py-3 flex items-center gap-3">
-          <Link href="/question" className="text-white/80 text-sm bg-white/10 border border-white/30 px-3 py-1.5 rounded-full hover:bg-white/20 no-underline transition-colors shrink-0">← 학생 화면</Link>
+          <Link href="/" className="text-white/80 text-sm bg-white/10 border border-white/30 px-3 py-1.5 rounded-full hover:bg-white/20 no-underline transition-colors shrink-0">← 홈</Link>
+          <Link href="/question" className="text-white/80 text-sm bg-white/10 border border-white/30 px-3 py-1.5 rounded-full hover:bg-white/20 no-underline transition-colors shrink-0">학생 화면</Link>
           <h1 className="text-lg font-bold m-0 flex-1 text-center">📊 교사용 대시보드</h1>
           <button onClick={tab === 'questions' ? load : loadLearnings}
             disabled={tab === 'questions' ? loading : loadingLearn}
@@ -463,7 +464,7 @@ export default function TeacherPage() {
         <div className="max-w-[1200px] mx-auto px-4 flex border-t border-white/20">
           {(['questions', 'learnings'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
-              className="text-sm font-bold px-6 py-2.5 border-b-[3px] transition-all cursor-pointer bg-transparent border-x-0 border-t-0"
+              className="text-xl font-bold px-12 py-5 border-b-[4px] transition-all cursor-pointer bg-transparent border-x-0 border-t-0"
               style={tab === t
                 ? { color: 'white', borderBottomColor: 'white' }
                 : { color: 'rgba(255,255,255,0.55)', borderBottomColor: 'transparent' }}>
