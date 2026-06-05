@@ -6,6 +6,9 @@ import Link from 'next/link';
 const SUPABASE_URL = 'https://fsrrtopndcrdnqwnspnp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_z7LexdeBdGJqEy5Z8IAyNA_LEGAxPf_';
 
+const CLASS_LIST   = ['3학년 1반','3학년 4반','4학년 4반','6학년 1반','6학년 2반','6학년 3반','6학년 3반 과학','6학년 4반','6학년 5반','6학년 6반'] as const;
+const PROJECT_LIST = ['세계는 어떻게 움직이는가','지구와 어떻게 함께 살아갈 것인가','우리는 어떻게 자신을 조직하는가'] as const;
+
 interface Feedback {
   praise: string;
   understood: string;
@@ -15,6 +18,7 @@ interface Feedback {
 
 type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
 
+// ── saveLearning: 수정 금지 ───────────────────────────
 async function saveLearning(
   grade: string,
   className: string,
@@ -30,7 +34,7 @@ async function saveLearning(
     student_name: studentName,
     lesson,
     content,
-    feedback: feedbackToSave,   // jsonb 컬럼: 객체 그대로 전송
+    feedback: feedbackToSave,
     created_at: new Date().toISOString(),
     type: 'learn',
   };
@@ -68,28 +72,26 @@ async function saveLearning(
   return { ok: true };
 }
 
+// ── 컴포넌트 ─────────────────────────────────────────
 export default function LearnPage() {
-  const [grade,       setGrade]       = useState('');
-  const [className,   setClassName]   = useState('');
-  const [studentName, setStudentName] = useState('');
-  const [lesson,      setLesson]      = useState('');
+  const [classRoom,   setClassRoom]   = useState('');
+  const [project,     setProject]     = useState('');
+  const [name,        setName]        = useState('');
   const [content,     setContent]     = useState('');
   const [loading,     setLoading]     = useState(false);
   const [result,      setResult]      = useState<Feedback | null>(null);
-  const [error,       setError]       = useState('');
+  const [cError,      setCError]      = useState('');
   const [saveStatus,  setSaveStatus]  = useState<SaveStatus>('idle');
   const [saveError,   setSaveError]   = useState('');
   const resultRef = useRef<HTMLDivElement>(null);
 
   async function handleSubmit() {
-    if (!grade)              { setError('학년을 선택해주세요.'); return; }
-    if (!className)          { setError('반을 선택해주세요.'); return; }
-    if (!studentName.trim()) { setError('이름을 입력해주세요.'); return; }
-    if (!lesson)             { setError('수업을 선택해주세요.'); return; }
-    if (!content.trim())     { setError('배운 내용을 작성해주세요.'); return; }
-    if (content.trim().length < 10) { setError('배운 내용을 조금 더 자세히 작성해주세요.'); return; }
-
-    setError('');
+    if (!classRoom)      { alert('학년/반을 선택해주세요!'); return; }
+    if (!project)        { alert('프로젝트를 선택해주세요!'); return; }
+    if (!name.trim())    { alert('이름을 입력해주세요!'); return; }
+    if (!content.trim()) { setCError('내용을 입력해주세요.'); return; }
+    if (content.trim().length < 10) { setCError('조금 더 자세히 작성해주세요.'); return; }
+    setCError('');
     setLoading(true);
     setResult(null);
 
@@ -113,7 +115,8 @@ export default function LearnPage() {
     }
 
     setSaveStatus('saving');
-    const saved = await saveLearning(grade, className, studentName.trim(), lesson, content, feedback);
+    // classRoom 전체를 grade로 전달, class_name은 빈 문자열
+    const saved = await saveLearning(classRoom, '', name.trim(), project, content, feedback);
     if (saved.ok) {
       setSaveStatus('success');
       setSaveError('');
@@ -139,87 +142,52 @@ export default function LearnPage() {
           </Link>
         </div>
 
-        {/* 헤더 배너 */}
-        <div className="rounded-2xl mb-3 text-white py-5 px-6"
-          style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-          <h1 className="text-xl font-bold mb-1">🌱 개념학습</h1>
-          <p className="text-sm font-medium mb-3" style={{ opacity: 0.85 }}>
-            핵심 개념을 내 말로 설명하고 이해를 점검해보세요.
-          </p>
-          <div className="text-sm space-y-1" style={{ opacity: 0.9 }}>
-            <p className="m-0">✔ 무엇을 배웠나요?</p>
-            <p className="m-0">✔ 왜 중요한가요?</p>
-            <p className="m-0">✔ 다른 상황에도 적용할 수 있나요?</p>
-          </div>
-          <p className="text-xs mt-3 mb-0" style={{ opacity: 0.7 }}>
-            AI가 여러분의 개념 이해를 함께 점검해줍니다.
-          </p>
-        </div>
+        {/* 배너 이미지 */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/learn.png" alt="개념학습" className="w-full rounded-2xl mb-3 block" style={{ maxHeight: '280px', objectFit: 'contain' }} />
 
-        {/* 오류 메시지 */}
-        {error && (
-          <div className="bg-[#ffebee] border-l-4 border-[#e53935] p-3 rounded-xl mb-2 text-sm text-[#c62828] font-semibold">
-            ⚠️ {error}
-          </div>
-        )}
-
-        {/* 학년 + 반 — 2열 */}
+        {/* 학년/반 + 이름 — 2열 */}
         <Card>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>학년</Label>
-              <Select value={grade} onChange={e => { setGrade(e.target.value); setError(''); }}>
-                <option value="">학년 선택</option>
-                {['3학년', '4학년', '5학년', '6학년'].map(v => <option key={v}>{v}</option>)}
+              <Label>학년/반</Label>
+              <Select value={classRoom} onChange={e => setClassRoom(e.target.value)}>
+                <option value="">학년/반 선택</option>
+                {CLASS_LIST.map(v => <option key={v}>{v}</option>)}
               </Select>
             </div>
             <div>
-              <Label>반</Label>
-              <Select value={className} onChange={e => { setClassName(e.target.value); setError(''); }}>
-                <option value="">반 선택</option>
-                {['1반', '2반', '3반', '4반', '5반', '6반'].map(v => <option key={v}>{v}</option>)}
-              </Select>
+              <Label>이름</Label>
+              <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="이름 입력"
+                className="w-full border-2 border-[#e0e0f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] transition-colors" />
             </div>
           </div>
         </Card>
 
-        {/* 이름 */}
+        {/* 프로젝트 */}
         <Card>
-          <Label>이름</Label>
-          <input type="text" value={studentName}
-            onChange={e => { setStudentName(e.target.value); setError(''); }}
-            placeholder="이름을 입력하세요"
-            className="w-full border-2 border-[#e0e0f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] transition-colors" />
-        </Card>
-
-        {/* 수업 선택 */}
-        <Card>
-          <Label>수업</Label>
-          <Select value={lesson} onChange={e => { setLesson(e.target.value); setError(''); }}>
-            <option value="">수업을 선택하세요</option>
-            {[
-              '세계는 어떻게 움직이는가',
-              '지구와 어떻게 함께 살아갈 것인가',
-              '우리는 어떻게 자신을 조직하는가',
-            ].map(v => <option key={v}>{v}</option>)}
+          <Label>프로젝트</Label>
+          <Select value={project} onChange={e => setProject(e.target.value)}>
+            <option value="">프로젝트를 선택하세요</option>
+            {PROJECT_LIST.map(v => <option key={v}>{v}</option>)}
           </Select>
         </Card>
 
         {/* 개념 이해 체크 */}
-        <div className="rounded-2xl p-4 mb-2" style={{ background: '#f8f9ff', border: '1.5px solid #e0e0f8' }}>
-          <h3 className="text-[0.9rem] font-bold text-[#4a4a6a] mb-3">🧠 개념 이해 체크</h3>
-          <div className="space-y-2.5 text-sm text-[#555]">
+        <div className="bg-[#f8f9ff] rounded-2xl p-4 mb-2 border border-[#e8eaf6]">
+          <p className="text-[0.9rem] font-bold text-[#4a4a6a] mb-3 m-0">🧠 개념 이해 체크</p>
+          <div className="space-y-3 text-sm">
             <div>
-              <p className="font-semibold text-[#4a4a6a] m-0 mb-0.5">① 무엇을 배웠나요?</p>
-              <p className="m-0 text-[#888]">예) 식물의 뿌리와 줄기의 역할을 배웠어요.</p>
+              <p className="font-semibold text-[#4a4a6a] m-0 mb-0.5">① 새롭게 알게 된 것은 무엇인가요?</p>
+              <p className="text-xs text-[#aaa] m-0">예) 식물의 뿌리와 줄기의 역할을 알게 되었어요.</p>
             </div>
             <div>
-              <p className="font-semibold text-[#4a4a6a] m-0 mb-0.5">② 왜 중요한가요?</p>
-              <p className="m-0 text-[#888]">예) 식물이 살아가는 데 꼭 필요하기 때문이에요.</p>
+              <p className="font-semibold text-[#4a4a6a] m-0 mb-0.5">② 가장 중요하다고 생각한 내용은 무엇인가요?</p>
+              <p className="text-xs text-[#aaa] m-0">예) 식물이 살아가는 데 꼭 필요한 내용이라고 생각해요.</p>
             </div>
             <div>
-              <p className="font-semibold text-[#4a4a6a] m-0 mb-0.5">③ 다른 상황에도 적용할 수 있나요?</p>
-              <p className="m-0 text-[#888]">예) 만약 뿌리가 없다면 식물은 어떻게 될지 생각해볼 수 있어요.</p>
+              <p className="font-semibold text-[#4a4a6a] m-0 mb-0.5">③ 더 궁금해진 점은 무엇인가요?</p>
+              <p className="text-xs text-[#aaa] m-0">예) 뿌리가 없다면 식물은 어떻게 될지 궁금해요.</p>
             </div>
           </div>
         </div>
@@ -227,25 +195,26 @@ export default function LearnPage() {
         {/* 핵심 개념 입력 */}
         <Card>
           <Label>내가 이해한 핵심 개념</Label>
-          <textarea
-            value={content}
-            onChange={e => { setContent(e.target.value); setError(''); }}
-            placeholder={`식물의 뿌리는 물을 흡수하고,\n줄기는 물이 이동하는 길이라는 것을 알게 되었다.\n이 개념은 식물이 살아가는 데 중요하다고 생각한다.\n만약 뿌리가 없다면 식물은 잘 자라기 어려울 것 같다.`}
-            rows={6}
+          <textarea value={content}
+            onChange={e => { setContent(e.target.value.slice(0, 500)); setCError(''); }}
+            placeholder="배운 내용을 정리하고 새롭게 알게 된 점, 중요하다고 생각한 점, 더 궁금한 점을 함께 적어보세요."
+            rows={4} maxLength={500}
             className="w-full border-2 border-[#e0e0f0] rounded-xl p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
-            style={{ minHeight: '150px' }}
-          />
+            style={{ minHeight: '110px' }} />
+          <div className={`text-right text-sm mt-1 ${content.length > 450 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
+            {content.length} / 500
+          </div>
+          {cError && <p className="text-red-600 text-sm mt-1.5">{cError}</p>}
           <button onClick={handleSubmit} disabled={loading}
-            className="mt-3 w-full text-white font-bold text-[1rem] py-3 rounded-xl border-none cursor-pointer hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-            {loading ? '개념 점검 중...' : '개념 이해 점검하기 🧠'}
+            className="mt-3 w-full text-white font-bold text-[1rem] py-3 rounded-xl border-none cursor-pointer bg-gradient-to-br from-[#667eea] to-[#764ba2] hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+            {loading ? '점검 중...' : '개념 이해 점검하기 🧠'}
           </button>
         </Card>
 
         {/* 로딩 */}
         {loading && (
           <div className="text-center text-[#667eea] text-[1.1rem] py-5 animate-pulse">
-            AI가 피드백을 작성 중이에요...
+            AI가 개념 이해를 점검 중이에요...
           </div>
         )}
 
@@ -255,7 +224,7 @@ export default function LearnPage() {
             className="bg-white rounded-[20px] p-6 mb-3.5 shadow-[0_4px_24px_rgba(80,60,160,0.13)] border-l-4 border-[#667eea]">
             <h2 className="text-xl font-bold text-[#4a4a6a] mb-4">🧠 개념 이해 점검 결과</h2>
 
-            {/* 저장 상태 — 결과 카드 최상단에 항상 표시 */}
+            {/* 저장 상태 */}
             {saveStatus === 'saving' && (
               <div className="bg-[#e3f2fd] border-l-4 border-[#1e88e5] p-3 rounded-lg mb-4 text-sm text-[#1565c0] font-semibold">
                 💾 저장 중...
@@ -263,14 +232,13 @@ export default function LearnPage() {
             )}
             {saveStatus === 'success' && (
               <div className="bg-[#e8f5e9] border-l-4 border-[#43a047] p-3 rounded-lg mb-4 text-sm text-[#2e7d32] font-semibold">
-                ✅ 배움이 저장되었어요!
+                ✅ 저장되었어요!
               </div>
             )}
             {saveStatus === 'error' && (
               <div className="bg-[#ffebee] border-l-4 border-[#e53935] p-3 rounded-lg mb-4 text-sm text-[#c62828]">
                 <p className="font-semibold mb-1">⚠️ 저장에 실패했어요.</p>
                 <p className="font-mono text-xs break-all whitespace-pre-wrap">{saveError}</p>
-                <p className="text-xs mt-1 text-[#795548]">브라우저 콘솔(F12 → Console)에서 [saveLearning] 로그를 확인해주세요.</p>
               </div>
             )}
 
@@ -299,6 +267,7 @@ export default function LearnPage() {
   );
 }
 
+// ── 공통 UI 서브컴포넌트 ─────────────────────────────
 function Card({ children }: { children: React.ReactNode }) {
   return <div className="bg-white rounded-2xl p-4 mb-2 shadow-[0_4px_20px_rgba(80,60,160,0.10)]">{children}</div>;
 }
