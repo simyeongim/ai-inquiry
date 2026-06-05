@@ -146,6 +146,22 @@ export default function LearnPage() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/learn.png" alt="개념학습" className="w-full rounded-2xl mb-3 block" style={{ maxHeight: '280px', objectFit: 'contain' }} />
 
+        {/* 상단 안내 */}
+        <div className="mb-3 px-0.5">
+          <div className="flex flex-wrap gap-1.5 mb-1.5">
+            {[
+              '✔ 새롭게 알게 된 것은 무엇인가요?',
+              '✔ 가장 중요하다고 생각한 내용은 무엇인가요?',
+              '✔ 더 알아보고 싶은 것은 무엇인가요?',
+            ].map(t => (
+              <span key={t} className="text-[0.78rem] font-semibold text-[#667eea] bg-[#e8eaf6] px-2.5 py-1 rounded-full select-none">
+                {t}
+              </span>
+            ))}
+          </div>
+          <p className="text-xs text-[#aaa] m-0">AI가 여러분의 개념 이해를 함께 점검해줍니다.</p>
+        </div>
+
         {/* 학년/반 + 이름 — 2열 */}
         <Card>
           <div className="grid grid-cols-2 gap-3">
@@ -174,21 +190,28 @@ export default function LearnPage() {
         </Card>
 
         {/* 개념 이해 체크 */}
-        <div className="bg-[#f8f9ff] rounded-2xl p-4 mb-2 border border-[#e8eaf6]">
-          <p className="text-[0.9rem] font-bold text-[#4a4a6a] mb-3 m-0">개념 이해 체크</p>
-          <div className="space-y-3 text-sm">
-            <div>
-              <p className="font-semibold text-[#4a4a6a] m-0 mb-0.5">① 새롭게 알게 된 것은 무엇인가요?</p>
-              <p className="text-xs text-[#aaa] m-0">예) 식물의 뿌리와 줄기의 역할을 알게 되었어요.</p>
-            </div>
-            <div>
-              <p className="font-semibold text-[#4a4a6a] m-0 mb-0.5">② 가장 중요하다고 생각한 내용은 무엇인가요?</p>
-              <p className="text-xs text-[#aaa] m-0">예) 식물이 살아가는 데 꼭 필요한 내용이라고 생각해요.</p>
-            </div>
-            <div>
-              <p className="font-semibold text-[#4a4a6a] m-0 mb-0.5">③ 더 궁금해진 점은 무엇인가요?</p>
-              <p className="text-xs text-[#aaa] m-0">예) 뿌리가 없다면 식물은 어떻게 될지 궁금해요.</p>
-            </div>
+        <div className="rounded-2xl p-4 mb-2 border-[1.5px] border-[#d0d4f0]" style={{ background: '#f6f7ff' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[0.85rem] font-bold text-[#667eea]">개념 이해 체크</span>
+            <div className="flex-1 h-px bg-[#d8daf4]" />
+          </div>
+          <div className="space-y-3">
+            {[
+              { q: '새롭게 알게 된 것은 무엇인가요?',                   ex: '예) 식물의 뿌리와 줄기의 역할을 알게 되었어요.' },
+              { q: '가장 중요하다고 생각한 내용은 무엇인가요?',          ex: '예) 식물이 살아가는 데 꼭 필요한 내용이라고 생각해요.' },
+              { q: '이 내용과 관련해 더 알아보고 싶은 것은 무엇인가요?', ex: '예) 뿌리가 없다면 식물은 어떻게 될지 궁금해요.' },
+            ].map(({ q, ex }, i) => (
+              <div key={i} className="flex gap-2.5 items-start">
+                <span className="text-[0.72rem] font-black text-white px-1.5 py-0.5 rounded-full shrink-0 mt-0.5 leading-tight"
+                  style={{ background: '#667eea' }}>
+                  {i + 1}
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-[#333] m-0 mb-0.5">{q}</p>
+                  <p className="text-xs text-[#aaa] m-0">{ex}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -197,7 +220,7 @@ export default function LearnPage() {
           <Label>내가 이해한 핵심 개념</Label>
           <textarea value={content}
             onChange={e => { setContent(e.target.value.slice(0, 500)); setCError(''); }}
-            placeholder="배운 내용을 정리하고 새롭게 알게 된 점, 중요하다고 생각한 점, 더 궁금한 점을 함께 적어보세요."
+            placeholder={`배운 내용을 내 말로 정리해보세요.\n\n✔ 새롭게 알게 된 점\n✔ 중요하다고 생각한 점\n✔ 더 알아보고 싶은 점\n\n을 포함하여 작성해보세요.`}
             rows={4} maxLength={500}
             className="w-full border-2 border-[#e0e0f0] rounded-xl p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
             style={{ minHeight: '110px' }} />
