@@ -36,12 +36,6 @@ export default function Home() {
     // 전체 화면 중앙 정렬, 흰 배경
     <div className="flex items-center justify-center w-screen h-screen bg-white overflow-hidden">
 
-      {/* 교사용 버튼 — 화면 오른쪽 상단 고정 */}
-      <Link href="/teacher"
-        className="fixed top-4 right-4 z-50 text-white text-sm font-bold px-4 py-2 rounded-full no-underline transition-all hover:opacity-90 shadow-md"
-        style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
-        🔒 교사용
-      </Link>
       {/*
         이미지가 1:1 정사각형이므로 래퍼도 1:1로 맞춤.
         min(100vw, 100vh)로 화면에 꽉 차되 잘리지 않게 유지.
@@ -58,6 +52,16 @@ export default function Home() {
           className="w-full h-full"
           draggable={false}
         />
+
+        {/* 교사용 버튼 — 이미지 오른쪽 상단 */}
+        <Link href="/teacher"
+          className="absolute z-20 no-underline transition-all hover:opacity-90"
+          style={{ top: '2%', right: '2%' }}>
+          <span className="text-white text-xl font-bold px-7 py-3.5 rounded-full shadow-md block"
+            style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
+            🔒 교사용
+          </span>
+        </Link>
 
         {/* 투명 클릭 오버레이 — z-index를 이미지(z-0)보다 높게 설정 */}
         {MENU_AREAS.map(({ label, href, pos }) =>
