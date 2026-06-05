@@ -12,7 +12,7 @@ const MENU_AREAS = [
   },
   {
     label: "개념학습",
-    href: null,
+    href: "/learn",
     pos: { left: "26%", top: "71%", width: "25%", height: "29%" },
   },
   {
