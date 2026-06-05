@@ -453,7 +453,7 @@ export default function TeacherPage() {
         <div className="max-w-[1200px] mx-auto px-4 py-3 flex items-center gap-3">
           <Link href="/" className="text-white/80 text-sm bg-white/10 border border-white/30 px-3 py-1.5 rounded-full hover:bg-white/20 no-underline transition-colors shrink-0">← 홈</Link>
           <Link href="/question" className="text-white/80 text-sm bg-white/10 border border-white/30 px-3 py-1.5 rounded-full hover:bg-white/20 no-underline transition-colors shrink-0">학생 화면</Link>
-          <h1 className="text-lg font-bold m-0 flex-1 text-center">📊 교사용 대시보드</h1>
+          <h1 className="text-xl font-bold m-0 flex-1 text-center">📊 교사용 분석</h1>
           <button onClick={tab === 'questions' ? load : loadLearnings}
             disabled={tab === 'questions' ? loading : loadingLearn}
             className="text-sm bg-white/20 border border-white/30 text-white px-4 py-1.5 rounded-full cursor-pointer hover:bg-white/30 disabled:opacity-50 transition-colors shrink-0">
