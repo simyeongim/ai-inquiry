@@ -137,10 +137,6 @@ export default function LearnPage() {
             className="text-[#667eea] text-[0.96rem] font-semibold border border-[#667eea]/30 bg-[#667eea]/5 px-[1.1rem] py-[0.41rem] rounded-full hover:bg-[#667eea]/10 transition-colors no-underline">
             ← 홈
           </Link>
-          <a href="/teacher"
-            className="text-[#667eea] text-[0.96rem] font-semibold border border-[#667eea]/30 bg-[#667eea]/5 px-[1.1rem] py-[0.41rem] rounded-full hover:bg-[#667eea]/10 transition-colors no-underline">
-            🔒 교사용
-          </a>
         </div>
 
         {/* 헤더 배너 */}
