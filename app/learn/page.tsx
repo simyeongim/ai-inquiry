@@ -13,6 +13,8 @@ interface Feedback {
   _fallback?: boolean;
 }
 
+type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
+
 async function saveLearning(
   grade: string,
   className: string,
@@ -20,9 +22,13 @@ async function saveLearning(
   lesson: string,
   content: string,
   feedback: Feedback,
-) {
+): Promise<{ ok: boolean; error?: string }> {
+  // _fallback 키는 저장 데이터에서 제외
+  const feedbackToSave = { praise: feedback.praise, understood: feedback.understood, nextStep: feedback.nextStep };
+
+  let resp: Response;
   try {
-    await fetch(`${SUPABASE_URL}/rest/v1/learnings`, {
+    resp = await fetch(`${SUPABASE_URL}/rest/v1/learnings`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -36,12 +42,27 @@ async function saveLearning(
         student_name: studentName,
         lesson,
         content,
-        feedback,
-        created_at: new Date().toLocaleString('ko-KR'),
+        // JSON.stringify로 문자열 저장 — text/jsonb 컬럼 모두 호환
+        feedback: JSON.stringify(feedbackToSave),
+        // ISO 형식 — timestamptz 컬럼 호환 (Supabase 기본값 있으면 생략 가능)
+        created_at: new Date().toISOString(),
         type: 'learn',
       }),
     });
-  } catch { /* 저장 실패 시 무시 */ }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[saveLearning] 네트워크 오류:', msg);
+    return { ok: false, error: `네트워크 오류: ${msg}` };
+  }
+
+  if (!resp.ok) {
+    let body = '';
+    try { body = await resp.text(); } catch { /* ignore */ }
+    console.error(`[saveLearning] HTTP ${resp.status}:`, body);
+    return { ok: false, error: `저장 실패 (HTTP ${resp.status}): ${body}` };
+  }
+
+  return { ok: true };
 }
 
 export default function LearnPage() {
@@ -53,6 +74,8 @@ export default function LearnPage() {
   const [loading,     setLoading]     = useState(false);
   const [result,      setResult]      = useState<Feedback | null>(null);
   const [error,       setError]       = useState('');
+  const [saveStatus,  setSaveStatus]  = useState<SaveStatus>('idle');
+  const [saveError,   setSaveError]   = useState('');
   const resultRef = useRef<HTMLDivElement>(null);
 
   async function handleSubmit() {
@@ -86,7 +109,15 @@ export default function LearnPage() {
       };
     }
 
-    await saveLearning(grade, className, studentName.trim(), lesson, content, feedback);
+    setSaveStatus('saving');
+    const saved = await saveLearning(grade, className, studentName.trim(), lesson, content, feedback);
+    if (saved.ok) {
+      setSaveStatus('success');
+      setSaveError('');
+    } else {
+      setSaveStatus('error');
+      setSaveError(saved.error ?? '알 수 없는 오류');
+    }
     setLoading(false);
     setResult(feedback);
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
@@ -191,6 +222,20 @@ export default function LearnPage() {
         {loading && (
           <div className="text-center text-[#667eea] text-[1.1rem] py-5 animate-pulse">
             AI가 피드백을 작성 중이에요...
+          </div>
+        )}
+
+        {/* 저장 상태 */}
+        {saveStatus === 'success' && (
+          <div className="bg-[#e8f5e9] border-l-4 border-[#43a047] p-3 rounded-xl mb-2 text-sm text-[#2e7d32] font-semibold">
+            ✅ 배움이 저장되었어요!
+          </div>
+        )}
+        {saveStatus === 'error' && (
+          <div className="bg-[#ffebee] border-l-4 border-[#e53935] p-3 rounded-xl mb-2 text-sm text-[#c62828]">
+            <p className="font-semibold mb-1">⚠️ 저장에 실패했어요.</p>
+            <p className="text-xs break-all">{saveError}</p>
+            <p className="text-xs mt-1">브라우저 콘솔(F12)에서 자세한 오류를 확인할 수 있어요.</p>
           </div>
         )}
 
