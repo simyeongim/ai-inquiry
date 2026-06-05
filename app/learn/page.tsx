@@ -175,7 +175,7 @@ export default function LearnPage() {
 
         {/* 개념 이해 체크 */}
         <div className="bg-[#f8f9ff] rounded-2xl p-4 mb-2 border border-[#e8eaf6]">
-          <p className="text-[0.9rem] font-bold text-[#4a4a6a] mb-3 m-0">🧠 개념 이해 체크</p>
+          <p className="text-[0.9rem] font-bold text-[#4a4a6a] mb-3 m-0">개념 이해 체크</p>
           <div className="space-y-3 text-sm">
             <div>
               <p className="font-semibold text-[#4a4a6a] m-0 mb-0.5">① 새롭게 알게 된 것은 무엇인가요?</p>
@@ -207,7 +207,7 @@ export default function LearnPage() {
           {cError && <p className="text-red-600 text-sm mt-1.5">{cError}</p>}
           <button onClick={handleSubmit} disabled={loading}
             className="mt-3 w-full text-white font-bold text-[1rem] py-3 rounded-xl border-none cursor-pointer bg-gradient-to-br from-[#667eea] to-[#764ba2] hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
-            {loading ? '점검 중...' : '개념 이해 점검하기 🧠'}
+            {loading ? '점검 중...' : '개념 이해 점검하기'}
           </button>
         </Card>
 
@@ -222,7 +222,7 @@ export default function LearnPage() {
         {result && (
           <div ref={resultRef}
             className="bg-white rounded-[20px] p-6 mb-3.5 shadow-[0_4px_24px_rgba(80,60,160,0.13)] border-l-4 border-[#667eea]">
-            <h2 className="text-xl font-bold text-[#4a4a6a] mb-4">🧠 개념 이해 점검 결과</h2>
+            <h2 className="text-xl font-bold text-[#4a4a6a] mb-4">개념 이해 점검 결과</h2>
 
             {/* 저장 상태 */}
             {saveStatus === 'saving' && (
