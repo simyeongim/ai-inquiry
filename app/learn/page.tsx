@@ -23,8 +23,19 @@ async function saveLearning(
   content: string,
   feedback: Feedback,
 ): Promise<{ ok: boolean; error?: string }> {
-  // _fallback 키는 저장 데이터에서 제외
   const feedbackToSave = { praise: feedback.praise, understood: feedback.understood, nextStep: feedback.nextStep };
+  const payload = {
+    grade,
+    class_name: className,
+    student_name: studentName,
+    lesson,
+    content,
+    feedback: feedbackToSave,   // jsonb 컬럼: 객체 그대로 전송
+    created_at: new Date().toISOString(),
+    type: 'learn',
+  };
+
+  console.log('[saveLearning] 호출됨 — payload:', payload);
 
   let resp: Response;
   try {
@@ -36,18 +47,7 @@ async function saveLearning(
         'Authorization': `Bearer ${SUPABASE_KEY}`,
         'Prefer': 'return=minimal',
       },
-      body: JSON.stringify({
-        grade,
-        class_name: className,
-        student_name: studentName,
-        lesson,
-        content,
-        // JSON.stringify로 문자열 저장 — text/jsonb 컬럼 모두 호환
-        feedback: JSON.stringify(feedbackToSave),
-        // ISO 형식 — timestamptz 컬럼 호환 (Supabase 기본값 있으면 생략 가능)
-        created_at: new Date().toISOString(),
-        type: 'learn',
-      }),
+      body: JSON.stringify(payload),
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -55,13 +55,16 @@ async function saveLearning(
     return { ok: false, error: `네트워크 오류: ${msg}` };
   }
 
+  console.log('[saveLearning] HTTP 응답 상태:', resp.status, resp.statusText);
+
   if (!resp.ok) {
     let body = '';
     try { body = await resp.text(); } catch { /* ignore */ }
-    console.error(`[saveLearning] HTTP ${resp.status}:`, body);
-    return { ok: false, error: `저장 실패 (HTTP ${resp.status}): ${body}` };
+    console.error(`[saveLearning] 저장 실패 — HTTP ${resp.status}:`, body);
+    return { ok: false, error: `HTTP ${resp.status}: ${body}` };
   }
 
+  console.log('[saveLearning] 저장 성공');
   return { ok: true };
 }
 
@@ -225,25 +228,30 @@ export default function LearnPage() {
           </div>
         )}
 
-        {/* 저장 상태 */}
-        {saveStatus === 'success' && (
-          <div className="bg-[#e8f5e9] border-l-4 border-[#43a047] p-3 rounded-xl mb-2 text-sm text-[#2e7d32] font-semibold">
-            ✅ 배움이 저장되었어요!
-          </div>
-        )}
-        {saveStatus === 'error' && (
-          <div className="bg-[#ffebee] border-l-4 border-[#e53935] p-3 rounded-xl mb-2 text-sm text-[#c62828]">
-            <p className="font-semibold mb-1">⚠️ 저장에 실패했어요.</p>
-            <p className="text-xs break-all">{saveError}</p>
-            <p className="text-xs mt-1">브라우저 콘솔(F12)에서 자세한 오류를 확인할 수 있어요.</p>
-          </div>
-        )}
-
         {/* 결과 */}
         {result && (
           <div ref={resultRef}
             className="bg-white rounded-[20px] p-6 mb-3.5 shadow-[0_4px_24px_rgba(80,60,160,0.13)] border-l-4 border-[#667eea]">
             <h2 className="text-xl font-bold text-[#4a4a6a] mb-4">🌱 AI 피드백</h2>
+
+            {/* 저장 상태 — 결과 카드 최상단에 항상 표시 */}
+            {saveStatus === 'saving' && (
+              <div className="bg-[#e3f2fd] border-l-4 border-[#1e88e5] p-3 rounded-lg mb-4 text-sm text-[#1565c0] font-semibold">
+                💾 저장 중...
+              </div>
+            )}
+            {saveStatus === 'success' && (
+              <div className="bg-[#e8f5e9] border-l-4 border-[#43a047] p-3 rounded-lg mb-4 text-sm text-[#2e7d32] font-semibold">
+                ✅ 배움이 저장되었어요!
+              </div>
+            )}
+            {saveStatus === 'error' && (
+              <div className="bg-[#ffebee] border-l-4 border-[#e53935] p-3 rounded-lg mb-4 text-sm text-[#c62828]">
+                <p className="font-semibold mb-1">⚠️ 저장에 실패했어요.</p>
+                <p className="font-mono text-xs break-all whitespace-pre-wrap">{saveError}</p>
+                <p className="text-xs mt-1 text-[#795548]">브라우저 콘솔(F12 → Console)에서 [saveLearning] 로그를 확인해주세요.</p>
+              </div>
+            )}
 
             {result._fallback && (
               <div className="bg-[#fff8e1] border-l-4 border-[#ffc107] p-3 rounded-md mb-4 text-sm text-[#795548]">
