@@ -197,9 +197,18 @@ export default function LearnPage() {
           </div>
           <div className="space-y-3">
             {[
-              { q: '새롭게 알게 된 것은 무엇인가요?',                   ex: '예) 식물의 뿌리와 줄기의 역할을 알게 되었어요.' },
-              { q: '가장 중요하다고 생각한 내용은 무엇인가요?',          ex: '예) 식물이 살아가는 데 꼭 필요한 내용이라고 생각해요.' },
-              { q: '이 내용과 관련해 더 알아보고 싶은 것은 무엇인가요?', ex: '예) 뿌리가 없다면 식물은 어떻게 될지 궁금해요.' },
+              {
+                q:  '새롭게 알게 된 것은 무엇인가요?',
+                ex: '식물의 뿌리는 땅속의 물을 흡수하고,\n줄기는 그 물이 잎까지 이동할 수 있는 통로 역할을 한다.',
+              },
+              {
+                q:  '가장 중요하다고 생각한 내용은 무엇인가요?',
+                ex: '뿌리, 줄기, 잎은 각각 다른 일을 하지만\n식물이 살아가기 위해 서로 연결되어 있다는 점이 중요하다.',
+              },
+              {
+                q:  '이 내용과 관련해 더 알아보고 싶은 것은 무엇인가요?',
+                ex: '뿌리가 물을 충분히 흡수하지 못하면\n줄기와 잎에는 어떤 변화가 나타날까?',
+              },
             ].map(({ q, ex }, i) => (
               <div key={i} className="flex gap-2.5 items-start">
                 <span className="text-[0.72rem] font-black text-white px-1.5 py-0.5 rounded-full shrink-0 mt-0.5 leading-tight"
@@ -207,8 +216,8 @@ export default function LearnPage() {
                   {i + 1}
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-[#333] m-0 mb-0.5">{q}</p>
-                  <p className="text-xs text-[#aaa] m-0">{ex}</p>
+                  <p className="text-sm font-semibold text-[#333] m-0 mb-1">{q}</p>
+                  <p className="text-xs text-[#999] m-0 leading-relaxed whitespace-pre-line">예){'\n'}{ex}</p>
                 </div>
               </div>
             ))}
