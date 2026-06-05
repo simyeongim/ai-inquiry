@@ -143,6 +143,18 @@ function topicComboLabel(topics: string[]): string {
 
 interface Row { id: number; class_room: string; project: string; name: string; question: string; analysis: { level: number; label: string; emoji: string; summary: string } | null; time: string; }
 
+interface LearningRow {
+  id: number; grade: string; class_name: string; student_name: string;
+  lesson: string; content: string;
+  feedback: Record<string, string> | string | null;
+  created_at: string;
+}
+function parseFeedback(f: LearningRow['feedback']): { praise: string; understood: string; nextStep: string } | null {
+  if (!f) return null;
+  if (typeof f === 'string') { try { return JSON.parse(f); } catch { return null; } }
+  return f as { praise: string; understood: string; nextStep: string };
+}
+
 // ─── 비밀번호 화면 ────────────────────────────────────
 function PinScreen({ onOk }: { onOk: () => void }) {
   const [v, setV] = useState('');
@@ -236,6 +248,16 @@ function ClassDropdown({ opts, sel, onToggle }: {
 // ─── 메인 대시보드 ────────────────────────────────────
 export default function TeacherPage() {
   const [authed,   setAuthed]   = useState(false);
+  const [tab,      setTab]      = useState<'questions' | 'learnings'>('questions');
+
+  // ── 배움 탭 상태 ──
+  const [learningRows,  setLearningRows]  = useState<LearningRow[]>([]);
+  const [fLearnClass,   setFLearnClass]   = useState<string[]>([]);
+  const [fLearnLesson,  setFLearnLesson]  = useState<string[]>([]);
+  const [expandedId,    setExpandedId]    = useState<number | null>(null);
+  const [loadingLearn,  setLoadingLearn]  = useState(false);
+  const [fetchErrLearn, setFetchErrLearn] = useState('');
+
   const [fClass,   setFClass]   = useState<string[]>([]);
   const [fProject, setFProject] = useState<string[]>([]);
   const [fLevel,   setFLevel]   = useState<number[]>([]);
@@ -262,7 +284,21 @@ export default function TeacherPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { if (authed) load(); }, [authed, load]);
+  const loadLearnings = useCallback(async () => {
+    setLoadingLearn(true); setFetchErrLearn('');
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/learnings?select=*&order=id.desc&limit=1000`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const d = await res.json();
+      setLearningRows(Array.isArray(d) ? d : []);
+    } catch { setFetchErrLearn('배움 데이터를 불러오지 못했습니다.'); setLearningRows([]); }
+    setLoadingLearn(false);
+  }, []);
+
+  useEffect(() => { if (authed && tab === 'questions') load(); },        [authed, tab, load]);
+  useEffect(() => { if (authed && tab === 'learnings') loadLearnings(); }, [authed, tab, loadLearnings]);
 
   async function generateAiReport() {
     if (!filtered.length || !stats) return;
@@ -302,6 +338,22 @@ export default function TeacherPage() {
     if (!q) return filtered;
     return filtered.filter(r => r.name.includes(q));
   }, [filtered, searchName]);
+
+  const uniqueLearnClasses = useMemo(() => {
+    const seen = new Set<string>();
+    learningRows.forEach(r => {
+      const label = [r.grade, r.class_name].filter(Boolean).join(' ');
+      if (label) seen.add(label);
+    });
+    return Array.from(seen).sort();
+  }, [learningRows]);
+
+  const filteredLearnings = useMemo(() => learningRows.filter(r => {
+    const classLabel = [r.grade, r.class_name].filter(Boolean).join(' ');
+    if (fLearnClass.length  && !fLearnClass.includes(classLabel)) return false;
+    if (fLearnLesson.length && !fLearnLesson.includes(r.lesson))  return false;
+    return true;
+  }), [learningRows, fLearnClass, fLearnLesson]);
 
   function toggleOne(id: number) { setSel(p => { const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n; }); }
   function toggleAll() {
@@ -398,16 +450,31 @@ export default function TeacherPage() {
 
       {/* 헤더 */}
       <div className="sticky top-0 z-20 text-white shadow-md" style={{ background:'linear-gradient(135deg,#667eea,#764ba2)' }}>
-        <div className="max-w-[1200px] mx-auto px-4 py-4 flex items-center gap-3">
+        <div className="max-w-[1200px] mx-auto px-4 py-3 flex items-center gap-3">
           <Link href="/question" className="text-white/80 text-sm bg-white/10 border border-white/30 px-3 py-1.5 rounded-full hover:bg-white/20 no-underline transition-colors shrink-0">← 학생 화면</Link>
-          <h1 className="text-lg font-bold m-0 flex-1 text-center">📊 교사용 질문 분석</h1>
-          <button onClick={load} disabled={loading}
+          <h1 className="text-lg font-bold m-0 flex-1 text-center">📊 교사용 대시보드</h1>
+          <button onClick={tab === 'questions' ? load : loadLearnings}
+            disabled={tab === 'questions' ? loading : loadingLearn}
             className="text-sm bg-white/20 border border-white/30 text-white px-4 py-1.5 rounded-full cursor-pointer hover:bg-white/30 disabled:opacity-50 transition-colors shrink-0">
-            {loading ? '로딩...' : '새로고침'}
+            {(tab === 'questions' ? loading : loadingLearn) ? '로딩...' : '새로고침'}
           </button>
+        </div>
+        {/* 탭 바 */}
+        <div className="max-w-[1200px] mx-auto px-4 flex border-t border-white/20">
+          {(['questions', 'learnings'] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className="text-sm font-bold px-6 py-2.5 border-b-[3px] transition-all cursor-pointer bg-transparent border-x-0 border-t-0"
+              style={tab === t
+                ? { color: 'white', borderBottomColor: 'white' }
+                : { color: 'rgba(255,255,255,0.55)', borderBottomColor: 'transparent' }}>
+              {t === 'questions' ? '📝 질문발견' : '🌱 개념학습'}
+            </button>
+          ))}
         </div>
       </div>
 
+      {/* ══ 질문발견 탭 ══ */}
+      {tab === 'questions' && (
       <div className="max-w-[1200px] mx-auto px-4 pt-5 space-y-4">
 
         {/* ── 필터 ─────────────────────────────────────── */}
@@ -684,6 +751,117 @@ export default function TeacherPage() {
         </div>
 
       </div>
+      )} {/* /질문발견 탭 */}
+
+      {/* ══ 개념학습 탭 ══ */}
+      {tab === 'learnings' && (
+        <div className="max-w-[1200px] mx-auto px-4 pt-5 space-y-4">
+
+          {/* 필터 */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-bold text-[#4a4a6a] text-sm m-0">🔍 필터</h2>
+              {(fLearnClass.length > 0 || fLearnLesson.length > 0) && (
+                <button onClick={() => { setFLearnClass([]); setFLearnLesson([]); }}
+                  className="text-xs text-[#667eea] border-none bg-transparent cursor-pointer font-semibold hover:underline">초기화</button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+              <div>
+                <div className="text-xs font-bold text-[#999] uppercase tracking-wider mb-2">학년/반</div>
+                <ClassDropdown
+                  opts={uniqueLearnClasses.length > 0 ? uniqueLearnClasses : CLASS_LIST}
+                  sel={fLearnClass}
+                  onToggle={v => setFLearnClass(tog(fLearnClass, v))}
+                />
+              </div>
+              <Pills label="수업" opts={PROJECT_LIST} sel={fLearnLesson}
+                onToggle={v => setFLearnLesson(tog(fLearnLesson, v as string))}
+                getLabel={v => v as string} />
+            </div>
+            {fetchErrLearn && <p className="text-red-500 text-sm mt-3">{fetchErrLearn}</p>}
+          </div>
+
+          {/* 배움 목록 */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm">
+            <h2 className="font-bold text-[#4a4a6a] text-sm mb-4 flex items-center gap-2">
+              🌱 배움 목록
+              <span className="font-bold text-xs text-white px-2 py-0.5 rounded-full" style={{background:'#667eea'}}>{filteredLearnings.length}개</span>
+            </h2>
+
+            {loadingLearn ? (
+              <p className="text-center text-[#ccc] py-10 text-sm">불러오는 중...</p>
+            ) : filteredLearnings.length === 0 ? (
+              <p className="text-center text-[#ccc] py-10 text-sm">아직 제출된 배움 기록이 없습니다.</p>
+            ) : (
+              <div className="space-y-3">
+                {filteredLearnings.map(row => {
+                  const fb         = parseFeedback(row.feedback);
+                  const isExpanded = expandedId === row.id;
+                  const classLabel = [row.grade, row.class_name].filter(Boolean).join(' ');
+                  return (
+                    <div key={row.id} className="border-2 rounded-xl overflow-hidden transition-colors"
+                      style={{borderColor: isExpanded ? '#667eea' : '#ebebf5'}}>
+
+                      {/* 요약 헤더 — 클릭으로 펼치기 */}
+                      <div className="p-4 cursor-pointer hover:bg-[#fafbff] transition-colors"
+                        onClick={() => setExpandedId(isExpanded ? null : row.id)}>
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex flex-wrap gap-1.5">
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{background:'#f0f2f8', color:'#555'}}>{classLabel}</span>
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-md" style={{background:'#e8eaf6', color:'#3949ab'}}>{row.student_name}</span>
+                            <span className="text-xs px-2 py-0.5 rounded-md" style={{background:'#f3f0ff', color:'#6b21a8'}}>{row.lesson}</span>
+                          </div>
+                          <span className="text-[#bbb] text-xs shrink-0">{isExpanded ? '▲' : '▼'}</span>
+                        </div>
+                        <p className="text-sm text-[#444] leading-relaxed m-0 overflow-hidden"
+                          style={{display:'-webkit-box', WebkitLineClamp: isExpanded ? undefined : 2, WebkitBoxOrient:'vertical'}}>
+                          {row.content}
+                        </p>
+                      </div>
+
+                      {/* 펼침: 전체 내용 + AI 피드백 + 제출 시간 */}
+                      {isExpanded && (
+                        <div className="border-t-2 border-[#ebebf5] p-4 space-y-3" style={{background:'#fafbff'}}>
+                          <div>
+                            <p className="text-xs font-bold text-[#667eea] mb-1.5">📝 배운 내용 (전체)</p>
+                            <p className="text-sm text-[#333] leading-relaxed whitespace-pre-wrap bg-white rounded-xl p-3 border border-[#ebebf5] m-0">{row.content}</p>
+                          </div>
+                          {fb ? (
+                            <div>
+                              <p className="text-xs font-bold text-[#667eea] mb-1.5">🌱 AI 피드백</p>
+                              <div className="space-y-2">
+                                <div className="bg-white rounded-xl p-3 border border-[#ebebf5]">
+                                  <p className="text-xs font-bold text-[#4a4a6a] mb-1">👏 칭찬</p>
+                                  <p className="text-sm text-[#555] m-0 leading-relaxed">{fb.praise}</p>
+                                </div>
+                                <div className="bg-white rounded-xl p-3 border border-[#ebebf5]">
+                                  <p className="text-xs font-bold text-[#2e7d32] mb-1">🌱 잘 이해한 점</p>
+                                  <p className="text-sm text-[#555] m-0 leading-relaxed">{fb.understood}</p>
+                                </div>
+                                <div className="bg-white rounded-xl p-3 border border-[#ebebf5]">
+                                  <p className="text-xs font-bold text-[#e65100] mb-1">🔍 한 걸음 더</p>
+                                  <p className="text-sm text-[#555] m-0 leading-relaxed">{fb.nextStep}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-[#bbb]">AI 피드백 정보 없음</p>
+                          )}
+                          <p className="text-[10px] text-[#ccc] m-0">제출: {row.created_at}</p>
+                        </div>
+                      )}
+
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+        </div>
+      )} {/* /개념학습 탭 */}
+
     </div>
   );
 }
