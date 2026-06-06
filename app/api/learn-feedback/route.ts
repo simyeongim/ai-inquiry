@@ -69,7 +69,8 @@ JSON으로만 응답: {"status":"...","goodPoint":"...","improvePoint":"...","se
             { role: 'system', content: system },
             { role: 'user',   content: user },
           ],
-          temperature: 0.1,
+          temperature: 0,
+          seed: 42,
           max_tokens: 600,
         }),
       });
