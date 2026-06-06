@@ -183,14 +183,10 @@ export default function LearnPage() {
 
         {/* 1. 새롭게 알게 된 것 */}
         <Card>
-          <p className="font-bold text-[#3a3a5a] mb-2 text-[1rem]">① 새롭게 알게 된 것은 무엇인가요?</p>
-          <div className="bg-[#f6f7ff] border border-[#d0d4f0] rounded-lg px-3 py-1.5 mb-2">
-            <span className="text-[0.7rem] font-bold text-[#bbb] block mb-0.5">💡 예시</span>
-            <p className="text-xs text-[#bbb] leading-relaxed m-0">식물의 뿌리는 땅속의 물을 흡수하고, 줄기는 그 물이 잎까지 이동할 수 있는 통로 역할을 한다.</p>
-          </div>
+          <p className="font-bold text-[#3a3a5a] mb-2 text-[1rem]">1. 새롭게 알게 된 것은 무엇인가요?</p>
           <textarea value={learned}
             onChange={e => { setLearned(e.target.value.slice(0, 200)); setInputError(''); }}
-            placeholder="여기에 써보세요." rows={2} maxLength={200}
+            placeholder="식물의 뿌리는 땅속의 물을 흡수하고, 줄기는 그 물이 잎까지 이동할 수 있는 통로 역할을 한다." rows={2} maxLength={200}
             className="w-full border-2 border-[#c5c9f0] rounded-xl p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
             style={{ minHeight: '70px' }} />
           <div className={`text-right text-sm mt-1 ${learned.length > 180 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
@@ -200,14 +196,10 @@ export default function LearnPage() {
 
         {/* 2. 가장 중요하다고 생각한 것 */}
         <Card>
-          <p className="font-bold text-[#3a3a5a] mb-2 text-[1rem]">② 가장 중요하다고 생각한 것은 무엇인가요?</p>
-          <div className="bg-[#f6f7ff] border border-[#d0d4f0] rounded-lg px-3 py-1.5 mb-2">
-            <span className="text-[0.7rem] font-bold text-[#bbb] block mb-0.5">💡 예시</span>
-            <p className="text-xs text-[#bbb] leading-relaxed m-0">뿌리, 줄기, 잎은 각각 다른 일을 하지만 식물이 살아가기 위해 서로 연결되어 있다는 점이 중요하다.</p>
-          </div>
+          <p className="font-bold text-[#3a3a5a] mb-2 text-[1rem]">2. 가장 중요하다고 생각한 것은 무엇인가요?</p>
           <textarea value={important}
             onChange={e => { setImportant(e.target.value.slice(0, 200)); setInputError(''); }}
-            placeholder="여기에 써보세요." rows={2} maxLength={200}
+            placeholder="뿌리, 줄기, 잎은 각각 다른 일을 하지만 식물이 살아가기 위해 서로 연결되어 있다는 점이 중요하다." rows={2} maxLength={200}
             className="w-full border-2 border-[#c5c9f0] rounded-xl p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
             style={{ minHeight: '70px' }} />
           <div className={`text-right text-sm mt-1 ${important.length > 180 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
@@ -217,14 +209,10 @@ export default function LearnPage() {
 
         {/* 3. 더 알아보고 싶은 것 */}
         <Card>
-          <p className="font-bold text-[#3a3a5a] mb-2 text-[1rem]">③ 배운 내용과 관련해 더 알아보고 싶은 것은 무엇인가요?</p>
-          <div className="bg-[#f6f7ff] border border-[#d0d4f0] rounded-lg px-3 py-1.5 mb-2">
-            <span className="text-[0.7rem] font-bold text-[#bbb] block mb-0.5">💡 예시</span>
-            <p className="text-xs text-[#bbb] leading-relaxed m-0">뿌리가 물을 충분히 흡수하지 못하면 줄기와 잎에는 어떤 변화가 나타날까?</p>
-          </div>
+          <p className="font-bold text-[#3a3a5a] mb-2 text-[1rem]">3. 배운 내용과 관련해 더 알아보고 싶은 것은 무엇인가요?</p>
           <textarea value={curious}
             onChange={e => { setCurious(e.target.value.slice(0, 200)); setInputError(''); }}
-            placeholder="여기에 써보세요." rows={2} maxLength={200}
+            placeholder="뿌리가 물을 충분히 흡수하지 못하면 줄기와 잎에는 어떤 변화가 나타날까?" rows={2} maxLength={200}
             className="w-full border-2 border-[#c5c9f0] rounded-xl p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
             style={{ minHeight: '70px' }} />
           <div className={`text-right text-sm mt-1 ${curious.length > 180 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
@@ -236,7 +224,7 @@ export default function LearnPage() {
           </p>
           <button onClick={handleSubmit} disabled={loading}
             className="mt-2 w-full text-white font-bold text-[1rem] py-3 rounded-xl border-none cursor-pointer bg-gradient-to-br from-[#667eea] to-[#764ba2] hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
-            {loading ? '점검 중...' : '개념 이해 점검하기'}
+            {loading ? '점검 중...' : '개념 이해 점검 및 피드백'}
           </button>
         </Card>
 
