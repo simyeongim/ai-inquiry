@@ -21,6 +21,10 @@ interface Feedback {
 
 type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
 
+function buildFeedbackObj(feedback: Feedback) {
+  return { goodPoint: feedback.goodPoint, improvePoint: feedback.improvePoint, secondTitle: feedback.secondTitle, secondContent: feedback.secondContent, thinkMore: feedback.thinkMore };
+}
+
 async function saveLearning(
   grade: string,
   className: string,
@@ -29,8 +33,15 @@ async function saveLearning(
   content: string,
   feedback: Feedback,
 ): Promise<{ ok: boolean; id?: string; error?: string }> {
-  const feedbackToSave = { status: feedback.status, goodPoint: feedback.goodPoint, improvePoint: feedback.improvePoint, secondTitle: feedback.secondTitle, secondContent: feedback.secondContent, thinkMore: feedback.thinkMore };
-  const payload = { grade, class_name: className, student_name: studentName, lesson, content, feedback: feedbackToSave, created_at: new Date().toISOString(), type: 'learn' };
+  const payload = {
+    grade, class_name: className, student_name: studentName, lesson,
+    original_content: content,
+    original_feedback: buildFeedbackObj(feedback),
+    original_status: feedback.status,
+    is_revised: false,
+    created_at: new Date().toISOString(),
+    type: 'learn',
+  };
   try {
     const resp = await fetch(`${SUPABASE_URL}/rest/v1/learnings`, {
       method: 'POST',
@@ -50,12 +61,17 @@ async function updateLearning(
   content: string,
   feedback: Feedback,
 ): Promise<{ ok: boolean; error?: string }> {
-  const feedbackToSave = { status: feedback.status, goodPoint: feedback.goodPoint, improvePoint: feedback.improvePoint, secondTitle: feedback.secondTitle, secondContent: feedback.secondContent, thinkMore: feedback.thinkMore };
+  const patch = {
+    revised_content: content,
+    revised_feedback: buildFeedbackObj(feedback),
+    revised_status: feedback.status,
+    is_revised: true,
+  };
   try {
     const resp = await fetch(`${SUPABASE_URL}/rest/v1/learnings?id=eq.${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ content, feedback: feedbackToSave }),
+      body: JSON.stringify(patch),
     });
     if (!resp.ok) { const body = await resp.text(); return { ok: false, error: `HTTP ${resp.status}: ${body}` }; }
     return { ok: true };
