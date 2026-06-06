@@ -228,9 +228,9 @@ export default function LearnPage() {
         {result && (
           <div ref={resultRef}
             className="bg-white rounded-[20px] p-6 mb-3.5 shadow-[0_4px_24px_rgba(80,60,160,0.13)] border-l-4 border-[#667eea]">
-            <div className="flex items-center gap-2 mb-4">
-              <h2 className="text-xl font-bold text-[#4a4a6a]">개념 이해 점검 결과</h2>
-              <span className="font-bold text-xs px-2.5 py-1 rounded-full whitespace-nowrap"
+            <div className="flex flex-nowrap items-center gap-2 mb-4">
+              <h2 className="text-base font-bold text-[#4a4a6a] shrink-0">개념 이해 점검 결과</h2>
+              <span className="font-semibold text-xs px-2.5 py-1 rounded-full whitespace-nowrap"
                 style={{
                   background: result.status.startsWith('🟢') ? '#e8f5e9' : result.status.startsWith('🔴') ? '#ffebee' : '#fff8e1',
                   color:      result.status.startsWith('🟢') ? '#2e7d32' : result.status.startsWith('🔴') ? '#c62828' : '#f57f17',
