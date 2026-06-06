@@ -120,9 +120,9 @@ export default function LearnPage() {
         status:         '🟡 핵심 개념을 조금 더 정리해보면 좋아요',
         goodPoint:      '배운 내용의 핵심 개념을 자신의 말로 정리하려고 노력한 점이 잘 드러나요.',
         improvePoint:   '개념들이 서로 어떻게 연결되는지 조금 더 구체적으로 설명해보면 이해가 더 깊어질 거예요.',
-        secondTitle:    '🔍 새롭게 이해한 내용',
-        secondContent:  '배운 내용을 자신의 말로 표현하려고 한 점이 좋아요.',
-        thinkMore:      '"왜 그럴까?", "만약 달라진다면?" 같은 질문을 스스로 던져보면 오늘 배운 내용을 더 깊이 탐구할 수 있어요.',
+        secondTitle:    '🔍 핵심 개념과 연결하기',
+        secondContent:  '작성한 내용은 오늘 배운 핵심 개념과 연결해서 생각해볼 수 있어요.',
+        thinkMore:      '오늘 배운 핵심 개념을 자신의 말로 다시 한번 설명해볼 수 있나요?',
         _fallback:      true,
       };
     }
@@ -273,7 +273,7 @@ export default function LearnPage() {
               <p className="text-[#555] leading-[1.7] m-0 bg-[#f8f8ff] p-3 rounded-lg">{result.secondContent}</p>
             </FeedbackSection>
 
-            <FeedbackSection title="💡 더 생각해볼 점" last>
+            <FeedbackSection title="💡 깊이 생각해보기" last>
               <p className="text-[#555] leading-[1.7] m-0 bg-[#f8f8ff] p-3 rounded-lg">{result.thinkMore}</p>
             </FeedbackSection>
           </div>
