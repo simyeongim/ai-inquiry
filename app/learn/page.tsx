@@ -197,7 +197,7 @@ export default function LearnPage() {
             onChange={e => { setCurious(e.target.value.slice(0, 200)); setInputError(''); }}
             placeholder="식물의 뿌리가 다양한 모양이라는 것을 알게 되었다. 뿌리가 물을 충분히 흡수하지 못하면 식물에는 어떤 변화가 나타날까?" rows={2} maxLength={200}
             className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
-            style={{ minHeight: '70px' }} />
+            style={{ minHeight: '105px' }} />
           <div className={`text-right text-xs mt-0.5 ${curious.length > 180 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
             {curious.length} / 200
           </div>
