@@ -243,8 +243,6 @@ export default function LearnPage() {
 
             {/* 본문 */}
             <div className="px-5 py-4">
-              <p className="text-[0.7rem] font-semibold text-[#bbb] mb-4 tracking-widest">개념 이해 점검 결과</p>
-
               {saveStatus === 'error' && (
                 <div className="bg-[#ffebee] border-l-4 border-[#e53935] p-3 rounded-lg mb-4 text-sm text-[#c62828]">
                   <p className="font-semibold mb-1">⚠️ 저장에 실패했어요.</p>
@@ -267,7 +265,7 @@ export default function LearnPage() {
 
               <div className="border-t border-[#eeeef8] my-3" />
 
-              <FeedbackSection title={result.secondTitle} titleColor="#5c35cc" bgColor="#f3f0ff" borderColor="#c5b8f0">
+              <FeedbackSection title="🔍 핵심 개념과 연결하기" titleColor="#5c35cc" bgColor="#f3f0ff" borderColor="#c5b8f0">
                 {result.secondContent}
               </FeedbackSection>
 
