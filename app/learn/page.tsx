@@ -182,12 +182,12 @@ export default function LearnPage() {
 
         {/* 1·2 통합 카드 */}
         <Card>
-          <p className="font-bold text-[#3a3a5a] mb-1.5 text-[0.9rem]">1. 오늘 배운 내용 중 가장 중요한 내용을 정리해보세요.</p>
+          <p className="font-bold text-[#3a3a5a] mb-1.5 text-[0.9rem]">1. 배운 내용 중에 가장 중요한 개념을 정리해보세요.</p>
           <textarea value={important}
             onChange={e => { setImportant(e.target.value.slice(0, 200)); setInputError(''); }}
             placeholder="식물의 뿌리는 물을 흡수하고 줄기는 물을 이동시킨다. 뿌리, 줄기, 잎은 서로 다른 역할을 하지만 식물이 살아가기 위해 함께 작용한다." rows={2} maxLength={200}
             className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
-            style={{ minHeight: '70px' }} />
+            style={{ minHeight: '105px' }} />
           <div className={`text-right text-xs mt-0.5 mb-3 ${important.length > 180 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
             {important.length} / 200
           </div>
@@ -195,7 +195,7 @@ export default function LearnPage() {
           <p className="font-bold text-[#3a3a5a] mb-1.5 text-[0.9rem]">2. 새롭게 알게 된 내용이나 더 궁금한 것은 무엇인가요?</p>
           <textarea value={curious}
             onChange={e => { setCurious(e.target.value.slice(0, 200)); setInputError(''); }}
-            placeholder="뿌리가 물을 충분히 흡수하지 못하면 식물에는 어떤 변화가 나타날까?" rows={2} maxLength={200}
+            placeholder="식물의 뿌리가 다양한 모양이라는 것을 알게 되었다. 뿌리가 물을 충분히 흡수하지 못하면 식물에는 어떤 변화가 나타날까?" rows={2} maxLength={200}
             className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
             style={{ minHeight: '70px' }} />
           <div className={`text-right text-xs mt-0.5 ${curious.length > 180 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
