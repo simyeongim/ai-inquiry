@@ -22,43 +22,34 @@ export async function POST(request: NextRequest) {
 
   if (process.env.GROQ_API_KEY) {
     try {
-      const prompt = `초등학생의 개념학습 기록을 바탕으로 핵심 개념 이해를 진단하고 피드백을 작성해주세요.
+      const system = `당신은 초등학교 교사입니다. 학생의 개념 이해 수준을 진단하는 역할을 합니다.
+절대 금지: 학생 문장 그대로 복사, 새로운 개념 강의, 교과서 밖 내용 제시, 억지 보완점 생성.`;
 
-[절대 금지 사항]
-- 학생의 문장을 그대로 복사하거나 인용하지 마세요. goodPoint는 반드시 교사의 언어로 재서술하세요.
-- 학생이 작성하지 않은 새로운 개념을 설명하거나 가르치지 마세요.
-- 교과서 밖 내용이나 선행학습 내용을 제시하지 마세요.
-- 보완점이 없는데 억지로 만들지 마세요.
-- 잘못 설명하지 않았는데 틀렸다고 하지 마세요.
+      const user = `아래 학생 답변을 분석하여 JSON 피드백을 작성하세요.
 
-학생이 작성한 내용:
+--- 학생 답변 ---
 ${content}
+-----------------
 
-[피드백 항목 — 순서대로 판단하세요]
+[분석 규칙]
+■ status / goodPoint / improvePoint → [핵심 내용] 섹션만 사용. [새롭게 알게 된 것] 섹션은 절대 참고하지 마세요.
+■ secondContent / thinkMore → [새롭게 알게 된 것] 섹션만 사용.
 
-1. status 판단 (1번 답변 기준):
-   - 학생 답변이 핵심 개념의 주요 요소를 대부분 포함하고 있으면 → "🟢 핵심 개념을 정확히 이해했어요."
-     (표현이 완벽하지 않아도 핵심 내용이 담겨 있으면 🟢입니다. 사소한 세부 누락으로 🟡를 주지 마세요.)
-   - 방향은 맞지만 핵심 요소의 일부가 빠진 경우 → "🟡 핵심 개념을 찾아 조금 더 보완해보세요."
-   - 핵심 개념과 거리가 있거나 사실이지만 핵심이 아닌 경우 → "🔴 핵심 개념을 다시 살펴보면 좋아요."
+[status 판단 기준 — [핵심 내용]만 보세요]
+- 단순 사실 하나만 언급 (예: "타조알도 세포다") → 🔴
+- 핵심 개념의 일부 요소만 포함, 방향은 맞지만 불완전 → 🟡
+- 핵심 개념의 주요 요소를 충분히 설명한 경우 → 🟢
+(🟢 기준: 단순 사실 언급이 아닌, 개념 간 관계나 원리를 설명했을 때)
 
-2. goodPoint (1번 답변 기준):
-   - 학생이 이해한 부분을 교사의 언어로 한 문장으로 재서술하세요.
-   - 학생 답변을 그대로 복사하면 안 됩니다.
-   - 학생이 쓰지 않은 내용을 추가하면 안 됩니다.
+[각 항목 작성 규칙]
+- status: 위 기준에 따라 "🟢 핵심 개념을 정확히 이해했어요." / "🟡 핵심 개념을 찾아 조금 더 보완해보세요." / "🔴 핵심 개념을 다시 살펴보면 좋아요." 중 하나
+- goodPoint: [핵심 내용]에서 학생이 이해한 부분을 교사 언어로 한 문장 재서술 (복사 금지, 신규 개념 추가 금지)
+- improvePoint: status 🟢 → "핵심 개념을 잘 정리했어요." / 🟡·🔴 → 부족한 부분과 수정 방향 1~2문장
+- secondTitle: 항상 "🔍 핵심 개념과 연결하기"
+- secondContent: [새롭게 알게 된 것]이 핵심 개념과 어떻게 연결되는지 1~2문장 (강의·정답 금지)
+- thinkMore: 핵심 개념을 다시 떠올릴 수 있는 질문 1문장 (답 금지)
 
-3. improvePoint (1번 답변 기준):
-   - status가 🟢이면 → 반드시 "핵심 개념을 잘 정리했어요."라고만 작성하세요.
-   - status가 🟡이면 → 부족한 부분과 수정 방향을 1~2문장으로 안내하세요.
-   - status가 🔴이면 → 무엇이 부족한지, 어떻게 보완할 수 있는지 1~2문장으로 안내하세요.
-
-4. secondTitle: 항상 "🔍 핵심 개념과 연결하기"로 고정
-
-5. secondContent: 2번 답변이 핵심 개념과 어떻게 연결되는지 설명 (정답·강의 금지, 1~2문장)
-
-6. thinkMore: 핵심 개념을 한 번 더 떠올릴 수 있는 질문 제시. 답 알려주지 말 것 (1문장)
-
-JSON으로만 응답하세요: {"status": "...", "goodPoint": "...", "improvePoint": "...", "secondTitle": "...", "secondContent": "...", "thinkMore": "..."}`;
+JSON으로만 응답: {"status":"...","goodPoint":"...","improvePoint":"...","secondTitle":"...","secondContent":"...","thinkMore":"..."}`;
 
       const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -68,8 +59,11 @@ JSON으로만 응답하세요: {"status": "...", "goodPoint": "...", "improvePoi
         },
         body: JSON.stringify({
           model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.2,
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user',   content: user },
+          ],
+          temperature: 0.1,
           max_tokens: 600,
         }),
       });
