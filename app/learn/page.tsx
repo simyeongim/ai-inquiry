@@ -35,10 +35,8 @@ async function saveLearning(
 ): Promise<{ ok: boolean; id?: string; error?: string }> {
   const payload = {
     grade, class_name: className, student_name: studentName, lesson,
-    original_content: content,
-    original_feedback: buildFeedbackObj(feedback),
-    original_status: feedback.status,
-    is_revised: false,
+    content,
+    feedback: { status: feedback.status, ...buildFeedbackObj(feedback) },
     created_at: new Date().toISOString(),
     type: 'learn',
   };
