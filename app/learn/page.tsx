@@ -227,10 +227,12 @@ export default function LearnPage() {
         {/* 결과 */}
         {result && (
           <div ref={resultRef}
-            className="bg-white rounded-[20px] p-6 mb-3.5 shadow-[0_4px_24px_rgba(80,60,160,0.13)] border-l-4 border-[#667eea]">
-            <div className="flex flex-nowrap items-center gap-2 mb-4">
-              <h2 className="text-base font-bold text-[#4a4a6a] shrink-0">개념 이해 점검 결과</h2>
-              <span className="font-semibold text-xs px-2.5 py-1 rounded-full whitespace-nowrap"
+            className="bg-white rounded-[20px] mb-3.5 shadow-[0_4px_24px_rgba(80,60,160,0.13)] overflow-hidden">
+
+            {/* 헤더 */}
+            <div className="px-5 pt-4 pb-3 border-b border-[#eeeef8]">
+              <p className="text-[0.7rem] font-semibold text-[#aaa] mb-2 tracking-widest">개념 이해 점검 결과</p>
+              <span className="inline-block font-bold text-sm px-3 py-1.5 rounded-full"
                 style={{
                   background: result.status.startsWith('🟢') ? '#e8f5e9' : result.status.startsWith('🔴') ? '#ffebee' : '#fff8e1',
                   color:      result.status.startsWith('🟢') ? '#2e7d32' : result.status.startsWith('🔴') ? '#c62828' : '#f57f17',
@@ -239,34 +241,38 @@ export default function LearnPage() {
               </span>
             </div>
 
-            {saveStatus === 'error' && (
-              <div className="bg-[#ffebee] border-l-4 border-[#e53935] p-3 rounded-lg mb-4 text-sm text-[#c62828]">
-                <p className="font-semibold mb-1">⚠️ 저장에 실패했어요.</p>
-                <p className="font-mono text-xs break-all whitespace-pre-wrap">{saveError}</p>
-              </div>
-            )}
+            {/* 본문 */}
+            <div className="px-5 py-4">
+              {saveStatus === 'error' && (
+                <div className="bg-[#ffebee] border-l-4 border-[#e53935] p-3 rounded-lg mb-4 text-sm text-[#c62828]">
+                  <p className="font-semibold mb-1">⚠️ 저장에 실패했어요.</p>
+                  <p className="font-mono text-xs break-all whitespace-pre-wrap">{saveError}</p>
+                </div>
+              )}
+              {result._fallback && (
+                <div className="bg-[#fff8e1] border-l-4 border-[#ffc107] p-3 rounded-md mb-4 text-sm text-[#795548]">
+                  AI 연결이 잠시 원활하지 않아 기본 피드백으로 보여드릴게요.
+                </div>
+              )}
 
-            {result._fallback && (
-              <div className="bg-[#fff8e1] border-l-4 border-[#ffc107] p-3 rounded-md mb-4 text-sm text-[#795548]">
-                AI 연결이 잠시 원활하지 않아 기본 피드백으로 보여드릴게요.
-              </div>
-            )}
+              <FeedbackSection title="✓ 잘 이해한 점" titleColor="#2e7d32" bgColor="#f1f8f1" borderColor="#a5d6a7">
+                {result.goodPoint}
+              </FeedbackSection>
 
-            <FeedbackSection title="✓ 잘 이해한 점">
-              <p className="text-[#555] leading-[1.7] m-0 bg-[#f8f8ff] p-3 rounded-lg">{result.goodPoint}</p>
-            </FeedbackSection>
+              <FeedbackSection title="△ 보완하면 좋은 점" titleColor="#b45309" bgColor="#fffbf0" borderColor="#fcd34d">
+                {result.improvePoint}
+              </FeedbackSection>
 
-            <FeedbackSection title="△ 보완하면 좋은 점">
-              <p className="text-[#555] leading-[1.7] m-0 bg-[#f8f8ff] p-3 rounded-lg">{result.improvePoint}</p>
-            </FeedbackSection>
+              <div className="border-t border-[#eeeef8] my-4" />
 
-            <FeedbackSection title={result.secondTitle}>
-              <p className="text-[#555] leading-[1.7] m-0 bg-[#f8f8ff] p-3 rounded-lg">{result.secondContent}</p>
-            </FeedbackSection>
+              <FeedbackSection title={result.secondTitle} titleColor="#5c35cc" bgColor="#f3f0ff" borderColor="#c5b8f0">
+                {result.secondContent}
+              </FeedbackSection>
 
-            <FeedbackSection title="💡 깊이 생각해보기" last>
-              <p className="text-[#555] leading-[1.7] m-0 bg-[#f8f8ff] p-3 rounded-lg">{result.thinkMore}</p>
-            </FeedbackSection>
+              <FeedbackSection title="💡 깊이 생각해보기" titleColor="#1565c0" bgColor="#f0f4ff" borderColor="#90caf9" last>
+                {result.thinkMore}
+              </FeedbackSection>
+            </div>
           </div>
         )}
 
@@ -294,15 +300,21 @@ function Select({ children, value, onChange }: {
     </select>
   );
 }
-function FeedbackSection({ title, children, last = false }: {
+function FeedbackSection({ title, children, last = false, titleColor = '#4a4a6a', bgColor = '#f8f8ff', borderColor = '#e0e0f0' }: {
   title: string;
   children: React.ReactNode;
   last?: boolean;
+  titleColor?: string;
+  bgColor?: string;
+  borderColor?: string;
 }) {
   return (
-    <div className={last ? '' : 'mb-5'}>
-      <h3 className="text-[#4a4a6a] text-base font-bold mb-2.5">{title}</h3>
-      {children}
+    <div className={last ? '' : 'mb-4'}>
+      <h3 className="text-sm font-bold mb-1.5" style={{ color: titleColor }}>{title}</h3>
+      <div className="text-sm text-[#444] leading-relaxed p-3 rounded-lg"
+        style={{ background: bgColor, borderLeft: `3px solid ${borderColor}` }}>
+        {children}
+      </div>
     </div>
   );
 }
