@@ -10,6 +10,7 @@ const CLASS_LIST   = ['3학년 1반','3학년 4반','4학년 4반','6학년 1반
 const PROJECT_LIST = ['세계는 어떻게 움직이는가','지구와 어떻게 함께 살아갈 것인가','우리는 어떻게 자신을 조직하는가'] as const;
 
 interface Feedback {
+  status: string;
   goodPoint: string;
   improvePoint: string;
   secondTitle: string;
@@ -29,7 +30,7 @@ async function saveLearning(
   content: string,
   feedback: Feedback,
 ): Promise<{ ok: boolean; error?: string }> {
-  const feedbackToSave = { goodPoint: feedback.goodPoint, improvePoint: feedback.improvePoint, secondTitle: feedback.secondTitle, secondContent: feedback.secondContent, thinkMore: feedback.thinkMore };
+  const feedbackToSave = { status: feedback.status, goodPoint: feedback.goodPoint, improvePoint: feedback.improvePoint, secondTitle: feedback.secondTitle, secondContent: feedback.secondContent, thinkMore: feedback.thinkMore };
   const payload = {
     grade,
     class_name: className,
@@ -116,11 +117,12 @@ export default function LearnPage() {
       feedback = json;
     } catch {
       feedback = {
+        status:         '🟡 핵심 개념을 조금 더 정리해보면 좋아요',
         goodPoint:      '배운 내용의 핵심 개념을 자신의 말로 정리하려고 노력한 점이 잘 드러나요.',
         improvePoint:   '개념들이 서로 어떻게 연결되는지 조금 더 구체적으로 설명해보면 이해가 더 깊어질 거예요.',
-        secondTitle:    '💡 더 생각해볼 점',
-        secondContent:  '"왜 그럴까?", "만약 달라진다면?" 같은 질문을 스스로 던져보면 오늘 배운 내용을 더 깊이 탐구할 수 있어요.',
-        thinkMore:      '오늘 배운 개념을 실제 생활에서 찾아보면 이해가 더 깊어져요.',
+        secondTitle:    '🔍 새롭게 이해한 내용',
+        secondContent:  '배운 내용을 자신의 말로 표현하려고 한 점이 좋아요.',
+        thinkMore:      '"왜 그럴까?", "만약 달라진다면?" 같은 질문을 스스로 던져보면 오늘 배운 내용을 더 깊이 탐구할 수 있어요.',
         _fallback:      true,
       };
     }
@@ -226,7 +228,14 @@ export default function LearnPage() {
         {result && (
           <div ref={resultRef}
             className="bg-white rounded-[20px] p-6 mb-3.5 shadow-[0_4px_24px_rgba(80,60,160,0.13)] border-l-4 border-[#667eea]">
-            <h2 className="text-xl font-bold text-[#4a4a6a] mb-4">개념 이해 점검 결과</h2>
+            <h2 className="text-xl font-bold text-[#4a4a6a] mb-3">개념 이해 점검 결과</h2>
+            <div className="inline-block font-bold text-sm px-3 py-1.5 rounded-full mb-4"
+              style={{
+                background: result.status.startsWith('🟢') ? '#e8f5e9' : result.status.startsWith('🔵') ? '#e3f2fd' : '#fff8e1',
+                color:      result.status.startsWith('🟢') ? '#2e7d32' : result.status.startsWith('🔵') ? '#1565c0' : '#f57f17',
+              }}>
+              {result.status}
+            </div>
 
             {/* 저장 상태 */}
             {saveStatus === 'saving' && (
