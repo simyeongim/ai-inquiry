@@ -27,7 +27,7 @@ async function saveLearning(
   content: string,
   feedback: Feedback,
 ): Promise<{ ok: boolean; error?: string }> {
-  const feedbackToSave = { praise: feedback.praise, understood: feedback.understood, nextStep: feedback.nextStep };
+  const feedbackToSave = { wellUnderstood: feedback.wellUnderstood, needsWork: feedback.needsWork, deeperQuestion: feedback.deeperQuestion };
   const payload = {
     grade,
     class_name: className,
