@@ -10,9 +10,9 @@ const CLASS_LIST   = ['3학년 1반','3학년 4반','4학년 4반','6학년 1반
 const PROJECT_LIST = ['세계는 어떻게 움직이는가','지구와 어떻게 함께 살아갈 것인가','우리는 어떻게 자신을 조직하는가'] as const;
 
 interface Feedback {
-  praise: string;
-  understood: string;
-  nextStep: string;
+  wellUnderstood: string;
+  needsWork: string;
+  deeperQuestion: string;
   _fallback?: boolean;
 }
 
@@ -77,10 +77,12 @@ export default function LearnPage() {
   const [classRoom,   setClassRoom]   = useState('');
   const [project,     setProject]     = useState('');
   const [name,        setName]        = useState('');
-  const [content,     setContent]     = useState('');
+  const [learned,     setLearned]     = useState('');
+  const [important,   setImportant]   = useState('');
+  const [curious,     setCurious]     = useState('');
   const [loading,     setLoading]     = useState(false);
   const [result,      setResult]      = useState<Feedback | null>(null);
-  const [cError,      setCError]      = useState('');
+  const [inputError,  setInputError]  = useState('');
   const [saveStatus,  setSaveStatus]  = useState<SaveStatus>('idle');
   const [saveError,   setSaveError]   = useState('');
   const resultRef = useRef<HTMLDivElement>(null);
@@ -89,11 +91,17 @@ export default function LearnPage() {
     if (!classRoom)      { alert('학년/반을 선택해주세요!'); return; }
     if (!project)        { alert('프로젝트를 선택해주세요!'); return; }
     if (!name.trim())    { alert('이름을 입력해주세요!'); return; }
-    if (!content.trim()) { setCError('내용을 입력해주세요.'); return; }
-    if (content.trim().length < 10) { setCError('조금 더 자세히 작성해주세요.'); return; }
-    setCError('');
+    if (!learned.trim() || !important.trim() || !curious.trim()) {
+      setInputError('세 항목을 모두 입력해주세요.'); return;
+    }
+    if ([learned, important, curious].some(v => v.trim().length < 5)) {
+      setInputError('각 항목을 조금 더 자세히 작성해주세요.'); return;
+    }
+    setInputError('');
     setLoading(true);
     setResult(null);
+
+    const content = `[새롭게 알게 된 개념]\n${learned.trim()}\n\n[가장 중요한 핵심 내용]\n${important.trim()}\n\n[더 알아보고 싶은 질문]\n${curious.trim()}`;
 
     let feedback: Feedback;
     try {
@@ -107,10 +115,10 @@ export default function LearnPage() {
       feedback = json;
     } catch {
       feedback = {
-        praise:     '오늘 배운 내용을 직접 말로 정리해보려고 노력했어요. 정말 잘했어요!',
-        understood: '배운 내용의 핵심을 자신의 말로 표현하려고 한 점이 훌륭해요.',
-        nextStep:   '"왜 그럴까?", "만약 다르다면?" 같은 질문을 스스로 던져보면 오늘 배운 내용을 더 깊이 이해할 수 있어요.',
-        _fallback:  true,
+        wellUnderstood: '배운 내용을 자신의 말로 정리하려고 노력한 점이 훌륭해요!',
+        needsWork:      '개념들 사이의 연결 관계를 조금 더 구체적으로 설명해보면 이해가 더 깊어질 거예요.',
+        deeperQuestion: '"왜 그럴까?", "만약 달라진다면?" 같은 질문을 스스로 던져보면 오늘 배운 내용을 더 깊이 탐구할 수 있어요.',
+        _fallback:      true,
       };
     }
 
@@ -173,54 +181,56 @@ export default function LearnPage() {
           </Select>
         </Card>
 
-        {/* 개념 이해 체크 */}
-        <div className="rounded-2xl p-4 mb-2 border-[1.5px] border-[#d0d4f0]" style={{ background: '#f6f7ff' }}>
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-[0.85rem] font-bold text-[#667eea]">개념 이해 체크</span>
-            <div className="flex-1 h-px bg-[#d8daf4]" />
-          </div>
-          <div className="space-y-3">
-            {[
-              {
-                q:  '새롭게 알게 된 것은 무엇인가요?',
-                ex: '식물의 뿌리는 땅속의 물을 흡수하고,\n줄기는 그 물이 잎까지 이동할 수 있는 통로 역할을 한다.',
-              },
-              {
-                q:  '가장 중요하다고 생각한 내용은 무엇인가요?',
-                ex: '뿌리, 줄기, 잎은 각각 다른 일을 하지만\n식물이 살아가기 위해 서로 연결되어 있다는 점이 중요하다.',
-              },
-              {
-                q:  '이 내용과 관련해 더 알아보고 싶은 것은 무엇인가요?',
-                ex: '뿌리가 물을 충분히 흡수하지 못하면\n줄기와 잎에는 어떤 변화가 나타날까?',
-              },
-            ].map(({ q, ex }, i) => (
-              <div key={i} className="flex gap-2.5 items-start">
-                <span className="text-[0.72rem] font-black text-white px-1.5 py-0.5 rounded-full shrink-0 mt-0.5 leading-tight"
-                  style={{ background: '#667eea' }}>
-                  {i + 1}
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-[#333] m-0 mb-1">{q}</p>
-                  <p className="text-xs text-[#999] m-0 leading-relaxed whitespace-pre-line">예){'\n'}{ex}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 핵심 개념 입력 */}
+        {/* 1. 새롭게 알게 된 개념 */}
         <Card>
-          <Label>내가 이해한 핵심 개념</Label>
-          <textarea value={content}
-            onChange={e => { setContent(e.target.value.slice(0, 500)); setCError(''); }}
-            placeholder={`배운 내용을 내 말로 정리해보세요.\n\n✔ 새롭게 알게 된 점\n✔ 중요하다고 생각한 점\n✔ 더 알아보고 싶은 점\n\n을 포함하여 작성해보세요.`}
-            rows={4} maxLength={500}
-            className="w-full border-2 border-[#e0e0f0] rounded-xl p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
-            style={{ minHeight: '110px' }} />
-          <div className={`text-right text-sm mt-1 ${content.length > 450 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
-            {content.length} / 500
+          <Label>1. 새롭게 알게 된 개념</Label>
+          <p className="text-xs text-[#888] mb-2 mt-[-4px]">오늘 새롭게 이해한 개념을 내 말로 써보세요.</p>
+          <div className="bg-[#f6f7ff] border border-[#d0d4f0] rounded-xl px-3 py-2 mb-2 text-xs text-[#999] leading-relaxed">
+            예) 식물의 뿌리는 땅속의 물을 흡수하고, 줄기는 그 물이 잎까지 이동할 수 있는 통로 역할을 한다.
           </div>
-          {cError && <p className="text-red-600 text-sm mt-1.5">{cError}</p>}
+          <textarea value={learned}
+            onChange={e => { setLearned(e.target.value.slice(0, 200)); setInputError(''); }}
+            placeholder="여기에 써보세요." rows={2} maxLength={200}
+            className="w-full border-2 border-[#e0e0f0] rounded-xl p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
+            style={{ minHeight: '70px' }} />
+          <div className={`text-right text-sm mt-1 ${learned.length > 180 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
+            {learned.length} / 200
+          </div>
+        </Card>
+
+        {/* 2. 가장 중요하다고 생각한 핵심 내용 */}
+        <Card>
+          <Label>2. 가장 중요하다고 생각한 핵심 내용</Label>
+          <p className="text-xs text-[#888] mb-2 mt-[-4px]">여러 내용 중 가장 중요하다고 생각한 개념을 써보세요.</p>
+          <div className="bg-[#f6f7ff] border border-[#d0d4f0] rounded-xl px-3 py-2 mb-2 text-xs text-[#999] leading-relaxed">
+            예) 뿌리, 줄기, 잎은 각각 다른 일을 하지만 식물이 살아가기 위해 서로 연결되어 있다는 점이 중요하다.
+          </div>
+          <textarea value={important}
+            onChange={e => { setImportant(e.target.value.slice(0, 200)); setInputError(''); }}
+            placeholder="여기에 써보세요." rows={2} maxLength={200}
+            className="w-full border-2 border-[#e0e0f0] rounded-xl p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
+            style={{ minHeight: '70px' }} />
+          <div className={`text-right text-sm mt-1 ${important.length > 180 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
+            {important.length} / 200
+          </div>
+        </Card>
+
+        {/* 3. 더 알아보고 싶은 질문 */}
+        <Card>
+          <Label>3. 더 알아보고 싶은 질문</Label>
+          <p className="text-xs text-[#888] mb-2 mt-[-4px]">배운 내용과 관련해 더 탐구해보고 싶은 질문을 써보세요.</p>
+          <div className="bg-[#f6f7ff] border border-[#d0d4f0] rounded-xl px-3 py-2 mb-2 text-xs text-[#999] leading-relaxed">
+            예) 뿌리가 물을 충분히 흡수하지 못하면 줄기와 잎에는 어떤 변화가 나타날까?
+          </div>
+          <textarea value={curious}
+            onChange={e => { setCurious(e.target.value.slice(0, 200)); setInputError(''); }}
+            placeholder="여기에 써보세요." rows={2} maxLength={200}
+            className="w-full border-2 border-[#e0e0f0] rounded-xl p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
+            style={{ minHeight: '70px' }} />
+          <div className={`text-right text-sm mt-1 ${curious.length > 180 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
+            {curious.length} / 200
+          </div>
+          {inputError && <p className="text-red-600 text-sm mt-1.5">{inputError}</p>}
           <button onClick={handleSubmit} disabled={loading}
             className="mt-3 w-full text-white font-bold text-[1rem] py-3 rounded-xl border-none cursor-pointer bg-gradient-to-br from-[#667eea] to-[#764ba2] hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
             {loading ? '점검 중...' : '개념 이해 점검하기'}
@@ -264,16 +274,16 @@ export default function LearnPage() {
               </div>
             )}
 
-            <FeedbackSection title="👏 칭찬">
-              <p className="text-[#555] leading-[1.7] m-0 bg-[#f8f8ff] p-3 rounded-lg">{result.praise}</p>
+            <FeedbackSection title="✅ 잘 이해한 개념">
+              <p className="text-[#555] leading-[1.7] m-0 bg-[#f8f8ff] p-3 rounded-lg">{result.wellUnderstood}</p>
             </FeedbackSection>
 
-            <FeedbackSection title="🌱 이해 수준 점검">
-              <p className="text-[#555] leading-[1.7] m-0 bg-[#f8f8ff] p-3 rounded-lg">{result.understood}</p>
+            <FeedbackSection title="💡 보완하면 좋은 개념">
+              <p className="text-[#555] leading-[1.7] m-0 bg-[#f8f8ff] p-3 rounded-lg">{result.needsWork}</p>
             </FeedbackSection>
 
-            <FeedbackSection title="🔍 생각 확장하기" last>
-              <p className="text-[#555] leading-[1.7] m-0 bg-[#f8f8ff] p-3 rounded-lg">{result.nextStep}</p>
+            <FeedbackSection title="🔍 더 깊은 탐구 질문" last>
+              <p className="text-[#555] leading-[1.7] m-0 bg-[#f8f8ff] p-3 rounded-lg">{result.deeperQuestion}</p>
             </FeedbackSection>
           </div>
         )}
