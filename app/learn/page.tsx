@@ -138,12 +138,12 @@ export default function LearnPage() {
   }
 
   return (
-    <div className="min-h-screen px-4 pt-3 pb-8"
+    <div className="min-h-screen px-4 pt-2 pb-8"
       style={{ background: '#ffffff', fontFamily: "'Noto Sans KR', '맑은 고딕', sans-serif" }}>
       <div className="max-w-[600px] mx-auto">
 
         {/* 네비게이션 */}
-        <div className="flex justify-between items-center mb-1.5">
+        <div className="flex justify-between items-center mb-1">
           <Link href="/"
             className="text-[#667eea] text-[0.96rem] font-semibold border border-[#667eea]/30 bg-[#667eea]/5 px-[1.1rem] py-[0.41rem] rounded-full hover:bg-[#667eea]/10 transition-colors no-underline">
             ← 홈
@@ -152,7 +152,7 @@ export default function LearnPage() {
 
         {/* 배너 이미지 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/learn.png" alt="개념학습" className="w-full rounded-2xl mb-1.5 block" style={{ maxHeight: '220px', objectFit: 'contain' }} />
+        <img src="/learn.png" alt="개념학습" className="w-full rounded-2xl mb-1 block" style={{ maxHeight: '220px', objectFit: 'cover' }} />
 
         {/* 학년/반 + 이름 — 2열 */}
         <Card>
@@ -219,8 +219,8 @@ export default function LearnPage() {
             {curious.length} / 200
           </div>
           {inputError && <p className="text-red-600 text-sm mt-1">{inputError}</p>}
-          <p className="text-xs text-center text-[#999] mt-2 mb-1 leading-relaxed">
-            작성한 내용을 바탕으로<br />AI가 여러분의 개념 이해를 점검하고 더 생각해볼 점을 알려줍니다.
+          <p className="text-xs text-center text-[#999] mt-2 mb-1">
+            작성한 내용을 바탕으로 AI가 여러분의 개념 이해를 점검하고 더 생각해볼 점을 알려줍니다.
           </p>
           <button onClick={handleSubmit} disabled={loading}
             className="mt-1.5 w-full text-white font-bold text-[0.95rem] py-2.5 rounded-xl border-none cursor-pointer bg-gradient-to-br from-[#667eea] to-[#764ba2] hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
