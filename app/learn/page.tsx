@@ -117,7 +117,7 @@ export default function LearnPage() {
       feedback = json;
     } catch {
       feedback = {
-        status:         '🟡 핵심 개념을 조금 더 정리해보면 좋아요',
+        status:         '🟡 핵심 개념을 찾아 조금 더 보완해보세요.',
         goodPoint:      '배운 내용의 핵심 개념을 자신의 말로 정리하려고 노력한 점이 잘 드러나요.',
         improvePoint:   '개념들이 서로 어떻게 연결되는지 조금 더 구체적으로 설명해보면 이해가 더 깊어질 거예요.',
         secondTitle:    '🔍 핵심 개념과 연결하기',
@@ -228,26 +228,17 @@ export default function LearnPage() {
         {result && (
           <div ref={resultRef}
             className="bg-white rounded-[20px] p-6 mb-3.5 shadow-[0_4px_24px_rgba(80,60,160,0.13)] border-l-4 border-[#667eea]">
-            <h2 className="text-xl font-bold text-[#4a4a6a] mb-3">개념 이해 점검 결과</h2>
-            <div className="inline-block font-bold text-sm px-3 py-1.5 rounded-full mb-4"
-              style={{
-                background: result.status.startsWith('🟢') ? '#e8f5e9' : result.status.startsWith('🔵') ? '#e3f2fd' : '#fff8e1',
-                color:      result.status.startsWith('🟢') ? '#2e7d32' : result.status.startsWith('🔵') ? '#1565c0' : '#f57f17',
-              }}>
-              {result.status}
+            <div className="flex items-center gap-2 mb-4">
+              <h2 className="text-xl font-bold text-[#4a4a6a]">개념 이해 점검 결과</h2>
+              <span className="font-bold text-xs px-2.5 py-1 rounded-full whitespace-nowrap"
+                style={{
+                  background: result.status.startsWith('🟢') ? '#e8f5e9' : result.status.startsWith('🔴') ? '#ffebee' : '#fff8e1',
+                  color:      result.status.startsWith('🟢') ? '#2e7d32' : result.status.startsWith('🔴') ? '#c62828' : '#f57f17',
+                }}>
+                {result.status}
+              </span>
             </div>
 
-            {/* 저장 상태 */}
-            {saveStatus === 'saving' && (
-              <div className="bg-[#e3f2fd] border-l-4 border-[#1e88e5] p-3 rounded-lg mb-4 text-sm text-[#1565c0] font-semibold">
-                💾 저장 중...
-              </div>
-            )}
-            {saveStatus === 'success' && (
-              <div className="bg-[#e8f5e9] border-l-4 border-[#43a047] p-3 rounded-lg mb-4 text-sm text-[#2e7d32] font-semibold">
-                ✅ 저장되었어요!
-              </div>
-            )}
             {saveStatus === 'error' && (
               <div className="bg-[#ffebee] border-l-4 border-[#e53935] p-3 rounded-lg mb-4 text-sm text-[#c62828]">
                 <p className="font-semibold mb-1">⚠️ 저장에 실패했어요.</p>
