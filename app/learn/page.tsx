@@ -229,20 +229,22 @@ export default function LearnPage() {
           <div ref={resultRef}
             className="bg-white rounded-[20px] mb-3.5 shadow-[0_4px_24px_rgba(80,60,160,0.13)] overflow-hidden">
 
-            {/* 헤더 */}
-            <div className="px-5 pt-4 pb-3 border-b border-[#eeeef8]">
-              <p className="text-[0.7rem] font-semibold text-[#aaa] mb-2 tracking-widest">개념 이해 점검 결과</p>
-              <span className="inline-block font-bold text-sm px-3 py-1.5 rounded-full"
-                style={{
-                  background: result.status.startsWith('🟢') ? '#e8f5e9' : result.status.startsWith('🔴') ? '#ffebee' : '#fff8e1',
-                  color:      result.status.startsWith('🟢') ? '#2e7d32' : result.status.startsWith('🔴') ? '#c62828' : '#f57f17',
-                }}>
+            {/* 상태 배너 */}
+            <div className="px-5 py-3 flex items-center gap-2"
+              style={{
+                background: result.status.startsWith('🟢') ? '#e8f5e9' : result.status.startsWith('🔴') ? '#ffebee' : '#fff8e1',
+                borderBottom: `2px solid ${result.status.startsWith('🟢') ? '#a5d6a7' : result.status.startsWith('🔴') ? '#ef9a9a' : '#ffe082'}`,
+              }}>
+              <span className="font-bold text-sm"
+                style={{ color: result.status.startsWith('🟢') ? '#2e7d32' : result.status.startsWith('🔴') ? '#c62828' : '#f57f17' }}>
                 {result.status}
               </span>
             </div>
 
             {/* 본문 */}
             <div className="px-5 py-4">
+              <p className="text-[0.7rem] font-semibold text-[#bbb] mb-4 tracking-widest">개념 이해 점검 결과</p>
+
               {saveStatus === 'error' && (
                 <div className="bg-[#ffebee] border-l-4 border-[#e53935] p-3 rounded-lg mb-4 text-sm text-[#c62828]">
                   <p className="font-semibold mb-1">⚠️ 저장에 실패했어요.</p>
@@ -263,7 +265,7 @@ export default function LearnPage() {
                 {result.improvePoint}
               </FeedbackSection>
 
-              <div className="border-t border-[#eeeef8] my-4" />
+              <div className="border-t border-[#eeeef8] my-3" />
 
               <FeedbackSection title={result.secondTitle} titleColor="#5c35cc" bgColor="#f3f0ff" borderColor="#c5b8f0">
                 {result.secondContent}
