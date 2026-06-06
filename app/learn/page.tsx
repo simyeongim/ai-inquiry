@@ -193,10 +193,10 @@ export default function LearnPage() {
             {learned.length} / 200
           </div>
 
-          <p className="font-bold text-[#3a3a5a] mb-1.5 text-[0.9rem]">2. 가장 중요하다고 생각한 것은 무엇인가요?</p>
+          <p className="font-bold text-[#3a3a5a] mb-1.5 text-[0.9rem]">2. 오늘 배운 내용 중 가장 중요한 핵심 내용을 1~2문장으로 써보세요.</p>
           <textarea value={important}
             onChange={e => { setImportant(e.target.value.slice(0, 200)); setInputError(''); }}
-            placeholder="뿌리, 줄기, 잎은 각각 다른 일을 하지만 식물이 살아가기 위해 서로 연결되어 있다는 점이 중요하다." rows={2} maxLength={200}
+            placeholder="뿌리, 줄기, 잎은 서로 다른 역할을 하지만 식물이 살아가기 위해 함께 작용한다." rows={2} maxLength={200}
             className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
             style={{ minHeight: '58px' }} />
           <div className={`text-right text-xs mt-0.5 mb-3 ${important.length > 180 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
