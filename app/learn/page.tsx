@@ -143,7 +143,7 @@ export default function LearnPage() {
       <div className="max-w-[600px] mx-auto">
 
         {/* 네비게이션 */}
-        <div className="flex justify-between items-center mb-2">
+        <div className="flex justify-between items-center mb-1.5">
           <Link href="/"
             className="text-[#667eea] text-[0.96rem] font-semibold border border-[#667eea]/30 bg-[#667eea]/5 px-[1.1rem] py-[0.41rem] rounded-full hover:bg-[#667eea]/10 transition-colors no-underline">
             ← 홈
@@ -152,7 +152,7 @@ export default function LearnPage() {
 
         {/* 배너 이미지 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/learn.png" alt="개념학습" className="w-full rounded-2xl mb-2 block" style={{ maxHeight: '280px', objectFit: 'contain' }} />
+        <img src="/learn.png" alt="개념학습" className="w-full rounded-2xl mb-1.5 block" style={{ maxHeight: '220px', objectFit: 'contain' }} />
 
         {/* 학년/반 + 이름 — 2열 */}
         <Card>
@@ -183,47 +183,47 @@ export default function LearnPage() {
 
         {/* 1. 새롭게 알게 된 것 */}
         <Card>
-          <p className="font-bold text-[#3a3a5a] mb-2 text-[1rem]">1. 새롭게 알게 된 것은 무엇인가요?</p>
+          <p className="font-bold text-[#3a3a5a] mb-1.5 text-[0.9rem]">1. 새롭게 알게 된 것은 무엇인가요?</p>
           <textarea value={learned}
             onChange={e => { setLearned(e.target.value.slice(0, 200)); setInputError(''); }}
             placeholder="식물의 뿌리는 땅속의 물을 흡수하고, 줄기는 그 물이 잎까지 이동할 수 있는 통로 역할을 한다." rows={2} maxLength={200}
-            className="w-full border-2 border-[#c5c9f0] rounded-xl p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
-            style={{ minHeight: '70px' }} />
-          <div className={`text-right text-sm mt-1 ${learned.length > 180 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
+            className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
+            style={{ minHeight: '58px' }} />
+          <div className={`text-right text-xs mt-0.5 ${learned.length > 180 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
             {learned.length} / 200
           </div>
         </Card>
 
         {/* 2. 가장 중요하다고 생각한 것 */}
         <Card>
-          <p className="font-bold text-[#3a3a5a] mb-2 text-[1rem]">2. 가장 중요하다고 생각한 것은 무엇인가요?</p>
+          <p className="font-bold text-[#3a3a5a] mb-1.5 text-[0.9rem]">2. 가장 중요하다고 생각한 것은 무엇인가요?</p>
           <textarea value={important}
             onChange={e => { setImportant(e.target.value.slice(0, 200)); setInputError(''); }}
             placeholder="뿌리, 줄기, 잎은 각각 다른 일을 하지만 식물이 살아가기 위해 서로 연결되어 있다는 점이 중요하다." rows={2} maxLength={200}
-            className="w-full border-2 border-[#c5c9f0] rounded-xl p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
-            style={{ minHeight: '70px' }} />
-          <div className={`text-right text-sm mt-1 ${important.length > 180 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
+            className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
+            style={{ minHeight: '58px' }} />
+          <div className={`text-right text-xs mt-0.5 ${important.length > 180 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
             {important.length} / 200
           </div>
         </Card>
 
         {/* 3. 더 알아보고 싶은 것 */}
         <Card>
-          <p className="font-bold text-[#3a3a5a] mb-2 text-[1rem]">3. 배운 내용과 관련해 더 알아보고 싶은 것은 무엇인가요?</p>
+          <p className="font-bold text-[#3a3a5a] mb-1.5 text-[0.9rem]">3. 배운 내용과 관련해 더 알아보고 싶은 것은 무엇인가요?</p>
           <textarea value={curious}
             onChange={e => { setCurious(e.target.value.slice(0, 200)); setInputError(''); }}
             placeholder="뿌리가 물을 충분히 흡수하지 못하면 줄기와 잎에는 어떤 변화가 나타날까?" rows={2} maxLength={200}
-            className="w-full border-2 border-[#c5c9f0] rounded-xl p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
-            style={{ minHeight: '70px' }} />
-          <div className={`text-right text-sm mt-1 ${curious.length > 180 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
+            className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
+            style={{ minHeight: '58px' }} />
+          <div className={`text-right text-xs mt-0.5 ${curious.length > 180 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
             {curious.length} / 200
           </div>
-          {inputError && <p className="text-red-600 text-sm mt-1.5">{inputError}</p>}
-          <p className="text-xs text-center text-[#999] mt-3 mb-1 leading-relaxed">
+          {inputError && <p className="text-red-600 text-sm mt-1">{inputError}</p>}
+          <p className="text-xs text-center text-[#999] mt-2 mb-1 leading-relaxed">
             작성한 내용을 바탕으로<br />AI가 여러분의 개념 이해를 점검하고 더 생각해볼 점을 알려줍니다.
           </p>
           <button onClick={handleSubmit} disabled={loading}
-            className="mt-2 w-full text-white font-bold text-[1rem] py-3 rounded-xl border-none cursor-pointer bg-gradient-to-br from-[#667eea] to-[#764ba2] hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+            className="mt-1.5 w-full text-white font-bold text-[0.95rem] py-2.5 rounded-xl border-none cursor-pointer bg-gradient-to-br from-[#667eea] to-[#764ba2] hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
             {loading ? '점검 중...' : '개념 이해 점검 및 피드백'}
           </button>
         </Card>
@@ -286,7 +286,7 @@ export default function LearnPage() {
 
 // ── 공통 UI 서브컴포넌트 ─────────────────────────────
 function Card({ children }: { children: React.ReactNode }) {
-  return <div className="bg-white rounded-2xl p-4 mb-2 shadow-[0_4px_20px_rgba(80,60,160,0.10)]">{children}</div>;
+  return <div className="bg-white rounded-2xl p-3 mb-1.5 shadow-[0_4px_20px_rgba(80,60,160,0.10)]">{children}</div>;
 }
 function Label({ children }: { children: React.ReactNode }) {
   return <label className="block font-bold text-[#4a4a6a] mb-1.5 text-[0.9rem]">{children}</label>;
