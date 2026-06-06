@@ -144,23 +144,7 @@ export default function LearnPage() {
 
         {/* 배너 이미지 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/learn.png" alt="개념학습" className="w-full rounded-2xl mb-3 block" style={{ maxHeight: '280px', objectFit: 'contain' }} />
-
-        {/* 상단 안내 */}
-        <div className="mb-3 px-0.5">
-          <div className="flex flex-wrap gap-1.5 mb-1.5">
-            {[
-              '✔ 새롭게 알게 된 것은 무엇인가요?',
-              '✔ 가장 중요하다고 생각한 내용은 무엇인가요?',
-              '✔ 더 알아보고 싶은 것은 무엇인가요?',
-            ].map(t => (
-              <span key={t} className="text-[0.78rem] font-semibold text-[#667eea] bg-[#e8eaf6] px-2.5 py-1 rounded-full select-none">
-                {t}
-              </span>
-            ))}
-          </div>
-          <p className="text-xs text-[#aaa] m-0">AI가 여러분의 개념 이해를 함께 점검해줍니다.</p>
-        </div>
+        <img src="/learn.png" alt="개념학습" className="w-full rounded-2xl mb-2 block" style={{ maxHeight: '280px', objectFit: 'contain' }} />
 
         {/* 학년/반 + 이름 — 2열 */}
         <Card>
