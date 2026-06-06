@@ -77,7 +77,6 @@ export default function LearnPage() {
   const [classRoom,   setClassRoom]   = useState('');
   const [project,     setProject]     = useState('');
   const [name,        setName]        = useState('');
-  const [learned,     setLearned]     = useState('');
   const [important,   setImportant]   = useState('');
   const [curious,     setCurious]     = useState('');
   const [loading,     setLoading]     = useState(false);
@@ -91,17 +90,17 @@ export default function LearnPage() {
     if (!classRoom)      { alert('학년/반을 선택해주세요!'); return; }
     if (!project)        { alert('프로젝트를 선택해주세요!'); return; }
     if (!name.trim())    { alert('이름을 입력해주세요!'); return; }
-    if (!learned.trim() || !important.trim() || !curious.trim()) {
-      setInputError('세 항목을 모두 입력해주세요.'); return;
+    if (!important.trim() || !curious.trim()) {
+      setInputError('두 항목을 모두 입력해주세요.'); return;
     }
-    if ([learned, important, curious].some(v => v.trim().length < 5)) {
+    if ([important, curious].some(v => v.trim().length < 5)) {
       setInputError('각 항목을 조금 더 자세히 작성해주세요.'); return;
     }
     setInputError('');
     setLoading(true);
     setResult(null);
 
-    const content = `[새롭게 알게 된 개념]\n${learned.trim()}\n\n[가장 중요한 핵심 내용]\n${important.trim()}\n\n[더 알아보고 싶은 질문]\n${curious.trim()}`;
+    const content = `[핵심 내용]\n${important.trim()}\n\n[새롭게 알게 된 것·더 궁금한 것]\n${curious.trim()}`;
 
     let feedback: Feedback;
     try {
@@ -181,34 +180,24 @@ export default function LearnPage() {
           </Select>
         </Card>
 
-        {/* 1·2·3 통합 카드 */}
+        {/* 1·2 통합 카드 */}
         <Card>
-          <p className="font-bold text-[#3a3a5a] mb-1.5 text-[0.9rem]">1. 새롭게 알게 된 것은 무엇인가요?</p>
-          <textarea value={learned}
-            onChange={e => { setLearned(e.target.value.slice(0, 200)); setInputError(''); }}
-            placeholder="식물의 뿌리는 땅속의 물을 흡수하고, 줄기는 그 물이 잎까지 이동할 수 있는 통로 역할을 한다." rows={2} maxLength={200}
-            className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
-            style={{ minHeight: '58px' }} />
-          <div className={`text-right text-xs mt-0.5 mb-3 ${learned.length > 180 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
-            {learned.length} / 200
-          </div>
-
-          <p className="font-bold text-[#3a3a5a] mb-1.5 text-[0.9rem]">2. 오늘 배운 내용 중 가장 중요한 핵심 내용을 1~2문장으로 써보세요.</p>
+          <p className="font-bold text-[#3a3a5a] mb-1.5 text-[0.9rem]">1. 오늘 배운 내용 중 가장 중요한 내용을 정리해보세요.</p>
           <textarea value={important}
             onChange={e => { setImportant(e.target.value.slice(0, 200)); setInputError(''); }}
-            placeholder="뿌리, 줄기, 잎은 서로 다른 역할을 하지만 식물이 살아가기 위해 함께 작용한다." rows={2} maxLength={200}
+            placeholder="식물의 뿌리는 물을 흡수하고 줄기는 물을 이동시킨다. 뿌리, 줄기, 잎은 서로 다른 역할을 하지만 식물이 살아가기 위해 함께 작용한다." rows={2} maxLength={200}
             className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
-            style={{ minHeight: '58px' }} />
+            style={{ minHeight: '70px' }} />
           <div className={`text-right text-xs mt-0.5 mb-3 ${important.length > 180 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
             {important.length} / 200
           </div>
 
-          <p className="font-bold text-[#3a3a5a] mb-1.5 text-[0.9rem]">3. 배운 내용과 관련해 더 알아보고 싶은 것은 무엇인가요?</p>
+          <p className="font-bold text-[#3a3a5a] mb-1.5 text-[0.9rem]">2. 새롭게 알게 된 내용이나 더 궁금한 것은 무엇인가요?</p>
           <textarea value={curious}
             onChange={e => { setCurious(e.target.value.slice(0, 200)); setInputError(''); }}
-            placeholder="뿌리가 물을 충분히 흡수하지 못하면 줄기와 잎에는 어떤 변화가 나타날까?" rows={2} maxLength={200}
+            placeholder="뿌리가 물을 충분히 흡수하지 못하면 식물에는 어떤 변화가 나타날까?" rows={2} maxLength={200}
             className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
-            style={{ minHeight: '58px' }} />
+            style={{ minHeight: '70px' }} />
           <div className={`text-right text-xs mt-0.5 ${curious.length > 180 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
             {curious.length} / 200
           </div>
