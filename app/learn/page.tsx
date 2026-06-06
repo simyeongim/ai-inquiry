@@ -21,7 +21,6 @@ interface Feedback {
 
 type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
 
-// ── saveLearning: 수정 금지 ───────────────────────────
 async function saveLearning(
   grade: string,
   className: string,
@@ -29,50 +28,40 @@ async function saveLearning(
   lesson: string,
   content: string,
   feedback: Feedback,
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; id?: string; error?: string }> {
   const feedbackToSave = { status: feedback.status, goodPoint: feedback.goodPoint, improvePoint: feedback.improvePoint, secondTitle: feedback.secondTitle, secondContent: feedback.secondContent, thinkMore: feedback.thinkMore };
-  const payload = {
-    grade,
-    class_name: className,
-    student_name: studentName,
-    lesson,
-    content,
-    feedback: feedbackToSave,
-    created_at: new Date().toISOString(),
-    type: 'learn',
-  };
-
-  console.log('[saveLearning] 호출됨 — payload:', payload);
-
-  let resp: Response;
+  const payload = { grade, class_name: className, student_name: studentName, lesson, content, feedback: feedbackToSave, created_at: new Date().toISOString(), type: 'learn' };
   try {
-    resp = await fetch(`${SUPABASE_URL}/rest/v1/learnings`, {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/learnings`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Prefer': 'return=minimal',
-      },
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Prefer': 'return=representation' },
       body: JSON.stringify(payload),
     });
+    if (!resp.ok) { const body = await resp.text(); return { ok: false, error: `HTTP ${resp.status}: ${body}` }; }
+    const data = await resp.json();
+    return { ok: true, id: data[0]?.id };
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error('[saveLearning] 네트워크 오류:', msg);
-    return { ok: false, error: `네트워크 오류: ${msg}` };
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
+}
 
-  console.log('[saveLearning] HTTP 응답 상태:', resp.status, resp.statusText);
-
-  if (!resp.ok) {
-    let body = '';
-    try { body = await resp.text(); } catch { /* ignore */ }
-    console.error(`[saveLearning] 저장 실패 — HTTP ${resp.status}:`, body);
-    return { ok: false, error: `HTTP ${resp.status}: ${body}` };
+async function updateLearning(
+  id: string,
+  content: string,
+  feedback: Feedback,
+): Promise<{ ok: boolean; error?: string }> {
+  const feedbackToSave = { status: feedback.status, goodPoint: feedback.goodPoint, improvePoint: feedback.improvePoint, secondTitle: feedback.secondTitle, secondContent: feedback.secondContent, thinkMore: feedback.thinkMore };
+  try {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/learnings?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ content, feedback: feedbackToSave }),
+    });
+    if (!resp.ok) { const body = await resp.text(); return { ok: false, error: `HTTP ${resp.status}: ${body}` }; }
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
-
-  console.log('[saveLearning] 저장 성공');
-  return { ok: true };
 }
 
 // ── 컴포넌트 ─────────────────────────────────────────
@@ -87,7 +76,9 @@ export default function LearnPage() {
   const [inputError,  setInputError]  = useState('');
   const [saveStatus,  setSaveStatus]  = useState<SaveStatus>('idle');
   const [saveError,   setSaveError]   = useState('');
+  const [recordId,    setRecordId]    = useState<string | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  const formRef   = useRef<HTMLDivElement>(null);
 
   async function handleSubmit() {
     if (!classRoom)      { alert('학년/반을 선택해주세요!'); return; }
@@ -128,8 +119,14 @@ export default function LearnPage() {
     }
 
     setSaveStatus('saving');
-    // classRoom 전체를 grade로 전달, class_name은 빈 문자열
-    const saved = await saveLearning(classRoom, '', name.trim(), project, content, feedback);
+    let saved: { ok: boolean; error?: string };
+    if (recordId) {
+      saved = await updateLearning(recordId, content, feedback);
+    } else {
+      const res = await saveLearning(classRoom, '', name.trim(), project, content, feedback);
+      if (res.ok && res.id) setRecordId(res.id);
+      saved = res;
+    }
     if (saved.ok) {
       setSaveStatus('success');
       setSaveError('');
@@ -140,6 +137,20 @@ export default function LearnPage() {
     setLoading(false);
     setResult(feedback);
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+  }
+
+  function handleRevise() {
+    setResult(null);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  }
+
+  function handleComplete() {
+    setResult(null);
+    setImportant('');
+    setCurious('');
+    setRecordId(null);
+    setSaveStatus('idle');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   return (
@@ -160,6 +171,7 @@ export default function LearnPage() {
         <img src="/learn.png" alt="개념학습" className="w-full rounded-2xl mb-1 block" style={{ maxHeight: '220px', objectFit: 'cover' }} />
 
         {/* 학년/반 + 이름 — 2열 */}
+        <div ref={formRef} />
         <Card>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -272,6 +284,22 @@ export default function LearnPage() {
               <FeedbackSection title="💡 깊이 생각해보기" titleColor="#1565c0" bgColor="#f0f4ff" borderColor="#90caf9" last>
                 {result.thinkMore}
               </FeedbackSection>
+
+              <div className="mt-4">
+                {result.status.startsWith('🟢') ? (
+                  <button onClick={handleComplete}
+                    className="w-full font-bold text-[0.95rem] py-2.5 rounded-xl border-none cursor-pointer transition-all"
+                    style={{ background: '#e8f5e9', color: '#2e7d32' }}>
+                    ✓ 완료하기
+                  </button>
+                ) : (
+                  <button onClick={handleRevise}
+                    className="w-full font-bold text-[0.95rem] py-2.5 rounded-xl border-none cursor-pointer transition-all"
+                    style={{ background: '#fff8e1', color: '#f57f17' }}>
+                    ✏️ 수정하기
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}
