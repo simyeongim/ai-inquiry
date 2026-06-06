@@ -46,8 +46,8 @@ ${content}
 - goodPoint: [핵심 내용]에서 학생이 이해한 부분을 교사 언어로 한 문장 재서술 (복사 금지, 신규 개념 추가 금지)
 - improvePoint: status 🟢 → "핵심 개념을 잘 정리했어요." / 🟡·🔴 → 부족한 부분과 수정 방향 1~2문장
 - secondTitle: 항상 "🔍 핵심 개념과 연결하기"
-- secondContent: [새롭게 알게 된 것]이 핵심 개념과 어떻게 연결되는지 1~2문장 (강의·정답 금지)
-- thinkMore: 핵심 개념을 다시 떠올릴 수 있는 질문 1문장 (답 금지)
+- secondContent: [새롭게 알게 된 것] 섹션 답변만 보고, 그 내용이 핵심 개념과 어떻게 연결되는지 1~2문장 (강의·정답 금지)
+- thinkMore: [핵심 내용]과 [새롭게 알게 된 것] 두 답변을 종합하여 학생이 더 깊이 탐구할 수 있는 질문이나 탐구 방향 1문장 (답 알려주지 말 것)
 
 JSON으로만 응답: {"status":"...","goodPoint":"...","improvePoint":"...","secondTitle":"...","secondContent":"...","thinkMore":"..."}`;
 
