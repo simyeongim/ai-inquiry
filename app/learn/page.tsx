@@ -230,7 +230,7 @@ export default function LearnPage() {
             className="bg-white rounded-[20px] mb-3.5 shadow-[0_4px_24px_rgba(80,60,160,0.13)] overflow-hidden">
 
             {/* 상태 배너 */}
-            <div className="px-5 py-3 flex items-center gap-2"
+            <div className="px-5 py-3 flex items-center justify-center"
               style={{
                 background: result.status.startsWith('🟢') ? '#e8f5e9' : result.status.startsWith('🔴') ? '#ffebee' : '#fff8e1',
                 borderBottom: `2px solid ${result.status.startsWith('🟢') ? '#a5d6a7' : result.status.startsWith('🔴') ? '#ef9a9a' : '#ffe082'}`,
