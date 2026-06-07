@@ -915,7 +915,7 @@ export default function TeacherPage() {
           {/* 필터 */}
           <div className="bg-white rounded-2xl p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="font-bold text-[#4a4a6a] text-sm m-0">🔍 필터</h2>
+              <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">필터</h2>
               {(fLearnClass.length > 0 || fLearnLesson.length > 0 || fLearnStatus.length > 0) && (
                 <button onClick={() => { setFLearnClass([]); setFLearnLesson([]); setFLearnStatus([]); }}
                   className="text-xs text-[#667eea] border-none bg-transparent cursor-pointer font-semibold hover:underline">초기화</button>
@@ -950,46 +950,40 @@ export default function TeacherPage() {
             const avgLevelColor = avg >= 2.5 ? '#2e7d32' : avg >= 1.5 ? '#f57f17' : '#c62828';
             return (
               <div className="bg-white rounded-2xl p-5 shadow-sm">
-                <h2 className="font-bold text-[#4a4a6a] text-sm mb-4">📊 개념 이해 현황</h2>
+                <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-4">개념 이해 현황</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
 
-                  {/* 참여 학생 수 — 중립 */}
-                  <div className="rounded-xl p-4 text-center" style={{background:'#f0f2f8'}}>
-                    <div className="text-[11px] text-[#999] mb-1">참여 학생 수</div>
-                    <div className="text-2xl font-black text-[#4a4a6a]">
-                      {learnStats.n}<span className="text-xs font-normal ml-0.5">명</span>
+                  <div className="rounded-xl p-4 text-center border border-[#e5e7eb]">
+                    <div className="text-xs text-[#9ca3af] mb-1.5">참여 학생 수</div>
+                    <div className="text-2xl font-black text-[#1a1a2e]">
+                      {learnStats.n}<span className="text-sm font-normal text-[#9ca3af] ml-0.5">명</span>
                     </div>
-                    <div className="text-xs text-[#aaa] mt-1.5">핵심개념 작성 참여</div>
+                    <div className="text-xs text-[#9ca3af] mt-1.5">핵심개념 작성 참여</div>
                   </div>
 
-                  {/* 평균이해수준 — 중립 */}
-                  <div className="rounded-xl p-4 text-center" style={{background:'#f0f2f8'}}>
-                    <div className="text-[11px] text-[#999] mb-1">평균이해수준</div>
+                  <div className="rounded-xl p-4 text-center border border-[#e5e7eb]">
+                    <div className="text-xs text-[#9ca3af] mb-1.5">평균 이해수준</div>
                     <div className="text-2xl font-black" style={{color: avgLevelColor}}>
                       {avg.toFixed(1)}
-                      <span className="text-sm font-normal text-[#bbb] ml-0.5">/ 3.0</span>
+                      <span className="text-sm font-normal text-[#9ca3af] ml-0.5">/ 3.0</span>
                     </div>
-                    <div className="text-xs mt-1.5 font-semibold" style={{color: avgLevelColor}}>
-                      {avgLevelLabel}
-                    </div>
+                    <div className="text-xs font-semibold mt-1.5" style={{color: avgLevelColor}}>{avgLevelLabel}</div>
                   </div>
 
-                  {/* 이해수준 학생 수 — 초록 */}
-                  <div className="rounded-xl p-4 text-center" style={{background:'#e8f5e9'}}>
-                    <div className="text-[11px] text-[#999] mb-1">🟢 이해 완료 학생 수</div>
-                    <div className="text-2xl font-black" style={{color:'#2e7d32'}}>
-                      {learnStats.finalGreenCount}<span className="text-xs font-normal ml-0.5">명</span>
+                  <div className="rounded-xl p-4 text-center border border-[#e5e7eb]">
+                    <div className="text-xs text-[#9ca3af] mb-1.5">이해 완료 학생</div>
+                    <div className="text-2xl font-black text-[#16a34a]">
+                      {learnStats.finalGreenCount}<span className="text-sm font-normal text-[#9ca3af] ml-0.5">명</span>
                     </div>
-                    <div className="text-xs text-[#66bb6a] mt-1.5">최종 기준 🟢 이해 완료</div>
+                    <div className="text-xs text-[#9ca3af] mt-1.5">최종 기준 🟢 이해</div>
                   </div>
 
-                  {/* 성장 학생 수 — 파랑 */}
-                  <div className="rounded-xl p-4 text-center" style={{background:'#e3f2fd'}}>
-                    <div className="text-[11px] text-[#999] mb-1">성장 학생 수</div>
-                    <div className="text-2xl font-black" style={{color:'#1565c0'}}>
-                      {learnStats.grownCount}<span className="text-xs font-normal ml-0.5">명</span>
+                  <div className="rounded-xl p-4 text-center border border-[#e5e7eb]">
+                    <div className="text-xs text-[#9ca3af] mb-1.5">성장 학생</div>
+                    <div className="text-2xl font-black text-[#2563eb]">
+                      {learnStats.grownCount}<span className="text-sm font-normal text-[#9ca3af] ml-0.5">명</span>
                     </div>
-                    <div className="text-xs text-[#64b5f6] mt-1.5">이해수준 단계 향상</div>
+                    <div className="text-xs text-[#9ca3af] mt-1.5">이해수준 단계 향상</div>
                   </div>
 
                 </div>
@@ -1000,68 +994,46 @@ export default function TeacherPage() {
           {/* AI 인사이트 */}
           {filteredLearnings.length > 0 && (
             <div className="bg-white rounded-2xl p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="font-bold text-[#4a4a6a] text-sm m-0">💡 AI 인사이트</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">AI 인사이트</h2>
                 <button onClick={generateLearnInsight} disabled={learnInsightLoading}
-                  className="text-sm px-4 py-2 rounded-full border-none cursor-pointer font-bold text-white disabled:opacity-50 transition-all"
-                  style={{background:'linear-gradient(135deg,#667eea,#764ba2)'}}>
-                  {learnInsightLoading ? '분석 중…' : learnInsight ? '↺ 다시 분석' : '🤖 분석 생성'}
+                  className="text-sm px-4 py-1.5 rounded-lg border-none cursor-pointer font-semibold text-white disabled:opacity-50 transition-all"
+                  style={{background:'#5850ec'}}>
+                  {learnInsightLoading ? '분석 중…' : learnInsight ? '다시 분석' : '분석 생성'}
                 </button>
               </div>
 
               {!learnInsight && !learnInsightLoading && (
-                <div className="flex flex-col items-center justify-center py-10 gap-3">
-                  <span className="text-4xl">🤖</span>
-                  <p className="text-sm text-[#bbb] text-center m-0 leading-relaxed">
-                    분석 생성을 누르면<br/>AI가 수업 개선 방향을 제안합니다.
-                  </p>
-                </div>
+                <p className="text-sm text-[#9ca3af] text-center py-8 m-0">
+                  분석 생성을 누르면 AI가 수업 개선 방향을 제안합니다.
+                </p>
               )}
 
               {learnInsightLoading && (
-                <div className="flex flex-col items-center justify-center py-10 gap-3">
-                  <span className="text-4xl animate-spin">⚙️</span>
-                  <p className="text-sm text-[#bbb] m-0">피드백 패턴을 분석하는 중…</p>
-                </div>
+                <p className="text-sm text-[#9ca3af] text-center py-8 m-0">피드백 패턴을 분석하는 중…</p>
               )}
 
               {learnInsight && !learnInsightLoading && (
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
 
-                  {/* 학급 공통 오개념 */}
-                  <div className="rounded-xl p-4" style={{background:'#fff8e1', border:'1.5px solid #ffe082'}}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-base">🔍</span>
-                      <span className="text-sm font-black text-[#f57f17]">학급 공통 오개념</span>
-                      <span className="text-[10px] text-[#aaa] ml-auto">다음 수업 도입부 재설명 포인트</span>
-                    </div>
-                    <p className="text-sm text-[#555] m-0 leading-relaxed">{learnInsight.misconception}</p>
+                  <div className="rounded-xl p-4 border border-[#e5e7eb]">
+                    <div className="text-xs font-semibold text-[#6b7280] mb-2">학급 공통 오개념</div>
+                    <p className="text-sm text-[#374151] m-0 leading-relaxed">{learnInsight.misconception}</p>
                   </div>
 
-                  {/* 수업 개선 제안 */}
-                  <div className="rounded-xl p-4" style={{background:'#f0fdf4', border:'1.5px solid #86efac'}}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-base">🗓</span>
-                      <span className="text-sm font-black text-[#059669]">수업 개선 제안</span>
-                      <span className="text-[10px] text-[#aaa] ml-auto">수업 자료 개선</span>
-                    </div>
-                    <p className="text-sm text-[#555] m-0 leading-relaxed">{learnInsight.suggestion}</p>
+                  <div className="rounded-xl p-4 border border-[#e5e7eb]">
+                    <div className="text-xs font-semibold text-[#6b7280] mb-2">수업 개선 제안</div>
+                    <p className="text-sm text-[#374151] m-0 leading-relaxed">{learnInsight.suggestion}</p>
                   </div>
 
-                  {/* 탐구 질문 추천 */}
                   {learnInsight.explorationQuestions && learnInsight.explorationQuestions.length > 0 && (
-                    <div className="rounded-xl p-4" style={{background:'#f3f0ff', border:'1.5px solid #c4b5fd'}}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-base">🔭</span>
-                        <span className="text-sm font-black text-[#6d28d9]">다음 탐구 질문 추천</span>
-                        <span className="text-[10px] text-[#aaa] ml-auto">다음 수업 탐구 출발점</span>
-                      </div>
+                    <div className="rounded-xl p-4 border border-[#e5e7eb]">
+                      <div className="text-xs font-semibold text-[#6b7280] mb-2">다음 탐구 질문 추천</div>
                       <div className="space-y-2">
                         {learnInsight.explorationQuestions.map((q, i) => (
-                          <div key={i} className="flex items-start gap-2 bg-white rounded-lg px-3 py-2"
-                            style={{border:'1px solid #ddd6fe'}}>
-                            <span className="text-xs font-black mt-0.5 shrink-0" style={{color:'#7c3aed'}}>Q{i+1}</span>
-                            <p className="text-sm text-[#333] m-0 leading-relaxed">{q}</p>
+                          <div key={i} className="flex items-start gap-2">
+                            <span className="text-xs font-bold text-[#9ca3af] shrink-0 mt-0.5">Q{i+1}</span>
+                            <p className="text-sm text-[#374151] m-0 leading-relaxed">{q}</p>
                           </div>
                         ))}
                       </div>
@@ -1109,69 +1081,54 @@ export default function TeacherPage() {
             return (
               <div className="bg-white rounded-2xl p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-bold text-[#4a4a6a] text-sm m-0">🧩 학생 성장 유형 분류</h2>
-                  {fGrowthType && (
+                  <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">학생 성장 유형 분류</h2>
+                  {fGrowthType ? (
                     <button onClick={() => setFGrowthType(null)}
-                      className="text-xs px-3 py-1 rounded-full border-none cursor-pointer font-semibold"
-                      style={{background:'#e8eaf6', color:'#3949ab'}}>
-                      ✕ 필터 해제
+                      className="text-xs px-3 py-1 rounded-lg border border-[#e5e7eb] bg-white cursor-pointer font-medium text-[#6b7280]">
+                      필터 해제
                     </button>
+                  ) : (
+                    <span className="text-xs text-[#9ca3af]">카드 클릭 시 배움 목록 필터</span>
                   )}
                 </div>
-                {!fGrowthType && (
-                  <p className="text-[11px] text-[#bbb] mb-3 mt-0">카드를 클릭하면 해당 유형만 배움 목록에 표시됩니다.</p>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {types.map(t => {
                     const isActive = fGrowthType === t.label;
                     return (
                       <div key={t.key}
                         onClick={() => setFGrowthType(isActive ? null : t.label)}
-                        className="rounded-xl p-4 border-2 cursor-pointer transition-all select-none"
+                        className="rounded-xl p-3 border border-[#e5e7eb] border-l-4 cursor-pointer transition-all select-none"
                         style={{
-                          background: t.bg,
-                          borderColor: isActive ? t.titleColor : t.borderColor,
-                          boxShadow: isActive ? `0 0 0 2px ${t.titleColor}` : undefined,
-                          opacity: fGrowthType && !isActive ? 0.55 : 1,
+                          borderLeftColor: t.titleColor,
+                          outline: isActive ? `2px solid ${t.titleColor}` : undefined,
+                          outlineOffset: isActive ? '1px' : undefined,
+                          opacity: fGrowthType && !isActive ? 0.4 : 1,
                         }}>
 
-                        {/* 헤더 */}
-                        <div className="flex items-start justify-between gap-2 mb-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-2xl leading-none">{t.emoji}</span>
-                            <div>
-                              <div className="text-sm font-black leading-tight" style={{color: t.titleColor}}>{t.label}</div>
-                              <div className="text-[11px] text-[#888] mt-0.5 leading-tight">{t.criterion}</div>
-                            </div>
-                          </div>
-                          <div className="flex flex-col items-end gap-1 shrink-0">
-                            <button
-                              onClick={e => {
-                                e.stopPropagation();
-                                if (t.rows.length > 0) setGrowthPopup({ label: t.label, rows: t.rows, titleColor: t.titleColor, borderColor: t.borderColor });
-                              }}
-                              disabled={t.rows.length === 0}
-                              className="text-xs font-black text-white px-3 py-1 rounded-full border-none cursor-pointer disabled:opacity-40 disabled:cursor-default transition-opacity"
-                              style={{background: t.titleColor}}>
-                              {t.rows.length}명 보기
-                            </button>
-                            {t.warning && t.rows.length > 0 && (
-                              <span className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full"
-                                style={{background:'#c62828'}}>다음 수업 전 확인</span>
-                            )}
-                          </div>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="text-sm font-bold leading-tight" style={{color: t.titleColor}}>{t.label}</div>
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              if (t.rows.length > 0) setGrowthPopup({ label: t.label, rows: t.rows, titleColor: t.titleColor, borderColor: t.borderColor });
+                            }}
+                            disabled={t.rows.length === 0}
+                            className="text-xs font-semibold text-white px-2 py-0.5 rounded border-none cursor-pointer disabled:opacity-40 disabled:cursor-default"
+                            style={{background: t.titleColor}}>
+                            {t.rows.length}명
+                          </button>
                         </div>
 
-                        {/* 교사 액션 */}
-                        <div className="text-xs font-semibold px-3 py-1.5 rounded-lg inline-flex items-center gap-1"
-                          style={{background:'white', color: t.titleColor, border:`1.5px solid ${t.borderColor}`}}>
-                          💡 {t.action}
-                        </div>
+                        <div className="text-[11px] text-[#9ca3af] mb-2 leading-tight">{t.criterion}</div>
+                        <div className="text-xs font-medium" style={{color: t.titleColor}}>{t.action}</div>
 
+                        {t.warning && t.rows.length > 0 && (
+                          <div className="text-[10px] font-semibold text-[#dc2626] mt-1.5">다음 수업 전 확인</div>
+                        )}
                         {isActive && (
-                          <div className="mt-2.5 text-[11px] font-bold text-center py-1 rounded-lg"
-                            style={{background: t.titleColor, color:'white'}}>
-                            ▼ 배움 목록 필터 적용 중
+                          <div className="text-[10px] font-semibold text-white text-center mt-2 py-0.5 rounded"
+                            style={{background: t.titleColor}}>
+                            필터 적용 중
                           </div>
                         )}
                       </div>
@@ -1184,32 +1141,28 @@ export default function TeacherPage() {
 
           {/* 배움 목록 */}
           <div className="bg-white rounded-2xl p-5 shadow-sm">
-            {/* 헤더 — 전체 선택 + 선택 삭제 */}
             <div className="flex items-center gap-2 mb-4">
               {displayedLearnings.length > 0 && (
                 <div onClick={toggleLearnAll} className="w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center cursor-pointer transition-colors"
                   style={displayedLearnings.every(r => selLearn.has(r.id)) && displayedLearnings.length > 0
-                    ? {borderColor:'#667eea', background:'#667eea'}
-                    : {borderColor:'#ccc', background:'white'}}>
+                    ? {borderColor:'#5850ec', background:'#5850ec'}
+                    : {borderColor:'#d1d5db', background:'white'}}>
                   {displayedLearnings.every(r => selLearn.has(r.id)) && displayedLearnings.length > 0 &&
                     <span className="text-white text-[9px] font-black leading-none">✓</span>}
                 </div>
               )}
-              <h2 className="font-bold text-[#4a4a6a] text-sm m-0 flex items-center gap-2">
-                📋 배움 목록
-                <span className="font-bold text-xs text-white px-2 py-0.5 rounded-full" style={{background:'#667eea'}}>{displayedLearnings.length}개</span>
+              <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0 flex items-center gap-2">
+                배움 목록
+                <span className="text-xs font-medium text-[#9ca3af]">{displayedLearnings.length}개</span>
                 {fGrowthType && (
-                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                    style={{background:'#e8eaf6', color:'#3949ab'}}>
-                    {fGrowthType} 필터 중
-                  </span>
+                  <span className="text-xs font-medium text-[#5850ec]">{fGrowthType}</span>
                 )}
               </h2>
               {selLearn.size > 0 && (
                 <button onClick={() => setShowDeleteLearn(true)}
-                  className="ml-auto text-xs px-3 py-1.5 rounded-full font-bold text-white border-none cursor-pointer"
-                  style={{background:'#c62828'}}>
-                  선택 삭제 ({selLearn.size})
+                  className="ml-auto text-xs px-3 py-1.5 rounded-lg font-semibold text-white border-none cursor-pointer"
+                  style={{background:'#dc2626'}}>
+                  삭제 ({selLearn.size})
                 </button>
               )}
             </div>
@@ -1221,7 +1174,7 @@ export default function TeacherPage() {
                 {fGrowthType ? `${fGrowthType}에 해당하는 학생이 없습니다.` : '아직 제출된 배움 기록이 없습니다.'}
               </p>
             ) : (
-              <div className="space-y-2.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {displayedLearnings.map(row => {
                   const isExpanded    = expandedId === row.id;
                   const isSelected    = selLearn.has(row.id);
@@ -1237,108 +1190,105 @@ export default function TeacherPage() {
                   const parsedRevised = row.revised_content ? parseContent(row.revised_content) : null;
 
                   return (
-                    <div key={row.id} className="border-2 rounded-xl overflow-hidden transition-colors"
-                      style={{borderColor: isExpanded ? '#667eea' : isSelected ? '#c5cae9' : '#ebebf5'}}>
+                    <div key={row.id} className="border rounded-xl overflow-hidden transition-colors"
+                      style={{borderColor: isExpanded ? '#5850ec' : isSelected ? '#c7d2fe' : '#e5e7eb'}}>
 
-                      {/* 헤더 — 체크박스 + 뱃지 + 토글 */}
-                      <div className="p-3 cursor-pointer hover:bg-[#fafbff] transition-colors"
+                      <div className="p-3 cursor-pointer hover:bg-[#fafafa] transition-colors"
                         onClick={() => setExpandedId(isExpanded ? null : row.id)}>
 
-                        <div className="flex items-start gap-2.5">
-                          {/* 체크박스 */}
+                        <div className="flex items-start gap-2">
                           <div onClick={e => { e.stopPropagation(); toggleLearnOne(row.id); }}
                             className="mt-0.5 w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center cursor-pointer transition-colors"
-                            style={isSelected ? {borderColor:'#667eea', background:'#667eea'} : {borderColor:'#ccc', background:'white'}}>
+                            style={isSelected ? {borderColor:'#5850ec', background:'#5850ec'} : {borderColor:'#d1d5db', background:'white'}}>
                             {isSelected && <span className="text-white text-[9px] font-black leading-none">✓</span>}
                           </div>
 
-                          {/* 뱃지 묶음 */}
                           <div className="flex-1 min-w-0">
-                            <div className="flex flex-wrap gap-1.5 items-center mb-1.5">
-                              {classLabel && <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{background:'#f0f2f8', color:'#555'}}>{classLabel}</span>}
-                              <span className="text-xs font-bold px-2 py-0.5 rounded-md" style={{background:'#e8eaf6', color:'#3949ab'}}>{row.student_name}</span>
-                              <span className="text-xs px-2 py-0.5 rounded-md" style={{background:'#f3f0ff', color:'#6b21a8'}}>{row.lesson}</span>
-                              {/* 수정 여부 */}
-                              <span className="text-xs font-semibold px-2 py-0.5 rounded-md"
-                                style={row.is_revised ? {background:'#e0f7fa', color:'#00838f'} : {background:'#f5f5f5', color:'#aaa'}}>
-                                {row.is_revised ? '✏️ 수정완료' : '— 미수정'}
+                            {/* 이름 + 학년반 + 프로젝트 */}
+                            <div className="flex items-baseline gap-1.5 mb-1 flex-wrap">
+                              <span className="text-sm font-semibold text-[#1a1a2e]">{row.student_name}</span>
+                              {classLabel && <span className="text-xs text-[#9ca3af]">{classLabel}</span>}
+                              <span className="text-xs text-[#9ca3af]">· {row.lesson}</span>
+                            </div>
+
+                            {/* 수정여부 + 성장유형 */}
+                            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                              <span className="text-[11px] font-medium"
+                                style={{color: row.is_revised ? '#16a34a' : '#9ca3af'}}>
+                                {row.is_revised ? '수정완료' : '미수정'}
                               </span>
-                              {/* 성장 유형 (이해수준 변화 정보 포함) */}
-                              <span className="text-xs font-bold px-2 py-0.5 rounded-md"
-                                style={{background: growthType.bg, color: growthType.color}}>
-                                {growthType.emoji} {growthType.label}
-                                {levelChanged && <span className="font-normal opacity-70 ml-1">{initSt}→{finalSt}</span>}
+                              <span className="text-[11px] text-[#d1d5db]">·</span>
+                              <span className="text-[11px] font-medium" style={{color: growthType.color}}>
+                                {growthType.label}
+                                {levelChanged && <span className="text-[#9ca3af] ml-1">{initSt}→{finalSt}</span>}
                               </span>
                             </div>
 
-                            {/* 내용 미리보기 — [핵심 내용]만 표시 */}
-                            <p className="text-sm text-[#444] leading-relaxed m-0 overflow-hidden"
+                            {/* 핵심 내용 미리보기 */}
+                            <p className="text-sm text-[#374151] leading-relaxed m-0 overflow-hidden"
                               style={{display:'-webkit-box', WebkitLineClamp: isExpanded ? undefined : 2, WebkitBoxOrient:'vertical'}}>
                               {parsedContent.core || row.content}
                             </p>
 
-                            {/* AI 핵심 개선 포인트 1줄 — 🟢 최종 학생 제외 */}
+                            {/* 개선 포인트 — 🟢 제외 */}
                             {latestImprove && finalSt !== '🟢' && (
-                              <p className="text-xs mt-1.5 m-0 leading-relaxed"
-                                style={{color:'#f57f17'}}>
-                                💬 {latestImprove}
+                              <p className="text-xs text-[#d97706] mt-1 m-0 leading-relaxed overflow-hidden"
+                                style={{display:'-webkit-box', WebkitLineClamp:1, WebkitBoxOrient:'vertical'}}>
+                                {latestImprove}
                               </p>
                             )}
                           </div>
 
-                          <span className="text-[#bbb] text-xs shrink-0 mt-0.5">{isExpanded ? '▲' : '▼'}</span>
+                          <span className="text-[#d1d5db] text-xs shrink-0 mt-0.5">{isExpanded ? '▲' : '▼'}</span>
                         </div>
                       </div>
 
                       {/* 펼침 영역 */}
                       {isExpanded && (
-                        <div className="border-t-2 border-[#ebebf5] p-4 space-y-3" style={{background:'#fafbff'}}>
+                        <div className="border-t border-[#e5e7eb] p-3 space-y-3 bg-[#fafafa]">
 
-                          {/* 최초 작성 */}
                           <div>
-                            <p className="text-xs font-bold text-[#667eea] mb-1.5">📝 최초 작성</p>
-                            <div className="bg-white rounded-xl border border-[#ebebf5] overflow-hidden">
-                              <div className="px-3 py-2 border-b border-[#f0f0f8]">
-                                <p className="text-[10px] font-bold text-[#9ca3af] mb-0.5">핵심 내용</p>
-                                <p className="text-sm text-[#333] leading-relaxed whitespace-pre-wrap m-0">{parsedContent.core}</p>
+                            <p className="text-xs font-semibold text-[#6b7280] mb-1.5">최초 작성</p>
+                            <div className="bg-white rounded-lg border border-[#e5e7eb] overflow-hidden">
+                              <div className="px-3 py-2 border-b border-[#f3f4f6]">
+                                <p className="text-[11px] font-medium text-[#9ca3af] mb-0.5">핵심 내용</p>
+                                <p className="text-sm text-[#374151] leading-relaxed whitespace-pre-wrap m-0">{parsedContent.core}</p>
                               </div>
                               {parsedContent.curious && (
                                 <div className="px-3 py-2">
-                                  <p className="text-[10px] font-bold text-[#9ca3af] mb-0.5">새롭게 알게 된 것 · 더 궁금한 것</p>
-                                  <p className="text-sm text-[#555] leading-relaxed whitespace-pre-wrap m-0">{parsedContent.curious}</p>
+                                  <p className="text-[11px] font-medium text-[#9ca3af] mb-0.5">새롭게 알게 된 것 · 더 궁금한 것</p>
+                                  <p className="text-sm text-[#374151] leading-relaxed whitespace-pre-wrap m-0">{parsedContent.curious}</p>
                                 </div>
                               )}
                             </div>
                           </div>
 
-                          {/* 수정 작성 */}
                           {row.is_revised && row.revised_content && parsedRevised && (
                             <div>
-                              <p className="text-xs font-bold text-[#00838f] mb-1.5">✏️ 수정 작성</p>
-                              <div className="bg-white rounded-xl border border-[#b2ebf2] overflow-hidden">
-                                <div className="px-3 py-2 border-b border-[#e0f7fa]">
-                                  <p className="text-[10px] font-bold text-[#9ca3af] mb-0.5">핵심 내용</p>
-                                  <p className="text-sm text-[#333] leading-relaxed whitespace-pre-wrap m-0">{parsedRevised.core}</p>
+                              <p className="text-xs font-semibold text-[#6b7280] mb-1.5">수정 작성</p>
+                              <div className="bg-white rounded-lg border border-[#e5e7eb] overflow-hidden">
+                                <div className="px-3 py-2 border-b border-[#f3f4f6]">
+                                  <p className="text-[11px] font-medium text-[#9ca3af] mb-0.5">핵심 내용</p>
+                                  <p className="text-sm text-[#374151] leading-relaxed whitespace-pre-wrap m-0">{parsedRevised.core}</p>
                                 </div>
                                 {parsedRevised.curious && (
                                   <div className="px-3 py-2">
-                                    <p className="text-[10px] font-bold text-[#9ca3af] mb-0.5">새롭게 알게 된 것 · 더 궁금한 것</p>
-                                    <p className="text-sm text-[#555] leading-relaxed whitespace-pre-wrap m-0">{parsedRevised.curious}</p>
+                                    <p className="text-[11px] font-medium text-[#9ca3af] mb-0.5">새롭게 알게 된 것 · 더 궁금한 것</p>
+                                    <p className="text-sm text-[#374151] leading-relaxed whitespace-pre-wrap m-0">{parsedRevised.curious}</p>
                                   </div>
                                 )}
                               </div>
                             </div>
                           )}
 
-                          {/* AI 핵심 개선 포인트 */}
-                          {latestImprove && (
-                            <div className="rounded-xl p-3" style={{background:'#fff8e1', border:'1px solid #ffe082'}}>
-                              <p className="text-xs font-bold text-[#f57f17] mb-1">💬 AI 핵심 개선 포인트</p>
-                              <p className="text-sm text-[#555] m-0 leading-relaxed">{latestImprove}</p>
+                          {latestImprove && finalSt !== '🟢' && (
+                            <div className="rounded-lg p-3 border border-[#e5e7eb]">
+                              <p className="text-[11px] font-semibold text-[#6b7280] mb-1">AI 개선 포인트</p>
+                              <p className="text-sm text-[#374151] m-0 leading-relaxed">{latestImprove}</p>
                             </div>
                           )}
 
-                          <p className="text-[10px] text-[#ccc] m-0">제출: {row.created_at}</p>
+                          <p className="text-[11px] text-[#9ca3af] m-0">제출 {row.created_at}</p>
                         </div>
                       )}
 
