@@ -693,7 +693,7 @@ export default function TeacherPage() {
         {stats && (
           <div className="bg-white rounded-2xl p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">수업 활용</h2>
+              <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">AI 인사이트</h2>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-[#9ca3af]">현재 {filtered.length}개 질문 기준</span>
                 <button onClick={generateAiReport} disabled={aiLoading || !stats}
