@@ -412,6 +412,21 @@ export default function TeacherPage() {
     return { n, avgScore, finalGreenCount, grownCount };
   }, [filteredLearnings]);
 
+  const growthTypes = useMemo(() => {
+    const immediate: LearningRow[] = [];  // 최초 🟢
+    const grower:    LearningRow[] = [];  // 최초 🔴/🟡 → 수정 후 🟢
+    const trying:    LearningRow[] = [];  // 수정했으나 🟢 미도달
+    const needsHelp: LearningRow[] = [];  // 🔴/🟡이나 수정 없음
+    filteredLearnings.forEach(r => {
+      const initSt = getLearnStatus(r.feedback);
+      if (initSt === '🟢') { immediate.push(r); return; }
+      if (r.is_revised && getFinalStatus(r) === '🟢') { grower.push(r); return; }
+      if (r.is_revised) { trying.push(r); return; }
+      needsHelp.push(r);
+    });
+    return { immediate, grower, trying, needsHelp };
+  }, [filteredLearnings]);
+
   function toggleOne(id: number) { setSel(p => { const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n; }); }
   function toggleAll() {
     const all = displayed.length > 0 && displayed.every(r => sel.has(r.id));
@@ -894,6 +909,105 @@ export default function TeacherPage() {
                     <div className="text-xs text-[#64b5f6] mt-1.5">수정 후 단계 향상</div>
                   </div>
 
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* 성장 유형 분류 */}
+          {filteredLearnings.length > 0 && (() => {
+            const types = [
+              {
+                key: 'immediate',
+                emoji: '🌟', label: '즉시 이해형',
+                criterion: '최초 작성부터 핵심 개념 이해',
+                action: '심화 탐구 제공',
+                bg: '#e8f5e9', borderColor: '#a5d6a7', titleColor: '#2e7d32',
+                subColor: '#66bb6a',
+                rows: growthTypes.immediate,
+              },
+              {
+                key: 'grower',
+                emoji: '🌱', label: '성장형',
+                criterion: '수정 후 핵심 개념 이해 도달',
+                action: '긍정 강화, 성장 공유',
+                bg: '#e0f7fa', borderColor: '#80deea', titleColor: '#00838f',
+                subColor: '#26c6da',
+                rows: growthTypes.grower,
+              },
+              {
+                key: 'trying',
+                emoji: '🔄', label: '지속 노력형',
+                criterion: '수정했으나 아직 🟢 미도달',
+                action: '소그룹 지도, 추가 스캐폴딩',
+                bg: '#fff8e1', borderColor: '#ffe082', titleColor: '#f57f17',
+                subColor: '#ffb300',
+                rows: growthTypes.trying,
+              },
+              {
+                key: 'needsHelp',
+                emoji: '⚠️', label: '지원 필요형',
+                criterion: '🔴/🟡 상태에서 수정 없음',
+                action: '우선 개별 면담',
+                bg: '#ffebee', borderColor: '#ef9a9a', titleColor: '#c62828',
+                subColor: '#e57373',
+                rows: growthTypes.needsHelp,
+                warning: true,
+              },
+            ];
+            return (
+              <div className="bg-white rounded-2xl p-5 shadow-sm">
+                <h2 className="font-bold text-[#4a4a6a] text-sm mb-4">🧩 학생 성장 유형 분류</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {types.map(t => (
+                    <div key={t.key} className="rounded-xl p-4 border-2"
+                      style={{background: t.bg, borderColor: t.borderColor}}>
+
+                      {/* 헤더 */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">{t.emoji}</span>
+                          <span className="text-sm font-bold" style={{color: t.titleColor}}>{t.label}</span>
+                          <span className="text-xs font-bold text-white px-2 py-0.5 rounded-full"
+                            style={{background: t.titleColor}}>{t.rows.length}명</span>
+                        </div>
+                        {t.warning && t.rows.length > 0 && (
+                          <span className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full"
+                            style={{background:'#c62828'}}>다음 수업 전 확인</span>
+                        )}
+                      </div>
+
+                      {/* 판정 기준 · 교사 액션 */}
+                      <div className="flex gap-3 mb-3">
+                        <div className="text-xs text-[#777]">
+                          <span className="font-semibold text-[#555]">판정 </span>{t.criterion}
+                        </div>
+                      </div>
+                      <div className="text-xs mb-3 px-2.5 py-1.5 rounded-lg inline-block"
+                        style={{background:'white', color: t.titleColor, border:`1px solid ${t.borderColor}`}}>
+                        💡 {t.action}
+                      </div>
+
+                      {/* 학생 목록 */}
+                      {t.rows.length === 0 ? (
+                        <p className="text-xs text-[#bbb]">해당 학생 없음</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                          {t.rows.map(r => {
+                            const cls = [r.grade, r.class_name].filter(Boolean).join(' ');
+                            return (
+                              <span key={r.id}
+                                className="text-xs px-2 py-0.5 rounded-full border font-medium"
+                                style={{background:'white', color: t.titleColor, borderColor: t.borderColor}}>
+                                {cls && <span className="text-[#aaa] mr-1">{cls}</span>}{r.student_name}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                    </div>
+                  ))}
                 </div>
               </div>
             );
