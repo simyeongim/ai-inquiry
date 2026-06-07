@@ -204,6 +204,14 @@ function getGrowthType(r: LearningRow): { emoji: string; label: string; color: s
   if (r.is_revised)                               return { emoji: '🔄', label: '지속 노력형', color: '#f57f17', bg: '#fff8e1' };
   return { emoji: '⚠️', label: '지원 필요형', color: '#c62828', bg: '#ffebee' };
 }
+function parseContent(content: string): { core: string; curious: string } {
+  const coreMatch    = content.match(/\[핵심 내용\]\n?([\s\S]*?)(?=\n\n?\[새롭게|$)/);
+  const curiousMatch = content.match(/\[새롭게 알게 된 것[^\]]*\]\n?([\s\S]*)$/);
+  return {
+    core:    coreMatch?.[1]?.trim()    ?? content.trim(),
+    curious: curiousMatch?.[1]?.trim() ?? '',
+  };
+}
 
 // ─── 비밀번호 화면 ────────────────────────────────────
 function PinScreen({ onOk }: { onOk: () => void }) {
@@ -321,11 +329,13 @@ export default function TeacherPage() {
   const [aiReport,  setAiReport]  = useState<{ report: string; deepQuestions: string[]; suggestions: string[] } | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [refinedLabels, setRefinedLabels] = useState<Record<string, string>>({});
-  const [learnInsight, setLearnInsight] = useState<{ misconception: string; suggestion: string; attention: string } | null>(null);
+  const [learnInsight, setLearnInsight] = useState<{ misconception: string; suggestion: string; explorationQuestions?: string[] } | null>(null);
   const [learnInsightLoading, setLearnInsightLoading] = useState(false);
   const [selLearn,        setSelLearn]        = useState<Set<number>>(new Set());
   const [deletingLearn,   setDeletingLearn]   = useState(false);
   const [showDeleteLearn, setShowDeleteLearn] = useState(false);
+  const [fGrowthType,    setFGrowthType]    = useState<string | null>(null);
+  const [growthPopup,    setGrowthPopup]    = useState<{ label: string; rows: LearningRow[]; titleColor: string; borderColor: string } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setFetchErr('');
@@ -383,9 +393,10 @@ export default function TeacherPage() {
     setLearnInsightLoading(true);
     try {
       const improvePoints = filteredLearnings
+        .filter(r => getLearnStatus(r.feedback) !== '🟢')
         .map(r => getImprovePoint(r.feedback)).filter(Boolean);
       const revisedImprovePoints = filteredLearnings
-        .filter(r => r.revised_feedback)
+        .filter(r => r.revised_feedback && getFinalStatus(r) !== '🟢')
         .map(r => getImprovePoint(r.revised_feedback)).filter(Boolean);
       const finalSts = filteredLearnings.map(r => getFinalStatus(r));
       const statusDist = {
@@ -393,20 +404,10 @@ export default function TeacherPage() {
         '🟡': finalSts.filter(s => s === '🟡').length,
         '🔴': finalSts.filter(s => s === '🔴').length,
       };
-      const fmt = (r: LearningRow) => {
-        const cls = [r.grade, r.class_name].filter(Boolean).join(' ');
-        return cls ? `${r.student_name}(${cls})` : r.student_name;
-      };
       const res = await fetch('/api/learn-insight', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          improvePoints,
-          revisedImprovePoints,
-          statusDist,
-          needsHelpNames: growthTypes.needsHelp.map(fmt),
-          tryingNames:    growthTypes.trying.map(fmt),
-        }),
+        body: JSON.stringify({ improvePoints, revisedImprovePoints, statusDist }),
       });
       if (!res.ok) throw new Error();
       setLearnInsight(await res.json());
@@ -416,8 +417,8 @@ export default function TeacherPage() {
 
   function toggleLearnOne(id: number) { setSelLearn(p => { const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n; }); }
   function toggleLearnAll() {
-    const all = filteredLearnings.length > 0 && filteredLearnings.every(r => selLearn.has(r.id));
-    setSelLearn(all ? new Set() : new Set(filteredLearnings.map(r => r.id)));
+    const all = displayedLearnings.length > 0 && displayedLearnings.every(r => selLearn.has(r.id));
+    setSelLearn(all ? new Set() : new Set(displayedLearnings.map(r => r.id)));
   }
   async function deleteLearnings(ids: number[]) {
     if (!ids.length) return;
@@ -465,7 +466,7 @@ export default function TeacherPage() {
     const classLabel = [r.grade, r.class_name].filter(Boolean).join(' ');
     if (fLearnClass.length  && !fLearnClass.includes(classLabel))            return false;
     if (fLearnLesson.length && !fLearnLesson.includes(r.lesson))             return false;
-    if (fLearnStatus.length && !fLearnStatus.includes(getLearnStatus(r.feedback))) return false;
+    if (fLearnStatus.length && !fLearnStatus.includes(getFinalStatus(r))) return false;
     return true;
   }), [learningRows, fLearnClass, fLearnLesson, fLearnStatus]);
 
@@ -502,6 +503,11 @@ export default function TeacherPage() {
     });
     return { immediate, grower, trying, needsHelp };
   }, [filteredLearnings]);
+
+  const displayedLearnings = useMemo(() => {
+    if (!fGrowthType) return filteredLearnings;
+    return filteredLearnings.filter(r => getGrowthType(r).label === fGrowthType);
+  }, [filteredLearnings, fGrowthType]);
 
   function toggleOne(id: number) { setSel(p => { const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n; }); }
   function toggleAll() {
@@ -994,96 +1000,103 @@ export default function TeacherPage() {
           {filteredLearnings.length > 0 && (() => {
             const types = [
               {
-                key: 'immediate',
-                emoji: '🌟', label: '즉시 이해형',
+                key: 'immediate', emoji: '🌟', label: '즉시 이해형',
                 criterion: '최초 작성부터 핵심 개념 이해',
                 action: '심화 탐구 제공',
-                bg: '#e8f5e9', borderColor: '#a5d6a7', titleColor: '#2e7d32',
-                subColor: '#66bb6a',
+                bg: '#f0faf2', borderColor: '#a5d6a7', titleColor: '#2e7d32',
                 rows: growthTypes.immediate,
               },
               {
-                key: 'grower',
-                emoji: '🌱', label: '성장형',
+                key: 'grower', emoji: '🌱', label: '성장형',
                 criterion: '수정 후 핵심 개념 이해 도달',
                 action: '긍정 강화, 성장 공유',
-                bg: '#e0f7fa', borderColor: '#80deea', titleColor: '#00838f',
-                subColor: '#26c6da',
+                bg: '#e8f9fb', borderColor: '#80deea', titleColor: '#00838f',
                 rows: growthTypes.grower,
               },
               {
-                key: 'trying',
-                emoji: '🔄', label: '지속 노력형',
+                key: 'trying', emoji: '🔄', label: '지속 노력형',
                 criterion: '수정했으나 아직 🟢 미도달',
                 action: '소그룹 지도, 추가 스캐폴딩',
-                bg: '#fff8e1', borderColor: '#ffe082', titleColor: '#f57f17',
-                subColor: '#ffb300',
+                bg: '#fffbec', borderColor: '#ffe082', titleColor: '#e65100',
                 rows: growthTypes.trying,
               },
               {
-                key: 'needsHelp',
-                emoji: '⚠️', label: '지원 필요형',
+                key: 'needsHelp', emoji: '⚠️', label: '지원 필요형',
                 criterion: '🔴/🟡 상태에서 수정 없음',
                 action: '우선 개별 면담',
-                bg: '#ffebee', borderColor: '#ef9a9a', titleColor: '#c62828',
-                subColor: '#e57373',
+                bg: '#fff3f3', borderColor: '#ef9a9a', titleColor: '#c62828',
                 rows: growthTypes.needsHelp,
                 warning: true,
               },
             ];
             return (
               <div className="bg-white rounded-2xl p-5 shadow-sm">
-                <h2 className="font-bold text-[#4a4a6a] text-sm mb-4">🧩 학생 성장 유형 분류</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-bold text-[#4a4a6a] text-sm m-0">🧩 학생 성장 유형 분류</h2>
+                  {fGrowthType && (
+                    <button onClick={() => setFGrowthType(null)}
+                      className="text-xs px-3 py-1 rounded-full border-none cursor-pointer font-semibold"
+                      style={{background:'#e8eaf6', color:'#3949ab'}}>
+                      ✕ 필터 해제
+                    </button>
+                  )}
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {types.map(t => (
-                    <div key={t.key} className="rounded-xl p-4 border-2"
-                      style={{background: t.bg, borderColor: t.borderColor}}>
+                  {types.map(t => {
+                    const isActive = fGrowthType === t.label;
+                    return (
+                      <div key={t.key}
+                        onClick={() => setFGrowthType(isActive ? null : t.label)}
+                        className="rounded-xl p-4 border-2 cursor-pointer transition-all select-none"
+                        style={{
+                          background: t.bg,
+                          borderColor: isActive ? t.titleColor : t.borderColor,
+                          boxShadow: isActive ? `0 0 0 2px ${t.titleColor}` : undefined,
+                          opacity: fGrowthType && !isActive ? 0.55 : 1,
+                        }}>
 
-                      {/* 헤더 */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-base">{t.emoji}</span>
-                          <span className="text-sm font-bold" style={{color: t.titleColor}}>{t.label}</span>
-                          <span className="text-xs font-bold text-white px-2 py-0.5 rounded-full"
-                            style={{background: t.titleColor}}>{t.rows.length}명</span>
+                        {/* 헤더 */}
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl leading-none">{t.emoji}</span>
+                            <div>
+                              <div className="text-sm font-black leading-tight" style={{color: t.titleColor}}>{t.label}</div>
+                              <div className="text-[11px] text-[#888] mt-0.5 leading-tight">{t.criterion}</div>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <button
+                              onClick={e => {
+                                e.stopPropagation();
+                                if (t.rows.length > 0) setGrowthPopup({ label: t.label, rows: t.rows, titleColor: t.titleColor, borderColor: t.borderColor });
+                              }}
+                              disabled={t.rows.length === 0}
+                              className="text-xs font-black text-white px-3 py-1 rounded-full border-none cursor-pointer disabled:opacity-40 disabled:cursor-default transition-opacity"
+                              style={{background: t.titleColor}}>
+                              {t.rows.length}명 보기
+                            </button>
+                            {t.warning && t.rows.length > 0 && (
+                              <span className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full"
+                                style={{background:'#c62828'}}>다음 수업 전 확인</span>
+                            )}
+                          </div>
                         </div>
-                        {t.warning && t.rows.length > 0 && (
-                          <span className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full"
-                            style={{background:'#c62828'}}>다음 수업 전 확인</span>
+
+                        {/* 교사 액션 */}
+                        <div className="text-xs font-semibold px-3 py-1.5 rounded-lg inline-flex items-center gap-1"
+                          style={{background:'white', color: t.titleColor, border:`1.5px solid ${t.borderColor}`}}>
+                          💡 {t.action}
+                        </div>
+
+                        {isActive && (
+                          <div className="mt-2.5 text-[11px] font-bold text-center py-1 rounded-lg"
+                            style={{background: t.titleColor, color:'white'}}>
+                            ▼ 배움 목록 필터 적용 중
+                          </div>
                         )}
                       </div>
-
-                      {/* 판정 기준 · 교사 액션 */}
-                      <div className="flex gap-3 mb-3">
-                        <div className="text-xs text-[#777]">
-                          <span className="font-semibold text-[#555]">판정 </span>{t.criterion}
-                        </div>
-                      </div>
-                      <div className="text-xs mb-3 px-2.5 py-1.5 rounded-lg inline-block"
-                        style={{background:'white', color: t.titleColor, border:`1px solid ${t.borderColor}`}}>
-                        💡 {t.action}
-                      </div>
-
-                      {/* 학생 목록 */}
-                      {t.rows.length === 0 ? (
-                        <p className="text-xs text-[#bbb]">해당 학생 없음</p>
-                      ) : (
-                        <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
-                          {t.rows.map(r => {
-                            const cls = [r.grade, r.class_name].filter(Boolean).join(' ');
-                            return (
-                              <span key={r.id}
-                                className="text-xs px-2 py-0.5 rounded-full border font-medium"
-                                style={{background:'white', color: t.titleColor, borderColor: t.borderColor}}>
-                                {cls && <span className="text-[#aaa] mr-1">{cls}</span>}{r.student_name}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -1140,15 +1153,25 @@ export default function TeacherPage() {
                     <p className="text-sm text-[#555] m-0 leading-relaxed">{learnInsight.suggestion}</p>
                   </div>
 
-                  {/* 주목할 학생 */}
-                  <div className="rounded-xl p-4" style={{background:'#ffebee', border:'1.5px solid #ef9a9a'}}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-base">⚠️</span>
-                      <span className="text-sm font-black text-[#c62828]">주목할 학생</span>
-                      <span className="text-[10px] text-[#aaa] ml-auto">1:1 면담 대상</span>
+                  {/* 탐구 질문 추천 */}
+                  {learnInsight.explorationQuestions && learnInsight.explorationQuestions.length > 0 && (
+                    <div className="rounded-xl p-4" style={{background:'#f3f0ff', border:'1.5px solid #c4b5fd'}}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-base">🔭</span>
+                        <span className="text-sm font-black text-[#6d28d9]">다음 탐구 질문 추천</span>
+                        <span className="text-[10px] text-[#aaa] ml-auto">다음 수업 탐구 출발점</span>
+                      </div>
+                      <div className="space-y-2">
+                        {learnInsight.explorationQuestions.map((q, i) => (
+                          <div key={i} className="flex items-start gap-2 bg-white rounded-lg px-3 py-2"
+                            style={{border:'1px solid #ddd6fe'}}>
+                            <span className="text-xs font-black mt-0.5 shrink-0" style={{color:'#7c3aed'}}>Q{i+1}</span>
+                            <p className="text-sm text-[#333] m-0 leading-relaxed">{q}</p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <p className="text-sm text-[#555] m-0 leading-relaxed">{learnInsight.attention}</p>
-                  </div>
+                  )}
 
                 </div>
               )}
@@ -1159,18 +1182,24 @@ export default function TeacherPage() {
           <div className="bg-white rounded-2xl p-5 shadow-sm">
             {/* 헤더 — 전체 선택 + 선택 삭제 */}
             <div className="flex items-center gap-2 mb-4">
-              {filteredLearnings.length > 0 && (
+              {displayedLearnings.length > 0 && (
                 <div onClick={toggleLearnAll} className="w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center cursor-pointer transition-colors"
-                  style={filteredLearnings.every(r => selLearn.has(r.id)) && filteredLearnings.length > 0
+                  style={displayedLearnings.every(r => selLearn.has(r.id)) && displayedLearnings.length > 0
                     ? {borderColor:'#667eea', background:'#667eea'}
                     : {borderColor:'#ccc', background:'white'}}>
-                  {filteredLearnings.every(r => selLearn.has(r.id)) && filteredLearnings.length > 0 &&
+                  {displayedLearnings.every(r => selLearn.has(r.id)) && displayedLearnings.length > 0 &&
                     <span className="text-white text-[9px] font-black leading-none">✓</span>}
                 </div>
               )}
               <h2 className="font-bold text-[#4a4a6a] text-sm m-0 flex items-center gap-2">
                 📋 배움 목록
-                <span className="font-bold text-xs text-white px-2 py-0.5 rounded-full" style={{background:'#667eea'}}>{filteredLearnings.length}개</span>
+                <span className="font-bold text-xs text-white px-2 py-0.5 rounded-full" style={{background:'#667eea'}}>{displayedLearnings.length}개</span>
+                {fGrowthType && (
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                    style={{background:'#e8eaf6', color:'#3949ab'}}>
+                    {fGrowthType} 필터 중
+                  </span>
+                )}
               </h2>
               {selLearn.size > 0 && (
                 <button onClick={() => setShowDeleteLearn(true)}
@@ -1183,11 +1212,13 @@ export default function TeacherPage() {
 
             {loadingLearn ? (
               <p className="text-center text-[#ccc] py-10 text-sm">불러오는 중...</p>
-            ) : filteredLearnings.length === 0 ? (
-              <p className="text-center text-[#ccc] py-10 text-sm">아직 제출된 배움 기록이 없습니다.</p>
+            ) : displayedLearnings.length === 0 ? (
+              <p className="text-center text-[#ccc] py-10 text-sm">
+                {fGrowthType ? `${fGrowthType}에 해당하는 학생이 없습니다.` : '아직 제출된 배움 기록이 없습니다.'}
+              </p>
             ) : (
               <div className="space-y-2.5">
-                {filteredLearnings.map(row => {
+                {displayedLearnings.map(row => {
                   const isExpanded    = expandedId === row.id;
                   const isSelected    = selLearn.has(row.id);
                   const classLabel    = [row.grade, row.class_name].filter(Boolean).join(' ');
@@ -1198,6 +1229,8 @@ export default function TeacherPage() {
                   const latestImprove = row.is_revised && row.revised_feedback
                     ? getImprovePoint(row.revised_feedback)
                     : getImprovePoint(row.feedback);
+                  const parsedContent = parseContent(row.content);
+                  const parsedRevised = row.revised_content ? parseContent(row.revised_content) : null;
 
                   return (
                     <div key={row.id} className="border-2 rounded-xl overflow-hidden transition-colors"
@@ -1241,10 +1274,10 @@ export default function TeacherPage() {
                               </span>
                             </div>
 
-                            {/* 내용 미리보기 */}
+                            {/* 내용 미리보기 — [핵심 내용]만 표시 */}
                             <p className="text-sm text-[#444] leading-relaxed m-0 overflow-hidden"
                               style={{display:'-webkit-box', WebkitLineClamp: isExpanded ? undefined : 2, WebkitBoxOrient:'vertical'}}>
-                              {row.content}
+                              {parsedContent.core || row.content}
                             </p>
 
                             {/* AI 핵심 개선 포인트 1줄 */}
@@ -1267,14 +1300,36 @@ export default function TeacherPage() {
                           {/* 최초 작성 */}
                           <div>
                             <p className="text-xs font-bold text-[#667eea] mb-1.5">📝 최초 작성</p>
-                            <p className="text-sm text-[#333] leading-relaxed whitespace-pre-wrap bg-white rounded-xl p-3 border border-[#ebebf5] m-0">{row.content}</p>
+                            <div className="bg-white rounded-xl border border-[#ebebf5] overflow-hidden">
+                              <div className="px-3 py-2 border-b border-[#f0f0f8]">
+                                <p className="text-[10px] font-bold text-[#9ca3af] mb-0.5">핵심 내용</p>
+                                <p className="text-sm text-[#333] leading-relaxed whitespace-pre-wrap m-0">{parsedContent.core}</p>
+                              </div>
+                              {parsedContent.curious && (
+                                <div className="px-3 py-2">
+                                  <p className="text-[10px] font-bold text-[#9ca3af] mb-0.5">새롭게 알게 된 것 · 더 궁금한 것</p>
+                                  <p className="text-sm text-[#555] leading-relaxed whitespace-pre-wrap m-0">{parsedContent.curious}</p>
+                                </div>
+                              )}
+                            </div>
                           </div>
 
                           {/* 수정 작성 */}
-                          {row.is_revised && row.revised_content && (
+                          {row.is_revised && row.revised_content && parsedRevised && (
                             <div>
                               <p className="text-xs font-bold text-[#00838f] mb-1.5">✏️ 수정 작성</p>
-                              <p className="text-sm text-[#333] leading-relaxed whitespace-pre-wrap bg-white rounded-xl p-3 border border-[#b2ebf2] m-0">{row.revised_content}</p>
+                              <div className="bg-white rounded-xl border border-[#b2ebf2] overflow-hidden">
+                                <div className="px-3 py-2 border-b border-[#e0f7fa]">
+                                  <p className="text-[10px] font-bold text-[#9ca3af] mb-0.5">핵심 내용</p>
+                                  <p className="text-sm text-[#333] leading-relaxed whitespace-pre-wrap m-0">{parsedRevised.core}</p>
+                                </div>
+                                {parsedRevised.curious && (
+                                  <div className="px-3 py-2">
+                                    <p className="text-[10px] font-bold text-[#9ca3af] mb-0.5">새롭게 알게 된 것 · 더 궁금한 것</p>
+                                    <p className="text-sm text-[#555] leading-relaxed whitespace-pre-wrap m-0">{parsedRevised.curious}</p>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           )}
 
@@ -1299,6 +1354,37 @@ export default function TeacherPage() {
 
         </div>
       )} {/* /개념학습 탭 */}
+
+      {/* 성장 유형 학생 이름 팝업 */}
+      {growthPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{background:'rgba(0,0,0,0.4)'}}
+          onClick={() => setGrowthPopup(null)}>
+          <div className="bg-white rounded-2xl p-5 w-80 max-h-[70vh] overflow-y-auto shadow-2xl"
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-black text-sm" style={{color: growthPopup.titleColor}}>
+                {growthPopup.label} ({growthPopup.rows.length}명)
+              </span>
+              <button onClick={() => setGrowthPopup(null)}
+                className="text-[#bbb] hover:text-[#888] text-lg font-bold leading-none border-none bg-transparent cursor-pointer">
+                ✕
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {growthPopup.rows.map(r => {
+                const cls = [r.grade, r.class_name].filter(Boolean).join(' ');
+                return (
+                  <span key={r.id} className="text-xs px-2.5 py-1 rounded-full border font-medium"
+                    style={{borderColor: growthPopup.borderColor, color: growthPopup.titleColor, background:'white'}}>
+                    {cls && <span className="text-[#aaa] mr-1">{cls}</span>}{r.student_name}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 삭제 확인 모달 */}
       {showDeleteLearn && (
