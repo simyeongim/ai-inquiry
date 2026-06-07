@@ -961,7 +961,7 @@ export default function TeacherPage() {
                   <div key={row.id} onClick={()=>toggleOne(row.id)}
                     className="rounded-xl p-4 cursor-pointer transition-all"
                     style={{background: info.bg, border: on ? `2.5px solid ${info.color}` : '1.5px solid transparent'}}>
-                    <p className="text-[#333] text-sm leading-relaxed m-0 mb-2">{row.question}</p>
+                    <p className="text-[#111] text-sm font-semibold leading-relaxed m-0 mb-2">{row.question}</p>
                     <div className="flex items-baseline gap-1.5 flex-wrap">
                       <span className="text-xs text-[#6b7280]">{row.class_room}</span>
                       <span className="text-xs text-[#9ca3af]">·</span>
