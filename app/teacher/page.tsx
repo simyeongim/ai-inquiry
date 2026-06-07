@@ -681,7 +681,7 @@ export default function TeacherPage() {
               style={tab === t
                 ? { color: 'white', borderBottomColor: 'white' }
                 : { color: 'rgba(255,255,255,0.55)', borderBottomColor: 'transparent' }}>
-              {t === 'questions' ? '📝 질문발견' : '🌱 개념학습'}
+              {t === 'questions' ? '📝 질문발견' : '🌱 핵심개념'}
             </button>
           ))}
         </div>
