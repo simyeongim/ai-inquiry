@@ -197,6 +197,13 @@ function getImprovePoint(f: Record<string, string> | string | null | undefined):
     : (f as Record<string, string>);
   return obj.improvePoint ?? '';
 }
+function getGrowthType(r: LearningRow): { emoji: string; label: string; color: string; bg: string } {
+  const initSt = getLearnStatus(r.feedback);
+  if (initSt === '🟢') return { emoji: '🌟', label: '즉시 이해형', color: '#2e7d32', bg: '#e8f5e9' };
+  if (r.is_revised && getFinalStatus(r) === '🟢') return { emoji: '🌱', label: '성장형',      color: '#00838f', bg: '#e0f7fa' };
+  if (r.is_revised)                               return { emoji: '🔄', label: '지속 노력형', color: '#f57f17', bg: '#fff8e1' };
+  return { emoji: '⚠️', label: '지원 필요형', color: '#c62828', bg: '#ffebee' };
+}
 
 // ─── 비밀번호 화면 ────────────────────────────────────
 function PinScreen({ onOk }: { onOk: () => void }) {
@@ -316,6 +323,9 @@ export default function TeacherPage() {
   const [refinedLabels, setRefinedLabels] = useState<Record<string, string>>({});
   const [learnInsight, setLearnInsight] = useState<{ misconception: string; suggestion: string; attention: string } | null>(null);
   const [learnInsightLoading, setLearnInsightLoading] = useState(false);
+  const [selLearn,        setSelLearn]        = useState<Set<number>>(new Set());
+  const [deletingLearn,   setDeletingLearn]   = useState(false);
+  const [showDeleteLearn, setShowDeleteLearn] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true); setFetchErr('');
@@ -402,6 +412,27 @@ export default function TeacherPage() {
       setLearnInsight(await res.json());
     } catch { alert('AI 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'); }
     setLearnInsightLoading(false);
+  }
+
+  function toggleLearnOne(id: number) { setSelLearn(p => { const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n; }); }
+  function toggleLearnAll() {
+    const all = filteredLearnings.length > 0 && filteredLearnings.every(r => selLearn.has(r.id));
+    setSelLearn(all ? new Set() : new Set(filteredLearnings.map(r => r.id)));
+  }
+  async function deleteLearnings(ids: number[]) {
+    if (!ids.length) return;
+    setDeletingLearn(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/learnings?id=in.(${ids.join(',')})`, {
+        method: 'DELETE',
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Prefer: 'return=minimal' },
+      });
+      if (!res.ok) throw new Error();
+      setLearningRows(p => p.filter(r => !ids.includes(r.id)));
+      setSelLearn(p => { const n=new Set(p); ids.forEach(id=>n.delete(id)); return n; });
+    } catch { alert('삭제에 실패했습니다.'); }
+    setDeletingLearn(false);
+    setShowDeleteLearn(false);
   }
 
   function tog<T>(a: T[], v: T): T[] { return a.includes(v) ? a.filter(x=>x!==v) : [...a,v]; }
@@ -1126,78 +1157,135 @@ export default function TeacherPage() {
 
           {/* 배움 목록 */}
           <div className="bg-white rounded-2xl p-5 shadow-sm">
-            <h2 className="font-bold text-[#4a4a6a] text-sm mb-4 flex items-center gap-2">
-              🌱 배움 목록
-              <span className="font-bold text-xs text-white px-2 py-0.5 rounded-full" style={{background:'#667eea'}}>{filteredLearnings.length}개</span>
-            </h2>
+            {/* 헤더 — 전체 선택 + 선택 삭제 */}
+            <div className="flex items-center gap-2 mb-4">
+              {filteredLearnings.length > 0 && (
+                <div onClick={toggleLearnAll} className="w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center cursor-pointer transition-colors"
+                  style={filteredLearnings.every(r => selLearn.has(r.id)) && filteredLearnings.length > 0
+                    ? {borderColor:'#667eea', background:'#667eea'}
+                    : {borderColor:'#ccc', background:'white'}}>
+                  {filteredLearnings.every(r => selLearn.has(r.id)) && filteredLearnings.length > 0 &&
+                    <span className="text-white text-[9px] font-black leading-none">✓</span>}
+                </div>
+              )}
+              <h2 className="font-bold text-[#4a4a6a] text-sm m-0 flex items-center gap-2">
+                📋 배움 목록
+                <span className="font-bold text-xs text-white px-2 py-0.5 rounded-full" style={{background:'#667eea'}}>{filteredLearnings.length}개</span>
+              </h2>
+              {selLearn.size > 0 && (
+                <button onClick={() => setShowDeleteLearn(true)}
+                  className="ml-auto text-xs px-3 py-1.5 rounded-full font-bold text-white border-none cursor-pointer"
+                  style={{background:'#c62828'}}>
+                  선택 삭제 ({selLearn.size})
+                </button>
+              )}
+            </div>
 
             {loadingLearn ? (
               <p className="text-center text-[#ccc] py-10 text-sm">불러오는 중...</p>
             ) : filteredLearnings.length === 0 ? (
               <p className="text-center text-[#ccc] py-10 text-sm">아직 제출된 배움 기록이 없습니다.</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {filteredLearnings.map(row => {
-                  const fb         = parseFeedback(row.feedback);
-                  const isExpanded = expandedId === row.id;
-                  const classLabel = [row.grade, row.class_name].filter(Boolean).join(' ');
-                  const learnSt    = getLearnStatus(row.feedback);
-                  const stInfo     = learnSt ? LEARN_STATUS_INFO[learnSt] : null;
+                  const isExpanded    = expandedId === row.id;
+                  const isSelected    = selLearn.has(row.id);
+                  const classLabel    = [row.grade, row.class_name].filter(Boolean).join(' ');
+                  const initSt        = getLearnStatus(row.feedback);
+                  const finalSt       = getFinalStatus(row);
+                  const levelChanged  = row.is_revised && initSt && finalSt && initSt !== finalSt;
+                  const growthType    = getGrowthType(row);
+                  const latestImprove = row.is_revised && row.revised_feedback
+                    ? getImprovePoint(row.revised_feedback)
+                    : getImprovePoint(row.feedback);
+
                   return (
                     <div key={row.id} className="border-2 rounded-xl overflow-hidden transition-colors"
-                      style={{borderColor: isExpanded ? '#667eea' : '#ebebf5'}}>
+                      style={{borderColor: isExpanded ? '#667eea' : isSelected ? '#c5cae9' : '#ebebf5'}}>
 
-                      {/* 요약 헤더 — 클릭으로 펼치기 */}
-                      <div className="p-4 cursor-pointer hover:bg-[#fafbff] transition-colors"
+                      {/* 헤더 — 체크박스 + 뱃지 + 토글 */}
+                      <div className="p-3 cursor-pointer hover:bg-[#fafbff] transition-colors"
                         onClick={() => setExpandedId(isExpanded ? null : row.id)}>
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div className="flex flex-wrap gap-1.5">
-                            <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{background:'#f0f2f8', color:'#555'}}>{classLabel}</span>
-                            <span className="text-xs font-bold px-2 py-0.5 rounded-md" style={{background:'#e8eaf6', color:'#3949ab'}}>{row.student_name}</span>
-                            <span className="text-xs px-2 py-0.5 rounded-md" style={{background:'#f3f0ff', color:'#6b21a8'}}>{row.lesson}</span>
-                            {stInfo && (
-                              <span className="text-xs font-bold px-2 py-0.5 rounded-md"
-                                style={{background: stInfo.bg, color: stInfo.color}}>
-                                {stInfo.label}
+
+                        <div className="flex items-start gap-2.5">
+                          {/* 체크박스 */}
+                          <div onClick={e => { e.stopPropagation(); toggleLearnOne(row.id); }}
+                            className="mt-0.5 w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center cursor-pointer transition-colors"
+                            style={isSelected ? {borderColor:'#667eea', background:'#667eea'} : {borderColor:'#ccc', background:'white'}}>
+                            {isSelected && <span className="text-white text-[9px] font-black leading-none">✓</span>}
+                          </div>
+
+                          {/* 뱃지 묶음 */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap gap-1.5 items-center mb-1.5">
+                              {classLabel && <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{background:'#f0f2f8', color:'#555'}}>{classLabel}</span>}
+                              <span className="text-xs font-bold px-2 py-0.5 rounded-md" style={{background:'#e8eaf6', color:'#3949ab'}}>{row.student_name}</span>
+                              <span className="text-xs px-2 py-0.5 rounded-md" style={{background:'#f3f0ff', color:'#6b21a8'}}>{row.lesson}</span>
+                              {/* 수정 여부 */}
+                              <span className="text-xs font-semibold px-2 py-0.5 rounded-md"
+                                style={row.is_revised ? {background:'#e0f7fa', color:'#00838f'} : {background:'#f5f5f5', color:'#aaa'}}>
+                                {row.is_revised ? '✏️ 수정완료' : '— 미수정'}
                               </span>
+                              {/* 이해수준 변화 */}
+                              {(initSt || finalSt) && (
+                                <span className="text-xs font-bold px-2 py-0.5 rounded-md"
+                                  style={{background: LEARN_STATUS_INFO[finalSt || initSt as LearnStatus]?.bg ?? '#f0f2f8',
+                                          color:      LEARN_STATUS_INFO[finalSt || initSt as LearnStatus]?.color ?? '#555'}}>
+                                  {levelChanged ? `${initSt}→${finalSt}` : (finalSt || initSt)}
+                                </span>
+                              )}
+                              {/* 성장 유형 */}
+                              <span className="text-xs font-bold px-2 py-0.5 rounded-md"
+                                style={{background: growthType.bg, color: growthType.color}}>
+                                {growthType.emoji} {growthType.label}
+                              </span>
+                            </div>
+
+                            {/* 내용 미리보기 */}
+                            <p className="text-sm text-[#444] leading-relaxed m-0 overflow-hidden"
+                              style={{display:'-webkit-box', WebkitLineClamp: isExpanded ? undefined : 2, WebkitBoxOrient:'vertical'}}>
+                              {row.content}
+                            </p>
+
+                            {/* AI 핵심 개선 포인트 1줄 */}
+                            {latestImprove && (
+                              <p className="text-xs mt-1.5 m-0 leading-relaxed"
+                                style={{color:'#f57f17'}}>
+                                💬 {latestImprove}
+                              </p>
                             )}
                           </div>
-                          <span className="text-[#bbb] text-xs shrink-0">{isExpanded ? '▲' : '▼'}</span>
+
+                          <span className="text-[#bbb] text-xs shrink-0 mt-0.5">{isExpanded ? '▲' : '▼'}</span>
                         </div>
-                        <p className="text-sm text-[#444] leading-relaxed m-0 overflow-hidden"
-                          style={{display:'-webkit-box', WebkitLineClamp: isExpanded ? undefined : 2, WebkitBoxOrient:'vertical'}}>
-                          {row.content}
-                        </p>
                       </div>
 
-                      {/* 펼침: 전체 내용 + AI 피드백 + 제출 시간 */}
+                      {/* 펼침 영역 */}
                       {isExpanded && (
                         <div className="border-t-2 border-[#ebebf5] p-4 space-y-3" style={{background:'#fafbff'}}>
+
+                          {/* 최초 작성 */}
                           <div>
-                            <p className="text-xs font-bold text-[#667eea] mb-1.5">📝 배운 내용 (전체)</p>
+                            <p className="text-xs font-bold text-[#667eea] mb-1.5">📝 최초 작성</p>
                             <p className="text-sm text-[#333] leading-relaxed whitespace-pre-wrap bg-white rounded-xl p-3 border border-[#ebebf5] m-0">{row.content}</p>
                           </div>
-                          {fb ? (
+
+                          {/* 수정 작성 */}
+                          {row.is_revised && row.revised_content && (
                             <div>
-                              <p className="text-xs font-bold text-[#667eea] mb-1.5">🌱 AI 피드백</p>
-                              <div className="space-y-2">
-                                <div className="bg-white rounded-xl p-3 border border-[#ebebf5]">
-                                  <p className="text-xs font-bold text-[#4a4a6a] mb-1">👏 칭찬</p>
-                                  <p className="text-sm text-[#555] m-0 leading-relaxed">{fb.praise}</p>
-                                </div>
-                                <div className="bg-white rounded-xl p-3 border border-[#ebebf5]">
-                                  <p className="text-xs font-bold text-[#2e7d32] mb-1">🌱 잘 이해한 점</p>
-                                  <p className="text-sm text-[#555] m-0 leading-relaxed">{fb.understood}</p>
-                                </div>
-                                <div className="bg-white rounded-xl p-3 border border-[#ebebf5]">
-                                  <p className="text-xs font-bold text-[#e65100] mb-1">🔍 한 걸음 더</p>
-                                  <p className="text-sm text-[#555] m-0 leading-relaxed">{fb.nextStep}</p>
-                                </div>
-                              </div>
+                              <p className="text-xs font-bold text-[#00838f] mb-1.5">✏️ 수정 작성</p>
+                              <p className="text-sm text-[#333] leading-relaxed whitespace-pre-wrap bg-white rounded-xl p-3 border border-[#b2ebf2] m-0">{row.revised_content}</p>
                             </div>
-                          ) : (
-                            <p className="text-xs text-[#bbb]">AI 피드백 정보 없음</p>
                           )}
+
+                          {/* AI 핵심 개선 포인트 */}
+                          {latestImprove && (
+                            <div className="rounded-xl p-3" style={{background:'#fff8e1', border:'1px solid #ffe082'}}>
+                              <p className="text-xs font-bold text-[#f57f17] mb-1">💬 AI 핵심 개선 포인트</p>
+                              <p className="text-sm text-[#555] m-0 leading-relaxed">{latestImprove}</p>
+                            </div>
+                          )}
+
                           <p className="text-[10px] text-[#ccc] m-0">제출: {row.created_at}</p>
                         </div>
                       )}
@@ -1212,6 +1300,33 @@ export default function TeacherPage() {
         </div>
       )} {/* /개념학습 탭 */}
 
+      {/* 삭제 확인 모달 */}
+      {showDeleteLearn && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{background:'rgba(0,0,0,0.45)'}}>
+          <div className="bg-white rounded-2xl p-6 w-80 shadow-2xl">
+            <div className="text-center mb-4">
+              <div className="text-3xl mb-2">🗑️</div>
+              <h3 className="font-bold text-[#4a4a6a] text-base mb-1">응답 삭제</h3>
+              <p className="text-sm text-[#666] m-0">
+                선택한 <span className="font-bold text-[#c62828]">{selLearn.size}개</span>의 응답을<br/>
+                삭제하시겠습니까?<br/>
+                <span className="text-xs text-[#bbb]">이 작업은 되돌릴 수 없습니다.</span>
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setShowDeleteLearn(false)}
+                className="flex-1 py-2.5 rounded-xl border-2 border-[#e0e0f0] bg-white text-sm font-semibold text-[#666] cursor-pointer">
+                취소
+              </button>
+              <button onClick={() => deleteLearnings([...selLearn])} disabled={deletingLearn}
+                className="flex-1 py-2.5 rounded-xl border-none text-sm font-bold text-white cursor-pointer disabled:opacity-50"
+                style={{background:'#c62828'}}>
+                {deletingLearn ? '삭제 중…' : '삭제'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
