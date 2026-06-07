@@ -155,6 +155,10 @@ interface LearningRow {
   id: number; grade: string; class_name: string; student_name: string;
   lesson: string; content: string;
   feedback: Record<string, string> | string | null;
+  is_revised?: boolean;
+  revised_content?: string | null;
+  revised_feedback?: Record<string, string> | string | null;
+  revised_status?: string | null;
   created_at: string;
 }
 function parseFeedback(f: LearningRow['feedback']): { praise: string; understood: string; nextStep: string } | null {
@@ -170,6 +174,15 @@ function getLearnStatus(f: LearningRow['feedback']): LearnStatus | '' {
   if (s.startsWith('🟡')) return '🟡';
   if (s.startsWith('🔴')) return '🔴';
   return '';
+}
+function getFinalStatus(r: LearningRow): LearnStatus | '' {
+  if (r.is_revised && r.revised_status) {
+    const s = r.revised_status;
+    if (s.startsWith('🟢')) return '🟢';
+    if (s.startsWith('🟡')) return '🟡';
+    if (s.startsWith('🔴')) return '🔴';
+  }
+  return getLearnStatus(r.feedback);
 }
 
 // ─── 비밀번호 화면 ────────────────────────────────────
@@ -373,6 +386,19 @@ export default function TeacherPage() {
     if (fLearnStatus.length && !fLearnStatus.includes(getLearnStatus(r.feedback))) return false;
     return true;
   }), [learningRows, fLearnClass, fLearnLesson, fLearnStatus]);
+
+  const learnStats = useMemo(() => {
+    const n = filteredLearnings.length;
+    if (!n) return null;
+    const revisedCount    = filteredLearnings.filter(r => r.is_revised).length;
+    const revisedPct      = Math.round((revisedCount / n) * 100);
+    const initGreenCount  = filteredLearnings.filter(r => getLearnStatus(r.feedback) === '🟢').length;
+    const finalGreenCount = filteredLearnings.filter(r => getFinalStatus(r) === '🟢').length;
+    const finalGreenPct   = Math.round((finalGreenCount / n) * 100);
+    const initGreenPct    = Math.round((initGreenCount  / n) * 100);
+    const growthPpt       = finalGreenPct - initGreenPct;
+    return { n, revisedCount, revisedPct, initGreenCount, finalGreenCount, finalGreenPct, initGreenPct, growthPpt };
+  }, [filteredLearnings]);
 
   function toggleOne(id: number) { setSel(p => { const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n; }); }
   function toggleAll() {
@@ -807,57 +833,61 @@ export default function TeacherPage() {
             {fetchErrLearn && <p className="text-red-500 text-sm mt-3">{fetchErrLearn}</p>}
           </div>
 
-          {/* 핵심개념이해수준 요약 카드 */}
-          {filteredLearnings.length > 0 && (() => {
-            const n = filteredLearnings.length;
-            const counts = { '🟢': 0, '🟡': 0, '🔴': 0, '': 0 };
-            filteredLearnings.forEach(r => { const s = getLearnStatus(r.feedback); counts[s]++; });
-            const greenPct = Math.round((counts['🟢'] / n) * 100);
-            return (
-              <div className="bg-white rounded-2xl p-5 shadow-sm">
-                <h2 className="font-bold text-[#4a4a6a] text-sm mb-4">📊 핵심개념이해수준 현황</h2>
-                <div className="grid grid-cols-4 gap-2 mb-4">
-                  <div className="rounded-xl p-3 text-center" style={{background:'#f0f2f8'}}>
-                    <div className="text-[10px] text-[#999] mb-1">총 제출</div>
-                    <div className="text-2xl font-black text-[#4a4a6a]">{n}<span className="text-xs font-normal ml-0.5">개</span></div>
+          {/* 상단 요약 카드 4개 */}
+          {learnStats && (
+            <div className="bg-white rounded-2xl p-5 shadow-sm">
+              <h2 className="font-bold text-[#4a4a6a] text-sm mb-4">📊 개념 이해 현황</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+
+                {/* 총 제출 */}
+                <div className="rounded-xl p-4 text-center" style={{background:'#f0f2f8'}}>
+                  <div className="text-[10px] text-[#999] mb-1">총 제출</div>
+                  <div className="text-2xl font-black text-[#4a4a6a]">
+                    {learnStats.n}<span className="text-xs font-normal ml-0.5">명</span>
                   </div>
-                  <div className="rounded-xl p-3 text-center" style={{background:'#e8f5e9'}}>
-                    <div className="text-[10px] mb-1" style={{color:'#2e7d32'}}>🟢 이해</div>
-                    <div className="text-2xl font-black" style={{color:'#2e7d32'}}>{counts['🟢']}<span className="text-xs font-normal ml-0.5">명</span></div>
+                  <div className="text-[10px] text-[#aaa] mt-1.5">필터 적용 결과</div>
+                </div>
+
+                {/* 수정 참여율 */}
+                <div className="rounded-xl p-4 text-center"
+                  style={{background: learnStats.revisedPct >= 50
+                    ? 'linear-gradient(135deg,#667eea18,#764ba218)'
+                    : '#f0f2f8'}}>
+                  <div className="text-[10px] text-[#999] mb-1">수정 참여율</div>
+                  <div className="text-2xl font-black" style={{color:'#667eea'}}>
+                    {learnStats.revisedPct}<span className="text-xs font-normal ml-0.5">%</span>
                   </div>
-                  <div className="rounded-xl p-3 text-center" style={{background:'#fff8e1'}}>
-                    <div className="text-[10px] mb-1" style={{color:'#f57f17'}}>🟡 보완</div>
-                    <div className="text-2xl font-black" style={{color:'#f57f17'}}>{counts['🟡']}<span className="text-xs font-normal ml-0.5">명</span></div>
+                  <div className="text-[10px] text-[#aaa] mt-1.5">{learnStats.revisedCount}명 수정 완료</div>
+                </div>
+
+                {/* 이해 도달률 */}
+                <div className="rounded-xl p-4 text-center"
+                  style={{background: learnStats.finalGreenPct >= 50 ? '#e8f5e9' : '#f0f2f8'}}>
+                  <div className="text-[10px] text-[#999] mb-1">이해 도달률</div>
+                  <div className="text-2xl font-black"
+                    style={{color: learnStats.finalGreenPct >= 50 ? '#2e7d32' : '#9e9e9e'}}>
+                    {learnStats.finalGreenPct}<span className="text-xs font-normal ml-0.5">%</span>
                   </div>
-                  <div className="rounded-xl p-3 text-center" style={{background:'#ffebee'}}>
-                    <div className="text-[10px] mb-1" style={{color:'#c62828'}}>🔴 재학습</div>
-                    <div className="text-2xl font-black" style={{color:'#c62828'}}>{counts['🔴']}<span className="text-xs font-normal ml-0.5">명</span></div>
+                  <div className="text-[10px] text-[#aaa] mt-1.5">최종 기준 🟢 {learnStats.finalGreenCount}명</div>
+                </div>
+
+                {/* 성장률 */}
+                <div className="rounded-xl p-4 text-center"
+                  style={{background: learnStats.growthPpt > 0 ? '#e8f5e9' : '#f0f2f8'}}>
+                  <div className="text-[10px] text-[#999] mb-1">성장률</div>
+                  <div className="text-2xl font-black"
+                    style={{color: learnStats.growthPpt > 0 ? '#2e7d32' : '#9e9e9e'}}>
+                    {learnStats.growthPpt > 0 ? '+' : ''}{learnStats.growthPpt}
+                    <span className="text-xs font-normal ml-0.5">%p</span>
+                  </div>
+                  <div className="text-[10px] text-[#aaa] mt-1.5">
+                    {learnStats.initGreenPct}% → {learnStats.finalGreenPct}%
                   </div>
                 </div>
-                <div className="space-y-2">
-                  {(['🟢', '🟡', '🔴'] as LearnStatus[]).map(s => {
-                    const info = LEARN_STATUS_INFO[s];
-                    const cnt  = counts[s];
-                    return (
-                      <div key={s} className="flex items-center gap-2">
-                        <span className="text-xs w-16 shrink-0 font-medium" style={{color: info.color}}>{info.label}</span>
-                        <div className="flex-1 bg-[#f0f2f8] rounded-full h-5 overflow-hidden">
-                          <div className="h-full rounded-full flex items-center justify-end pr-2 transition-all duration-500"
-                            style={{width:`${Math.max(cnt > 0 ? 6 : 0, (cnt / n) * 100)}%`, background: info.color}}>
-                            {cnt > 0 && <span className="text-white text-[10px] font-bold">{cnt}</span>}
-                          </div>
-                        </div>
-                        <span className="text-xs text-[#bbb] w-10 text-right shrink-0">{cnt}명 ({Math.round((cnt/n)*100)}%)</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                {greenPct >= 50 && (
-                  <p className="text-xs text-[#2e7d32] mt-3 font-semibold">✅ 절반 이상의 학생이 핵심 개념을 이해했습니다.</p>
-                )}
+
               </div>
-            );
-          })()}
+            </div>
+          )}
 
           {/* 배움 목록 */}
           <div className="bg-white rounded-2xl p-5 shadow-sm">
