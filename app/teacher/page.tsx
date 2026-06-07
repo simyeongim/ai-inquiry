@@ -1283,11 +1283,17 @@ export default function TeacherPage() {
 
                         <div className="flex items-start gap-2">
                           <div className="flex-1 min-w-0">
-                            {/* 이름 + 학년반 + 프로젝트 */}
-                            <div className="flex items-baseline gap-1.5 mb-1 flex-wrap">
-                              <span className="text-sm font-semibold text-[#1a1a2e]">{row.student_name}</span>
-                              {classLabel && <span className="text-xs text-[#9ca3af]">{classLabel}</span>}
-                              <span className="text-xs text-[#9ca3af]">· {row.lesson}</span>
+                            {/* 프로젝트 칩 + 학년반 + 이름 */}
+                            <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                              {(() => { const p = PROJECT_SHORT[row.lesson]; return p ? (
+                                <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md"
+                                  style={{background:'rgba(255,255,255,0.6)', color: growthType.color}}>
+                                  {p.emoji} {p.short}
+                                </span>
+                              ) : null; })()}
+                              {classLabel && <span className="text-xs text-[#6b7280]">{classLabel}</span>}
+                              <span className="text-xs text-[#9ca3af]">·</span>
+                              <span className="text-xs font-semibold text-[#374151]">{row.student_name}</span>
                             </div>
 
                             {/* 수정여부 */}
