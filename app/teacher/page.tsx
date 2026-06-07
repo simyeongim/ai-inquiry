@@ -958,23 +958,13 @@ export default function TeacherPage() {
                 return (
                   <div key={row.id} onClick={()=>toggleOne(row.id)}
                     className="rounded-xl p-4 cursor-pointer transition-all"
-                    style={{border: on ? '2.5px solid #667eea' : '1.5px solid #e5e7eb', background: on ? '#f5f5ff' : 'white'}}>
-                    <div className="flex items-start">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <p className="text-[#222] text-sm leading-relaxed m-0 flex-1">{row.question}</p>
-                          <span className="shrink-0 text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap"
-                            style={{background:info.bg, color:info.color}}>
-                            {info.emoji} {info.short}
-                          </span>
-                        </div>
-                        <div className="flex items-baseline gap-1.5 mt-2 flex-wrap">
-                          <span className="text-xs text-[#6b7280]">{row.class_room}</span>
-                          <span className="text-xs text-[#9ca3af]">·</span>
-                          <span className="text-xs font-semibold text-[#374151]">{row.name}</span>
-                          <span className="text-xs text-[#9ca3af]">· {row.project}</span>
-                        </div>
-                      </div>
+                    style={{background: info.bg, border: on ? `2.5px solid ${info.color}` : '1.5px solid transparent'}}>
+                    <p className="text-[#333] text-sm leading-relaxed m-0 mb-2">{row.question}</p>
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                      <span className="text-xs text-[#6b7280]">{row.class_room}</span>
+                      <span className="text-xs text-[#9ca3af]">·</span>
+                      <span className="text-xs font-semibold text-[#374151]">{row.name}</span>
+                      <span className="text-xs text-[#9ca3af]">· {row.project}</span>
                     </div>
                   </div>
                 );
