@@ -28,9 +28,9 @@ const LV: Record<Level, { emoji: string; short: string; label: string; color: st
 const LEARN_STATUS_OPTS = ['🟢', '🟡', '🔴'] as const;
 type LearnStatus = '🟢' | '🟡' | '🔴';
 const LEARN_STATUS_INFO: Record<LearnStatus, { label: string; color: string; bg: string }> = {
-  '🟢': { label: '🟢 이해', color: '#2e7d32', bg: '#e8f5e9' },
-  '🟡': { label: '🟡 보완', color: '#f57f17', bg: '#fff8e1' },
-  '🔴': { label: '🔴 재학습', color: '#c62828', bg: '#ffebee' },
+  '🟢': { label: '🟢 핵심 개념 이해', color: '#2e7d32', bg: '#e8f5e9' },
+  '🟡': { label: '🟡 핵심 개념 보완', color: '#f57f17', bg: '#fff8e1' },
+  '🔴': { label: '🔴 재학습 필요',    color: '#c62828', bg: '#ffebee' },
 };
 
 // ─── 키워드 추출 ─────────────────────────────────────
