@@ -1273,9 +1273,12 @@ export default function TeacherPage() {
 
                   return (
                     <div key={row.id} className="rounded-xl overflow-hidden transition-all"
-                      style={{border: isSelected ? '2.5px solid #5850ec' : isExpanded ? '1.5px solid #a5b4fc' : '1.5px solid #e5e7eb'}}>
+                      style={{
+                        background: growthType.bg,
+                        border: isSelected ? `2.5px solid ${growthType.color}` : isExpanded ? `1.5px solid ${growthType.color}80` : '1.5px solid transparent',
+                      }}>
 
-                      <div className="p-3 cursor-pointer hover:bg-[#fafafa] transition-colors"
+                      <div className="p-3 cursor-pointer transition-colors"
                         onClick={() => { toggleLearnOne(row.id); setExpandedId(isExpanded ? null : row.id); }}>
 
                         <div className="flex items-start gap-2">
@@ -1287,17 +1290,13 @@ export default function TeacherPage() {
                               <span className="text-xs text-[#9ca3af]">· {row.lesson}</span>
                             </div>
 
-                            {/* 수정여부 + 성장유형 */}
+                            {/* 수정여부 */}
                             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                               <span className="text-[11px] font-medium"
                                 style={{color: row.is_revised ? '#16a34a' : '#9ca3af'}}>
                                 {row.is_revised ? '수정완료' : '미수정'}
                               </span>
-                              <span className="text-[11px] text-[#d1d5db]">·</span>
-                              <span className="text-[11px] font-medium" style={{color: growthType.color}}>
-                                {growthType.label}
-                                {levelChanged && <span className="text-[#9ca3af] ml-1">{initSt}→{finalSt}</span>}
-                              </span>
+                              {levelChanged && <span className="text-[11px] text-[#9ca3af]">{initSt}→{finalSt}</span>}
                             </div>
 
                             {/* 핵심 내용 미리보기 */}
@@ -1321,7 +1320,7 @@ export default function TeacherPage() {
 
                       {/* 펼침 영역 */}
                       {isExpanded && (
-                        <div className="border-t border-[#e5e7eb] p-3 space-y-3 bg-[#fafafa]">
+                        <div className="border-t p-3 space-y-3" style={{borderColor:`${growthType.color}30`, background:'rgba(255,255,255,0.55)'}}>
 
                           <div>
                             <p className="text-xs font-semibold text-[#6b7280] mb-1.5">최초 작성</p>
