@@ -310,6 +310,53 @@ function ClassDropdown({ opts, sel, onToggle }: {
   );
 }
 
+// ─── 범용 멀티셀렉 드롭다운 ──────────────────────────────
+function FilterDropdown({ label, opts, sel, onToggle, getLabel, getStyle }: {
+  label: string; opts: readonly (string|number)[]; sel: (string|number)[];
+  onToggle: (v: string|number) => void; getLabel: (v: string|number) => string;
+  getStyle?: (v: string|number) => { color: string; bg: string } | undefined;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handle(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, []);
+  return (
+    <div ref={ref} className="relative">
+      <button onClick={() => setOpen(p => !p)}
+        className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl border-2 text-sm font-semibold cursor-pointer transition-all"
+        style={sel.length > 0
+          ? { borderColor:'#667eea', background:'#e8eaf6', color:'#667eea' }
+          : { borderColor:'#e0e0e0', background:'white', color:'#666' }}>
+        <span className="truncate">{sel.length > 0 ? `${label} ${sel.length}개` : label}</span>
+        <span className="text-xs opacity-50 shrink-0">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 bg-white rounded-xl shadow-lg border border-[#e0e0f0] z-20 max-h-52 overflow-y-auto"
+          style={{minWidth:'max-content'}}>
+          {opts.map(o => {
+            const on = sel.includes(o); const s = getStyle?.(o);
+            return (
+              <div key={String(o)} onClick={() => onToggle(o)}
+                className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-[#f5f5ff] transition-colors select-none">
+                <div className="w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors"
+                  style={on ? { borderColor: s?.color ?? '#667eea', background: s?.color ?? '#667eea' } : { borderColor:'#ccc', background:'white' }}>
+                  {on && <span className="text-white text-[9px] font-black leading-none">✓</span>}
+                </div>
+                <span className="text-sm text-[#333]">{getLabel(o)}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── 메인 대시보드 ────────────────────────────────────
 export default function TeacherPage() {
   const [authed,   setAuthed]   = useState(false);
@@ -645,23 +692,26 @@ export default function TeacherPage() {
       <div className="max-w-[1200px] mx-auto px-4 pt-5 space-y-4">
 
         {/* ── 필터 ─────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl py-3 px-4 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">필터</h2>
-            {hasFilter && <button onClick={clearFilters} className="text-xs text-[#667eea] border-none bg-transparent cursor-pointer font-semibold hover:underline">초기화</button>}
+        <div className="bg-white rounded-2xl px-4 py-2.5 shadow-sm flex items-center gap-2 flex-wrap">
+          <div className="w-36 shrink-0">
+            <ClassDropdown opts={CLASS_LIST} sel={fClass} onToggle={v => setFClass(tog(fClass, v))} />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
-            <div>
-              <div className="text-xs font-bold text-[#999] uppercase tracking-wider mb-2">학년/반</div>
-              <ClassDropdown opts={CLASS_LIST} sel={fClass} onToggle={v => setFClass(tog(fClass, v))} />
-            </div>
-            <div className="pl-6">
-              <Pills label="프로젝트" opts={PROJECT_LIST} sel={fProject} onToggle={v=>setFProject(tog(fProject,v as string))} getLabel={v=>v as string}/>
-            </div>
-            <Pills label="질문 수준" opts={LEVEL_OPTS}   sel={fLevel}   onToggle={v=>setFLevel(tog(fLevel,v as number))}
+          <div className="flex-1 min-w-[140px]">
+            <FilterDropdown label="프로젝트" opts={PROJECT_LIST} sel={fProject}
+              onToggle={v=>setFProject(tog(fProject,v as string))} getLabel={v=>v as string}/>
+          </div>
+          <div className="w-32 shrink-0">
+            <FilterDropdown label="질문 수준" opts={LEVEL_OPTS} sel={fLevel}
+              onToggle={v=>setFLevel(tog(fLevel,v as number))}
               getLabel={v=>`${LV[v as Level].emoji} ${LV[v as Level].short}`} getStyle={v=>LV[v as Level]}/>
           </div>
-          {fetchErr && <p className="text-red-500 text-sm mt-3">{fetchErr}</p>}
+          {hasFilter && (
+            <button onClick={clearFilters}
+              className="text-xs text-[#667eea] border-none bg-transparent cursor-pointer font-semibold hover:underline whitespace-nowrap">
+              초기화
+            </button>
+          )}
+          {fetchErr && <p className="text-red-500 text-xs w-full m-0">{fetchErr}</p>}
         </div>
 
         {/* ── 질문 현황 ──────────────────────────────────── */}
@@ -926,34 +976,32 @@ export default function TeacherPage() {
         <div className="max-w-[1200px] mx-auto px-4 pt-5 space-y-4">
 
           {/* 필터 */}
-          <div className="bg-white rounded-2xl py-3 px-4 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">필터</h2>
-              {(fLearnClass.length > 0 || fLearnLesson.length > 0 || fLearnStatus.length > 0) && (
-                <button onClick={() => { setFLearnClass([]); setFLearnLesson([]); setFLearnStatus([]); }}
-                  className="text-xs text-[#667eea] border-none bg-transparent cursor-pointer font-semibold hover:underline">초기화</button>
-              )}
+          <div className="bg-white rounded-2xl px-4 py-2.5 shadow-sm flex items-center gap-2 flex-wrap">
+            <div className="w-36 shrink-0">
+              <ClassDropdown
+                opts={uniqueLearnClasses.length > 0 ? uniqueLearnClasses : CLASS_LIST}
+                sel={fLearnClass}
+                onToggle={v => setFLearnClass(tog(fLearnClass, v))}
+              />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
-              <div>
-                <div className="text-xs font-bold text-[#999] uppercase tracking-wider mb-2">학년/반</div>
-                <ClassDropdown
-                  opts={uniqueLearnClasses.length > 0 ? uniqueLearnClasses : CLASS_LIST}
-                  sel={fLearnClass}
-                  onToggle={v => setFLearnClass(tog(fLearnClass, v))}
-                />
-              </div>
-              <div className="pl-6">
-                <Pills label="프로젝트" opts={PROJECT_LIST} sel={fLearnLesson}
-                  onToggle={v => setFLearnLesson(tog(fLearnLesson, v as string))}
-                  getLabel={v => v as string} />
-              </div>
-              <Pills label="핵심개념이해수준" opts={LEARN_STATUS_OPTS} sel={fLearnStatus}
+            <div className="flex-1 min-w-[140px]">
+              <FilterDropdown label="프로젝트" opts={PROJECT_LIST} sel={fLearnLesson}
+                onToggle={v => setFLearnLesson(tog(fLearnLesson, v as string))}
+                getLabel={v => v as string} />
+            </div>
+            <div className="w-32 shrink-0">
+              <FilterDropdown label="이해수준" opts={LEARN_STATUS_OPTS} sel={fLearnStatus}
                 onToggle={v => setFLearnStatus(tog(fLearnStatus, v as string))}
                 getLabel={v => LEARN_STATUS_INFO[v as LearnStatus].label}
                 getStyle={v => LEARN_STATUS_INFO[v as LearnStatus]} />
             </div>
-            {fetchErrLearn && <p className="text-red-500 text-sm mt-3">{fetchErrLearn}</p>}
+            {(fLearnClass.length > 0 || fLearnLesson.length > 0 || fLearnStatus.length > 0) && (
+              <button onClick={() => { setFLearnClass([]); setFLearnLesson([]); setFLearnStatus([]); }}
+                className="text-xs text-[#667eea] border-none bg-transparent cursor-pointer font-semibold hover:underline whitespace-nowrap">
+                초기화
+              </button>
+            )}
+            {fetchErrLearn && <p className="text-red-500 text-xs w-full m-0">{fetchErrLearn}</p>}
           </div>
 
           {/* 상단 요약 카드 4개 */}
