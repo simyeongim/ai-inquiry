@@ -365,6 +365,7 @@ export default function TeacherPage() {
 
   useEffect(() => { if (authed && tab === 'questions') load(); },        [authed, tab, load]);
   useEffect(() => { if (authed && tab === 'learnings') loadLearnings(); }, [authed, tab, loadLearnings]);
+  useEffect(() => { setLearnInsight(null); }, [fLearnClass, fLearnLesson, fLearnStatus]);
 
   async function generateAiReport() {
     if (!filtered.length || !stats) return;
@@ -975,7 +976,7 @@ export default function TeacherPage() {
 
                   {/* 이해수준 학생 수 — 초록 */}
                   <div className="rounded-xl p-4 text-center" style={{background:'#e8f5e9'}}>
-                    <div className="text-[11px] text-[#999] mb-1">이해수준 학생 수</div>
+                    <div className="text-[11px] text-[#999] mb-1">🟢 이해 완료 학생 수</div>
                     <div className="text-2xl font-black" style={{color:'#2e7d32'}}>
                       {learnStats.finalGreenCount}<span className="text-xs font-normal ml-0.5">명</span>
                     </div>
@@ -988,7 +989,7 @@ export default function TeacherPage() {
                     <div className="text-2xl font-black" style={{color:'#1565c0'}}>
                       {learnStats.grownCount}<span className="text-xs font-normal ml-0.5">명</span>
                     </div>
-                    <div className="text-xs text-[#64b5f6] mt-1.5">수정 후 단계 향상</div>
+                    <div className="text-xs text-[#64b5f6] mt-1.5">이해수준 단계 향상</div>
                   </div>
 
                 </div>
@@ -1117,6 +1118,9 @@ export default function TeacherPage() {
                     </button>
                   )}
                 </div>
+                {!fGrowthType && (
+                  <p className="text-[11px] text-[#bbb] mb-3 mt-0">카드를 클릭하면 해당 유형만 배움 목록에 표시됩니다.</p>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {types.map(t => {
                     const isActive = fGrowthType === t.label;
@@ -1259,18 +1263,11 @@ export default function TeacherPage() {
                                 style={row.is_revised ? {background:'#e0f7fa', color:'#00838f'} : {background:'#f5f5f5', color:'#aaa'}}>
                                 {row.is_revised ? '✏️ 수정완료' : '— 미수정'}
                               </span>
-                              {/* 이해수준 변화 */}
-                              {(initSt || finalSt) && (
-                                <span className="text-xs font-bold px-2 py-0.5 rounded-md"
-                                  style={{background: LEARN_STATUS_INFO[finalSt || initSt as LearnStatus]?.bg ?? '#f0f2f8',
-                                          color:      LEARN_STATUS_INFO[finalSt || initSt as LearnStatus]?.color ?? '#555'}}>
-                                  {levelChanged ? `${initSt}→${finalSt}` : (finalSt || initSt)}
-                                </span>
-                              )}
-                              {/* 성장 유형 */}
+                              {/* 성장 유형 (이해수준 변화 정보 포함) */}
                               <span className="text-xs font-bold px-2 py-0.5 rounded-md"
                                 style={{background: growthType.bg, color: growthType.color}}>
                                 {growthType.emoji} {growthType.label}
+                                {levelChanged && <span className="font-normal opacity-70 ml-1">{initSt}→{finalSt}</span>}
                               </span>
                             </div>
 
@@ -1280,8 +1277,8 @@ export default function TeacherPage() {
                               {parsedContent.core || row.content}
                             </p>
 
-                            {/* AI 핵심 개선 포인트 1줄 */}
-                            {latestImprove && (
+                            {/* AI 핵심 개선 포인트 1줄 — 🟢 최종 학생 제외 */}
+                            {latestImprove && finalSt !== '🟢' && (
                               <p className="text-xs mt-1.5 m-0 leading-relaxed"
                                 style={{color:'#f57f17'}}>
                                 💬 {latestImprove}
