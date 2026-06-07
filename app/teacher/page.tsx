@@ -846,55 +846,58 @@ export default function TeacherPage() {
           </div>
 
           {/* 상단 요약 카드 4개 */}
-          {learnStats && (
-            <div className="bg-white rounded-2xl p-5 shadow-sm">
-              <h2 className="font-bold text-[#4a4a6a] text-sm mb-4">📊 개념 이해 현황</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {learnStats && (() => {
+            const avg = learnStats.avgScore;
+            const avgLevelLabel = avg >= 2.5 ? '🟢 이해' : avg >= 1.5 ? '🟡 보완' : '🔴 재학습';
+            const avgLevelColor = avg >= 2.5 ? '#2e7d32' : avg >= 1.5 ? '#f57f17' : '#c62828';
+            return (
+              <div className="bg-white rounded-2xl p-5 shadow-sm">
+                <h2 className="font-bold text-[#4a4a6a] text-sm mb-4">📊 개념 이해 현황</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
 
-                {/* 참여 학생 수 */}
-                <div className="rounded-xl p-4 text-center" style={{background:'#f0f2f8'}}>
-                  <div className="text-[10px] text-[#999] mb-1">참여 학생 수</div>
-                  <div className="text-2xl font-black text-[#4a4a6a]">
-                    {learnStats.n}<span className="text-xs font-normal ml-0.5">명</span>
+                  {/* 참여 학생 수 — 중립 */}
+                  <div className="rounded-xl p-4 text-center" style={{background:'#f0f2f8'}}>
+                    <div className="text-[11px] text-[#999] mb-1">참여 학생 수</div>
+                    <div className="text-2xl font-black text-[#4a4a6a]">
+                      {learnStats.n}<span className="text-xs font-normal ml-0.5">명</span>
+                    </div>
+                    <div className="text-xs text-[#aaa] mt-1.5">핵심개념 작성 참여</div>
                   </div>
-                  <div className="text-[10px] text-[#aaa] mt-1.5 leading-tight">핵심개념 작성에<br/>참여한 전체 학생</div>
-                </div>
 
-                {/* 평균이해수준 */}
-                <div className="rounded-xl p-4 text-center"
-                  style={{background:'linear-gradient(135deg,#667eea18,#764ba218)'}}>
-                  <div className="text-[10px] text-[#999] mb-1">평균이해수준</div>
-                  <div className="text-2xl font-black" style={{color:'#667eea'}}>
-                    {learnStats.avgScore.toFixed(1)}<span className="text-xs font-normal ml-0.5">점</span>
+                  {/* 평균이해수준 — 중립 */}
+                  <div className="rounded-xl p-4 text-center" style={{background:'#f0f2f8'}}>
+                    <div className="text-[11px] text-[#999] mb-1">평균이해수준</div>
+                    <div className="text-2xl font-black" style={{color: avgLevelColor}}>
+                      {avg.toFixed(1)}
+                      <span className="text-sm font-normal text-[#bbb] ml-0.5">/ 3.0</span>
+                    </div>
+                    <div className="text-xs mt-1.5 font-semibold" style={{color: avgLevelColor}}>
+                      {avgLevelLabel}
+                    </div>
                   </div>
-                  <div className="text-[10px] text-[#aaa] mt-1.5 leading-tight">최종 결과 기준<br/>🔴 1점 · 🟡 2점 · 🟢 3점</div>
-                </div>
 
-                {/* 이해수준 학생 수 */}
-                <div className="rounded-xl p-4 text-center"
-                  style={{background: learnStats.finalGreenCount > 0 ? '#e8f5e9' : '#f0f2f8'}}>
-                  <div className="text-[10px] text-[#999] mb-1">이해수준 학생 수</div>
-                  <div className="text-2xl font-black"
-                    style={{color: learnStats.finalGreenCount > 0 ? '#2e7d32' : '#9e9e9e'}}>
-                    {learnStats.finalGreenCount}<span className="text-xs font-normal ml-0.5">명</span>
+                  {/* 이해수준 학생 수 — 초록 */}
+                  <div className="rounded-xl p-4 text-center" style={{background:'#e8f5e9'}}>
+                    <div className="text-[11px] text-[#999] mb-1">이해수준 학생 수</div>
+                    <div className="text-2xl font-black" style={{color:'#2e7d32'}}>
+                      {learnStats.finalGreenCount}<span className="text-xs font-normal ml-0.5">명</span>
+                    </div>
+                    <div className="text-xs text-[#66bb6a] mt-1.5">최종 기준 🟢 이해 완료</div>
                   </div>
-                  <div className="text-[10px] text-[#aaa] mt-1.5 leading-tight">최종 결과 기준<br/>핵심 개념 이해(🟢) 학생</div>
-                </div>
 
-                {/* 성장 학생 수 */}
-                <div className="rounded-xl p-4 text-center"
-                  style={{background: learnStats.grownCount > 0 ? '#e8f5e9' : '#f0f2f8'}}>
-                  <div className="text-[10px] text-[#999] mb-1">성장 학생 수</div>
-                  <div className="text-2xl font-black"
-                    style={{color: learnStats.grownCount > 0 ? '#2e7d32' : '#9e9e9e'}}>
-                    {learnStats.grownCount}<span className="text-xs font-normal ml-0.5">명</span>
+                  {/* 성장 학생 수 — 파랑 */}
+                  <div className="rounded-xl p-4 text-center" style={{background:'#e3f2fd'}}>
+                    <div className="text-[11px] text-[#999] mb-1">성장 학생 수</div>
+                    <div className="text-2xl font-black" style={{color:'#1565c0'}}>
+                      {learnStats.grownCount}<span className="text-xs font-normal ml-0.5">명</span>
+                    </div>
+                    <div className="text-xs text-[#64b5f6] mt-1.5">수정 후 단계 향상</div>
                   </div>
-                  <div className="text-[10px] text-[#aaa] mt-1.5 leading-tight">수정 후 이해수준이<br/>한 단계 이상 향상된 학생</div>
-                </div>
 
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* 배움 목록 */}
           <div className="bg-white rounded-2xl p-5 shadow-sm">
