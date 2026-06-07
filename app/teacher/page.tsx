@@ -184,6 +184,12 @@ function getFinalStatus(r: LearningRow): LearnStatus | '' {
   }
   return getLearnStatus(r.feedback);
 }
+function statusScore(s: LearnStatus | ''): number {
+  if (s === '🟢') return 3;
+  if (s === '🟡') return 2;
+  if (s === '🔴') return 1;
+  return 0;
+}
 
 // ─── 비밀번호 화면 ────────────────────────────────────
 function PinScreen({ onOk }: { onOk: () => void }) {
@@ -390,14 +396,20 @@ export default function TeacherPage() {
   const learnStats = useMemo(() => {
     const n = filteredLearnings.length;
     if (!n) return null;
-    const revisedCount    = filteredLearnings.filter(r => r.is_revised).length;
-    const revisedPct      = Math.round((revisedCount / n) * 100);
-    const initGreenCount  = filteredLearnings.filter(r => getLearnStatus(r.feedback) === '🟢').length;
+    // 평균이해수준: 최종 status 점수(🔴1·🟡2·🟢3) 평균
+    const scored   = filteredLearnings.filter(r => getFinalStatus(r) !== '');
+    const avgScore = scored.length > 0
+      ? scored.reduce((s, r) => s + statusScore(getFinalStatus(r)), 0) / scored.length
+      : 0;
+    // 이해수준 학생 수: 최종 🟢
     const finalGreenCount = filteredLearnings.filter(r => getFinalStatus(r) === '🟢').length;
-    const finalGreenPct   = Math.round((finalGreenCount / n) * 100);
-    const initGreenPct    = Math.round((initGreenCount  / n) * 100);
-    const growthPpt       = finalGreenPct - initGreenPct;
-    return { n, revisedCount, revisedPct, initGreenCount, finalGreenCount, finalGreenPct, initGreenPct, growthPpt };
+    // 성장 학생 수: 초기 status보다 최종 status 점수가 높은 학생 (수정 여부 무관)
+    const grownCount = filteredLearnings.filter(r => {
+      const init  = statusScore(getLearnStatus(r.feedback));
+      const final = statusScore(getFinalStatus(r));
+      return init > 0 && final > init;
+    }).length;
+    return { n, avgScore, finalGreenCount, grownCount };
   }, [filteredLearnings]);
 
   function toggleOne(id: number) { setSel(p => { const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n; }); }
@@ -839,50 +851,45 @@ export default function TeacherPage() {
               <h2 className="font-bold text-[#4a4a6a] text-sm mb-4">📊 개념 이해 현황</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
 
-                {/* 총 제출 */}
+                {/* 참여 학생 수 */}
                 <div className="rounded-xl p-4 text-center" style={{background:'#f0f2f8'}}>
-                  <div className="text-[10px] text-[#999] mb-1">총 제출</div>
+                  <div className="text-[10px] text-[#999] mb-1">참여 학생 수</div>
                   <div className="text-2xl font-black text-[#4a4a6a]">
                     {learnStats.n}<span className="text-xs font-normal ml-0.5">명</span>
                   </div>
-                  <div className="text-[10px] text-[#aaa] mt-1.5">필터 적용 결과</div>
+                  <div className="text-[10px] text-[#aaa] mt-1.5 leading-tight">핵심개념 작성에<br/>참여한 전체 학생</div>
                 </div>
 
-                {/* 수정 참여율 */}
+                {/* 평균이해수준 */}
                 <div className="rounded-xl p-4 text-center"
-                  style={{background: learnStats.revisedPct >= 50
-                    ? 'linear-gradient(135deg,#667eea18,#764ba218)'
-                    : '#f0f2f8'}}>
-                  <div className="text-[10px] text-[#999] mb-1">수정 참여율</div>
+                  style={{background:'linear-gradient(135deg,#667eea18,#764ba218)'}}>
+                  <div className="text-[10px] text-[#999] mb-1">평균이해수준</div>
                   <div className="text-2xl font-black" style={{color:'#667eea'}}>
-                    {learnStats.revisedPct}<span className="text-xs font-normal ml-0.5">%</span>
+                    {learnStats.avgScore.toFixed(1)}<span className="text-xs font-normal ml-0.5">점</span>
                   </div>
-                  <div className="text-[10px] text-[#aaa] mt-1.5">{learnStats.revisedCount}명 수정 완료</div>
+                  <div className="text-[10px] text-[#aaa] mt-1.5 leading-tight">최종 결과 기준<br/>🔴 1점 · 🟡 2점 · 🟢 3점</div>
                 </div>
 
-                {/* 이해 도달률 */}
+                {/* 이해수준 학생 수 */}
                 <div className="rounded-xl p-4 text-center"
-                  style={{background: learnStats.finalGreenPct >= 50 ? '#e8f5e9' : '#f0f2f8'}}>
-                  <div className="text-[10px] text-[#999] mb-1">이해 도달률</div>
+                  style={{background: learnStats.finalGreenCount > 0 ? '#e8f5e9' : '#f0f2f8'}}>
+                  <div className="text-[10px] text-[#999] mb-1">이해수준 학생 수</div>
                   <div className="text-2xl font-black"
-                    style={{color: learnStats.finalGreenPct >= 50 ? '#2e7d32' : '#9e9e9e'}}>
-                    {learnStats.finalGreenPct}<span className="text-xs font-normal ml-0.5">%</span>
+                    style={{color: learnStats.finalGreenCount > 0 ? '#2e7d32' : '#9e9e9e'}}>
+                    {learnStats.finalGreenCount}<span className="text-xs font-normal ml-0.5">명</span>
                   </div>
-                  <div className="text-[10px] text-[#aaa] mt-1.5">최종 기준 🟢 {learnStats.finalGreenCount}명</div>
+                  <div className="text-[10px] text-[#aaa] mt-1.5 leading-tight">최종 결과 기준<br/>핵심 개념 이해(🟢) 학생</div>
                 </div>
 
-                {/* 성장률 */}
+                {/* 성장 학생 수 */}
                 <div className="rounded-xl p-4 text-center"
-                  style={{background: learnStats.growthPpt > 0 ? '#e8f5e9' : '#f0f2f8'}}>
-                  <div className="text-[10px] text-[#999] mb-1">성장률</div>
+                  style={{background: learnStats.grownCount > 0 ? '#e8f5e9' : '#f0f2f8'}}>
+                  <div className="text-[10px] text-[#999] mb-1">성장 학생 수</div>
                   <div className="text-2xl font-black"
-                    style={{color: learnStats.growthPpt > 0 ? '#2e7d32' : '#9e9e9e'}}>
-                    {learnStats.growthPpt > 0 ? '+' : ''}{learnStats.growthPpt}
-                    <span className="text-xs font-normal ml-0.5">%p</span>
+                    style={{color: learnStats.grownCount > 0 ? '#2e7d32' : '#9e9e9e'}}>
+                    {learnStats.grownCount}<span className="text-xs font-normal ml-0.5">명</span>
                   </div>
-                  <div className="text-[10px] text-[#aaa] mt-1.5">
-                    {learnStats.initGreenPct}% → {learnStats.finalGreenPct}%
-                  </div>
+                  <div className="text-[10px] text-[#aaa] mt-1.5 leading-tight">수정 후 이해수준이<br/>한 단계 이상 향상된 학생</div>
                 </div>
 
               </div>
