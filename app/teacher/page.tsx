@@ -715,7 +715,7 @@ export default function TeacherPage() {
               getLabel={v=>{ const p=PROJECT_SHORT[v as string]; return p?`${p.emoji} ${p.short}`:v as string; }}/>
             <FilterDropdown label="질문 수준" opts={LEVEL_OPTS} sel={fLevel}
               onToggle={v=>setFLevel(tog(fLevel,v as number))}
-              getLabel={v=>`${LV[v as Level].emoji} ${LV[v as Level].short}`} getStyle={v=>LV[v as Level]}/>
+              getLabel={v=>`${LV[v as Level].emoji} ${LV[v as Level].short}  ${LV[v as Level].label}`} getStyle={v=>LV[v as Level]}/>
           </div>
           {hasFilter && (
             <button onClick={clearFilters}
