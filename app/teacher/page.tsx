@@ -12,6 +12,12 @@ const PROJECT_LIST  = ['세계는 어떻게 움직이는가','지구와 어떻�
 const LEVEL_OPTS    = [1, 2, 3, 4] as const;
 type  Level         = 1 | 2 | 3 | 4;
 
+const PROJECT_SHORT: Record<string, { emoji: string; short: string }> = {
+  '세계는 어떻게 움직이는가':          { emoji: '🌍', short: '세계' },
+  '지구와 어떻게 함께 살아갈 것인가': { emoji: '🌱', short: '지구' },
+  '우리는 어떻게 자신을 조직하는가':  { emoji: '🤝', short: '우리' },
+};
+
 const LV: Record<Level, { emoji: string; short: string; label: string; color: string; bg: string }> = {
   1: { emoji:'🟢', short:'1단계', label:'단순 사실 확인', color:'#2e7d32', bg:'#e8f5e9' },
   2: { emoji:'🔵', short:'2단계', label:'개념 이해',      color:'#1565c0', bg:'#e3f2fd' },
@@ -705,7 +711,8 @@ export default function TeacherPage() {
           <div className="grid grid-cols-3 gap-2 flex-1">
             <ClassDropdown opts={CLASS_LIST} sel={fClass} onToggle={v => setFClass(tog(fClass, v))} />
             <FilterDropdown label="프로젝트" opts={PROJECT_LIST} sel={fProject}
-              onToggle={v=>setFProject(tog(fProject,v as string))} getLabel={v=>v as string}/>
+              onToggle={v=>setFProject(tog(fProject,v as string))}
+              getLabel={v=>{ const p=PROJECT_SHORT[v as string]; return p?`${p.emoji} ${p.short}`:v as string; }}/>
             <FilterDropdown label="질문 수준" opts={LEVEL_OPTS} sel={fLevel}
               onToggle={v=>setFLevel(tog(fLevel,v as number))}
               getLabel={v=>`${LV[v as Level].emoji} ${LV[v as Level].short}`} getStyle={v=>LV[v as Level]}/>
@@ -961,13 +968,18 @@ export default function TeacherPage() {
                   <div key={row.id} onClick={()=>toggleOne(row.id)}
                     className="rounded-xl p-4 cursor-pointer transition-all"
                     style={{background: info.bg, border: on ? `2.5px solid ${info.color}` : '1.5px solid transparent'}}>
-                    <p className="text-[#111] text-sm font-semibold leading-relaxed m-0 mb-2">{row.question}</p>
-                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                    <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                      {(() => { const p = PROJECT_SHORT[row.project]; return p ? (
+                        <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md"
+                          style={{background:'rgba(255,255,255,0.6)', color:info.color}}>
+                          {p.emoji} {p.short}
+                        </span>
+                      ) : null; })()}
                       <span className="text-xs text-[#6b7280]">{row.class_room}</span>
                       <span className="text-xs text-[#9ca3af]">·</span>
                       <span className="text-xs font-semibold text-[#374151]">{row.name}</span>
-                      <span className="text-xs text-[#9ca3af]">· {row.project}</span>
                     </div>
+                    <p className="text-[#111] text-sm font-semibold leading-relaxed m-0">{row.question}</p>
                   </div>
                 );
               })}
@@ -992,7 +1004,7 @@ export default function TeacherPage() {
               />
               <FilterDropdown label="프로젝트" opts={PROJECT_LIST} sel={fLearnLesson}
                 onToggle={v => setFLearnLesson(tog(fLearnLesson, v as string))}
-                getLabel={v => v as string} />
+                getLabel={v=>{ const p=PROJECT_SHORT[v as string]; return p?`${p.emoji} ${p.short}`:v as string; }}/>
               <FilterDropdown label="이해 수준" opts={LEARN_STATUS_OPTS} sel={fLearnStatus}
                 onToggle={v => setFLearnStatus(tog(fLearnStatus, v as string))}
                 getLabel={v => LEARN_STATUS_INFO[v as LearnStatus].label}
