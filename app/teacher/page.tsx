@@ -946,11 +946,9 @@ export default function TeacherPage() {
                 const on   = sel.has(row.id);
                 return (
                   <div key={row.id} onClick={()=>toggleOne(row.id)}
-                    className="border-2 rounded-xl p-4 cursor-pointer transition-colors"
-                    style={{borderColor:on?'#667eea':'#ebebf5', background:on?'#f5f5ff':'white'}}>
-                    <div className="flex items-start gap-3">
-                      <input type="checkbox" checked={on} onChange={()=>toggleOne(row.id)} onClick={e=>e.stopPropagation()}
-                        className="mt-0.5 w-4 h-4 accent-[#667eea] shrink-0 cursor-pointer"/>
+                    className="rounded-xl p-4 cursor-pointer transition-all"
+                    style={{border: on ? '2.5px solid #667eea' : '1.5px solid #e5e7eb', background: on ? '#f5f5ff' : 'white'}}>
+                    <div className="flex items-start">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <p className="text-[#222] text-sm leading-relaxed m-0 flex-1">{row.question}</p>
@@ -1196,16 +1194,7 @@ export default function TeacherPage() {
 
           {/* 배움 목록 */}
           <div className="bg-white rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              {displayedLearnings.length > 0 && (
-                <div onClick={toggleLearnAll} className="w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center cursor-pointer transition-colors"
-                  style={displayedLearnings.every(r => selLearn.has(r.id)) && displayedLearnings.length > 0
-                    ? {borderColor:'#5850ec', background:'#5850ec'}
-                    : {borderColor:'#d1d5db', background:'white'}}>
-                  {displayedLearnings.every(r => selLearn.has(r.id)) && displayedLearnings.length > 0 &&
-                    <span className="text-white text-[9px] font-black leading-none">✓</span>}
-                </div>
-              )}
+            <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
               <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0 flex items-center gap-2">
                 배움 목록
                 <span className="text-xs font-medium text-[#9ca3af]">{displayedLearnings.length}개</span>
@@ -1213,13 +1202,24 @@ export default function TeacherPage() {
                   <span className="text-xs font-medium text-[#5850ec]">{fGrowthType}</span>
                 )}
               </h2>
-              {selLearn.size > 0 && (
-                <button onClick={() => setShowDeleteLearn(true)}
-                  className="ml-auto text-xs px-3 py-1.5 rounded-lg font-semibold text-white border-none cursor-pointer"
-                  style={{background:'#dc2626'}}>
-                  삭제 ({selLearn.size})
-                </button>
-              )}
+              <div className="flex gap-2">
+                {displayedLearnings.length > 0 && (
+                  <button onClick={toggleLearnAll}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-full border-2 cursor-pointer transition-all"
+                    style={displayedLearnings.every(r => selLearn.has(r.id)) && displayedLearnings.length > 0
+                      ? {background:'#ede9fe', color:'#5850ec', borderColor:'#5850ec'}
+                      : {background:'white', color:'#777', borderColor:'#e0e0e0'}}>
+                    {displayedLearnings.every(r => selLearn.has(r.id)) && displayedLearnings.length > 0 ? '전체 선택 해제' : '전체 선택'}
+                  </button>
+                )}
+                {selLearn.size > 0 && (
+                  <button onClick={() => setShowDeleteLearn(true)}
+                    className="text-xs px-3 py-1.5 rounded-full font-semibold text-white border-none cursor-pointer"
+                    style={{background:'#dc2626'}}>
+                    삭제 ({selLearn.size})
+                  </button>
+                )}
+              </div>
             </div>
 
             {loadingLearn ? (
@@ -1245,19 +1245,13 @@ export default function TeacherPage() {
                   const parsedRevised = row.revised_content ? parseContent(row.revised_content) : null;
 
                   return (
-                    <div key={row.id} className="border rounded-xl overflow-hidden transition-colors"
-                      style={{borderColor: isExpanded ? '#5850ec' : isSelected ? '#c7d2fe' : '#e5e7eb'}}>
+                    <div key={row.id} className="rounded-xl overflow-hidden transition-all"
+                      style={{border: isSelected ? '2.5px solid #5850ec' : isExpanded ? '1.5px solid #a5b4fc' : '1.5px solid #e5e7eb'}}>
 
                       <div className="p-3 cursor-pointer hover:bg-[#fafafa] transition-colors"
-                        onClick={() => setExpandedId(isExpanded ? null : row.id)}>
+                        onClick={() => { toggleLearnOne(row.id); setExpandedId(isExpanded ? null : row.id); }}>
 
                         <div className="flex items-start gap-2">
-                          <div onClick={e => { e.stopPropagation(); toggleLearnOne(row.id); }}
-                            className="mt-0.5 w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center cursor-pointer transition-colors"
-                            style={isSelected ? {borderColor:'#5850ec', background:'#5850ec'} : {borderColor:'#d1d5db', background:'white'}}>
-                            {isSelected && <span className="text-white text-[9px] font-black leading-none">✓</span>}
-                          </div>
-
                           <div className="flex-1 min-w-0">
                             {/* 이름 + 학년반 + 프로젝트 */}
                             <div className="flex items-baseline gap-1.5 mb-1 flex-wrap">
