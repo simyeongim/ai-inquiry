@@ -337,7 +337,7 @@ function FilterDropdown({ label, opts, sel, onToggle, getLabel, getStyle }: {
       </button>
       {open && (
         <div className="absolute top-full left-0 mt-1 bg-white rounded-xl shadow-lg border border-[#e0e0f0] z-20 max-h-52 overflow-y-auto"
-          style={{minWidth:'max-content'}}>
+          style={{minWidth:'100%', width:'max-content', maxWidth:'320px'}}>
           {opts.map(o => {
             const on = sel.includes(o); const s = getStyle?.(o);
             return (
@@ -724,18 +724,22 @@ export default function TeacherPage() {
               <div className="rounded-xl py-2.5 px-4 text-center" style={{background:'#f0f2f8'}}>
                 <div className="text-xs text-[#9ca3af] mb-0.5">총 질문</div>
                 <div className="text-xl font-black text-[#1a1a2e]">{stats.n}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">개</span></div>
+                <div className="text-xs text-[#9ca3af] mt-0.5">필터 기준 전체</div>
               </div>
               <div className="rounded-xl py-2.5 px-4 text-center" style={{background:'linear-gradient(135deg,#667eea18,#764ba218)', border:'1px solid #667eea20'}}>
                 <div className="text-xs text-[#9ca3af] mb-0.5">참여 학생</div>
                 <div className="text-xl font-black text-[#3949ab]">{stats.uniqueStudents}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">명</span></div>
+                <div className="text-xs text-[#9ca3af] mt-0.5">질문 작성 참여</div>
               </div>
               <div className="rounded-xl py-2.5 px-4 text-center" style={{background:'#e8f5e9'}}>
                 <div className="text-xs text-[#9ca3af] mb-0.5">평균 단계</div>
                 <div className="text-xl font-black" style={{color:'#667eea'}}>{stats.avg.toFixed(1)}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">단계</span></div>
+                <div className="text-xs text-[#9ca3af] mt-0.5">1–4단계 기준</div>
               </div>
               <div className="rounded-xl py-2.5 px-4 text-center" style={{background:'#e8eaf6'}}>
                 <div className="text-xs text-[#9ca3af] mb-0.5">3·4단계</div>
                 <div className="text-xl font-black" style={{color: stats.highPct >= 50 ? '#2e7d32' : '#9e9e9e'}}>{stats.highPct}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">%</span></div>
+                <div className="text-xs text-[#9ca3af] mt-0.5">심층 탐구 비율</div>
               </div>
             </div>
           </div>
@@ -988,7 +992,7 @@ export default function TeacherPage() {
               <FilterDropdown label="프로젝트" opts={PROJECT_LIST} sel={fLearnLesson}
                 onToggle={v => setFLearnLesson(tog(fLearnLesson, v as string))}
                 getLabel={v => v as string} />
-              <FilterDropdown label="이해수준" opts={LEARN_STATUS_OPTS} sel={fLearnStatus}
+              <FilterDropdown label="이해 수준" opts={LEARN_STATUS_OPTS} sel={fLearnStatus}
                 onToggle={v => setFLearnStatus(tog(fLearnStatus, v as string))}
                 getLabel={v => LEARN_STATUS_INFO[v as LearnStatus].label}
                 getStyle={v => LEARN_STATUS_INFO[v as LearnStatus]} />
