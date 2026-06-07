@@ -664,174 +664,161 @@ export default function TeacherPage() {
           {fetchErr && <p className="text-red-500 text-sm mt-3">{fetchErr}</p>}
         </div>
 
-        {/* ── 분석 영역 ─────────────────────────────────── */}
+        {/* ── 질문 현황 ──────────────────────────────────── */}
         {stats && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-            {/* 질문 현황 */}
-            <div className="bg-white rounded-2xl p-5 shadow-sm">
-              <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-4">질문 현황</h2>
-
-              {/* 요약 카드 4개 */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-5">
-                <div className="rounded-xl p-3 text-center" style={{background:'#f0f2f8'}}>
-                  <div className="text-[10px] text-[#9ca3af] mb-1">총 질문</div>
-                  <div className="text-xl font-black text-[#1a1a2e]">{stats.n}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">개</span></div>
-                </div>
-                <div className="rounded-xl p-3 text-center" style={{background:'#e8eaf6'}}>
-                  <div className="text-[10px] text-[#9ca3af] mb-1">참여 학생</div>
-                  <div className="text-xl font-black text-[#3949ab]">{stats.uniqueStudents}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">명</span></div>
-                </div>
-                <div className="rounded-xl p-3 text-center" style={{background:'linear-gradient(135deg,#667eea18,#764ba218)'}}>
-                  <div className="text-[10px] text-[#9ca3af] mb-1">평균 단계</div>
-                  <div className="text-xl font-black" style={{color:'#667eea'}}>{stats.avg.toFixed(1)}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">단계</span></div>
-                </div>
-                <div className="rounded-xl p-3 text-center" style={{background: stats.highPct >= 50 ? '#e8f5e9' : '#f0f2f8'}}>
-                  <div className="text-[10px] text-[#9ca3af] mb-1">3·4단계</div>
-                  <div className="text-xl font-black" style={{color: stats.highPct >= 50 ? '#2e7d32' : '#9e9e9e'}}>{stats.highPct}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">%</span></div>
-                </div>
+          <div className="bg-white rounded-2xl px-5 py-4 shadow-sm">
+            <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-3">질문 현황</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="rounded-xl py-2.5 px-4 text-center" style={{background:'#f0f2f8'}}>
+                <div className="text-xs text-[#9ca3af] mb-0.5">총 질문</div>
+                <div className="text-xl font-black text-[#1a1a2e]">{stats.n}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">개</span></div>
               </div>
-
-              {/* 수준 분포 */}
-              <div className="mb-5">
-                <div className="mb-3">
-                  <span className="text-sm font-semibold text-[#555]">수준 분포</span>
-                </div>
-                <div className="space-y-2">
-                  {stats.lvDist.map(({ l, emoji, short, color, cnt }) => (
-                    <div key={l} className="flex items-center gap-2">
-                      <span className="text-xs w-16 shrink-0 font-medium" style={{color}}>{emoji} {short}</span>
-                      <div className="flex-1 bg-[#f0f2f8] rounded-full h-5 overflow-hidden">
-                        <div className="h-full rounded-full flex items-center justify-end pr-2 transition-all duration-500"
-                          style={{width:`${Math.max(cnt>0?6:0,(cnt/stats.maxC)*100)}%`, background:color}}>
-                          {cnt > 0 && <span className="text-white text-[10px] font-bold">{cnt}</span>}
-                        </div>
-                      </div>
-                      <span className="text-xs text-[#bbb] w-5 text-right shrink-0">{cnt}</span>
-                    </div>
-                  ))}
-                </div>
+              <div className="rounded-xl py-2.5 px-4 text-center" style={{background:'#e8eaf6'}}>
+                <div className="text-xs text-[#9ca3af] mb-0.5">참여 학생</div>
+                <div className="text-xl font-black text-[#3949ab]">{stats.uniqueStudents}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">명</span></div>
               </div>
-
-              {/* 핵심어 */}
-              <div className="mb-5">
-                <div className="text-sm font-semibold text-[#555] mb-2">많이 나온 핵심어</div>
-                {stats.topKw.length === 0
-                  ? <p className="text-xs text-[#ccc]">핵심어 없음</p>
-                  : (
-                    <div className="flex flex-wrap gap-2">
-                      {stats.topKw.map(([kw, cnt]) => (
-                        <span key={kw} className="px-2.5 py-1 rounded-full font-semibold"
-                          style={{background:'#e8eaf6', color:'#3949ab', fontSize:`${Math.min(0.88,0.64+(cnt/stats.maxKw)*0.24)}rem`}}>
-                          {kw} <span className="opacity-50 text-[10px]">×{cnt}</span>
-                        </span>
-                      ))}
-                    </div>
-                  )}
+              <div className="rounded-xl py-2.5 px-4 text-center" style={{background:'linear-gradient(135deg,#667eea18,#764ba218)', border:'1px solid #667eea20'}}>
+                <div className="text-xs text-[#9ca3af] mb-0.5">평균 단계</div>
+                <div className="text-xl font-black" style={{color:'#667eea'}}>{stats.avg.toFixed(1)}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">단계</span></div>
               </div>
+              <div className="rounded-xl py-2.5 px-4 text-center" style={{background: stats.highPct >= 50 ? '#e8f5e9' : '#f0f2f8'}}>
+                <div className="text-xs text-[#9ca3af] mb-0.5">3·4단계</div>
+                <div className="text-xl font-black" style={{color: stats.highPct >= 50 ? '#2e7d32' : '#9e9e9e'}}>{stats.highPct}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">%</span></div>
+              </div>
+            </div>
+          </div>
+        )}
 
-              {/* 탐구 주제별 묶음 */}
-              <div>
-                <div className="text-sm font-semibold text-[#555] mb-2">탐구 주제별 묶음</div>
-                {stats.groups.length === 0
-                  ? <p className="text-xs text-[#ccc]">유사 질문 그룹 없음</p>
-                  : (
-                    <div className="space-y-2.5">
-                      {stats.groups.map(({ label, key, qs }) => (
-                        <div key={key} className="bg-[#f8f9ff] rounded-xl p-3">
-                          <div className="text-xs font-bold text-[#667eea] mb-1.5">🔗 {refinedLabels[key] ?? label} ({qs.length}개)</div>
-                          <ul className="space-y-1">
-                            {qs.slice(0,3).map(q => (
-                              <li key={q.id} className="text-xs text-[#555] flex gap-1">
-                                <span className="text-[#ddd] shrink-0">·</span><span>{q.question}</span>
-                              </li>
-                            ))}
-                            {qs.length > 3 && <li className="text-xs text-[#bbb]">외 {qs.length-3}개</li>}
-                          </ul>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+        {/* ── 수업 활용 ──────────────────────────────────── */}
+        {stats && (
+          <div className="bg-white rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">수업 활용</h2>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-[#9ca3af]">현재 {filtered.length}개 질문 기준</span>
+                <button onClick={generateAiReport} disabled={aiLoading || !stats}
+                  className="text-sm px-4 py-1.5 rounded-lg border-none cursor-pointer font-semibold text-white disabled:opacity-50 transition-all"
+                  style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)' }}>
+                  {aiLoading ? '분석 중…' : aiReport ? '↺ 다시 분석' : '분석 생성'}
+                </button>
               </div>
             </div>
 
-            {/* 수업 활용 */}
-            <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-col">
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">수업 활용</h2>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#9ca3af]">현재 {filtered.length}개 질문 기준</span>
-                  <button onClick={generateAiReport} disabled={aiLoading || !stats}
-                    className="text-sm px-4 py-2 rounded-full border-none cursor-pointer font-bold text-white disabled:opacity-50 transition-all"
-                    style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)' }}>
-                    {aiLoading ? '분석 중…' : aiReport ? '↺ 다시 분석' : '분석 생성'}
-                  </button>
+            {!aiReport && !aiLoading && (
+              <p className="text-sm text-[#9ca3af] text-center py-8 m-0">
+                분석 생성을 누르면 AI가 수업 설계를 도와드립니다.
+              </p>
+            )}
+
+            {aiLoading && (
+              <p className="text-sm text-[#9ca3af] text-center py-8 m-0 animate-pulse">AI가 질문을 분석하고 있습니다…</p>
+            )}
+
+            {aiReport && !aiLoading && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+                <div className="rounded-xl p-4" style={{background:'linear-gradient(135deg,#667eea0d,#764ba20d)', border:'1.5px solid #667eea30'}}>
+                  <div className="text-xs font-semibold text-[#667eea] mb-2">질문 분석 리포트</div>
+                  <p className="text-sm text-[#2a2a3a] leading-relaxed m-0">{aiReport.report}</p>
                 </div>
+
+                <div className="rounded-xl p-4" style={{background:'#fffbeb', border:'1.5px solid #fde68a'}}>
+                  <div className="text-xs font-semibold text-[#92400e] mb-2">대표 탐구 질문</div>
+                  {aiReport.deepQuestions.length > 0 ? (
+                    <div className="space-y-2.5">
+                      {aiReport.deepQuestions.slice(0, 3).map((q, i) => (
+                        <div key={i} className="flex gap-2 items-start">
+                          <span className="text-xs font-black text-[#f59e0b] shrink-0 mt-0.5">{i + 1}</span>
+                          <p className="text-sm text-[#333] leading-snug m-0 font-semibold">{q}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[#9ca3af] m-0">추출된 질문이 없습니다.</p>
+                  )}
+                </div>
+
+                <div className="rounded-xl p-4" style={{background:'#f0fdf4', border:'1.5px solid #86efac'}}>
+                  <div className="text-xs font-semibold text-[#166534] mb-2">다음 차시 활동 제안</div>
+                  {aiReport.suggestions.length > 0 ? (
+                    <div className="space-y-2.5">
+                      {aiReport.suggestions.slice(0, 3).map((s, i) => (
+                        <div key={i} className="flex gap-2 items-start">
+                          <span className="text-[#059669] font-black text-sm shrink-0">▶</span>
+                          <p className="text-sm text-[#166534] leading-snug m-0 font-bold">{s}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[#9ca3af] m-0">제안 없음</p>
+                  )}
+                </div>
+
               </div>
+            )}
+          </div>
+        )}
 
-              {!aiReport && !aiLoading && (
-                <div className="flex-1 flex flex-col items-center justify-center py-12 gap-3">
-                  <span className="text-4xl">🤖</span>
-                  <p className="text-sm text-[#bbb] text-center m-0 leading-relaxed">분석 생성을 누르면<br/>AI가 수업 설계를 도와드립니다.</p>
-                </div>
-              )}
+        {/* ── 질문 분포 상세 ─────────────────────────────── */}
+        {stats && (
+          <div className="bg-white rounded-2xl p-5 shadow-sm">
+            <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-4">질문 분포 상세</h2>
 
-              {aiLoading && (
-                <div className="flex-1 flex flex-col items-center justify-center py-12 gap-3">
-                  <span className="text-3xl animate-spin">⚙️</span>
-                  <p className="text-sm text-[#aaa] text-center m-0 animate-pulse">AI가 질문을 분석하고 있습니다…</p>
-                </div>
-              )}
-
-              {aiReport && !aiLoading && (
-                <div className="space-y-5">
-
-                  {/* 질문 분석 리포트 */}
-                  <div className="rounded-xl p-4" style={{background:'linear-gradient(135deg,#667eea0d,#764ba20d)', border:'1.5px solid #667eea30'}}>
-                    <div className="mb-2">
-                      <span className="text-sm font-semibold text-[#667eea]">질문 분석 리포트</span>
+            <div className="mb-5">
+              <div className="text-sm font-semibold text-[#555] mb-3">수준 분포</div>
+              <div className="space-y-2">
+                {stats.lvDist.map(({ l, emoji, short, color, cnt }) => (
+                  <div key={l} className="flex items-center gap-2">
+                    <span className="text-xs w-16 shrink-0 font-medium" style={{color}}>{emoji} {short}</span>
+                    <div className="flex-1 bg-[#f0f2f8] rounded-full h-5 overflow-hidden">
+                      <div className="h-full rounded-full flex items-center justify-end pr-2 transition-all duration-500"
+                        style={{width:`${Math.max(cnt>0?6:0,(cnt/stats.maxC)*100)}%`, background:color}}>
+                        {cnt > 0 && <span className="text-white text-[10px] font-bold">{cnt}</span>}
+                      </div>
                     </div>
-                    <p className="text-[15px] text-[#2a2a3a] leading-relaxed m-0">{aiReport.report}</p>
+                    <span className="text-xs text-[#bbb] w-5 text-right shrink-0">{cnt}</span>
                   </div>
+                ))}
+              </div>
+            </div>
 
-                  {/* 대표 탐구 질문 */}
-                  {aiReport.deepQuestions.length > 0 && (
-                    <div>
-                      <div className="mb-2">
-                        <span className="text-sm font-semibold text-[#d97706]">대표 탐구 질문</span>
-                      </div>
-                      <div className="space-y-2.5">
-                        {aiReport.deepQuestions.slice(0, 2).map((q, i) => (
-                          <div key={i} className="rounded-xl p-4 flex gap-3 items-start"
-                            style={{background:'#fffbeb', border:'1.5px solid #fde68a'}}>
-                            <span className="text-base font-black text-[#f59e0b] shrink-0 leading-tight mt-0.5">{i + 1}</span>
-                            <p className="text-[15px] text-[#333] leading-snug m-0 font-semibold">{q}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+            <div className="mb-5">
+              <div className="text-sm font-semibold text-[#555] mb-2">많이 나온 핵심어</div>
+              {stats.topKw.length === 0
+                ? <p className="text-xs text-[#ccc]">핵심어 없음</p>
+                : (
+                  <div className="flex flex-wrap gap-2">
+                    {stats.topKw.map(([kw, cnt]) => (
+                      <span key={kw} className="px-2.5 py-1 rounded-full font-semibold"
+                        style={{background:'#e8eaf6', color:'#3949ab', fontSize:`${Math.min(0.88,0.64+(cnt/stats.maxKw)*0.24)}rem`}}>
+                        {kw} <span className="opacity-50 text-[10px]">×{cnt}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+            </div>
 
-                  {/* 다음 차시 활동 제안 */}
-                  {aiReport.suggestions.length > 0 && (
-                    <div>
-                      <div className="mb-2">
-                        <span className="text-sm font-semibold text-[#059669]">다음 차시 활동 제안</span>
+            <div>
+              <div className="text-sm font-semibold text-[#555] mb-2">탐구 주제별 묶음</div>
+              {stats.groups.length === 0
+                ? <p className="text-xs text-[#ccc]">유사 질문 그룹 없음</p>
+                : (
+                  <div className="space-y-2.5">
+                    {stats.groups.map(({ label, key, qs }) => (
+                      <div key={key} className="bg-[#f8f9ff] rounded-xl p-3">
+                        <div className="text-xs font-bold text-[#667eea] mb-1.5">🔗 {refinedLabels[key] ?? label} ({qs.length}개)</div>
+                        <ul className="space-y-1">
+                          {qs.slice(0,3).map(q => (
+                            <li key={q.id} className="text-xs text-[#555] flex gap-1">
+                              <span className="text-[#ddd] shrink-0">·</span><span>{q.question}</span>
+                            </li>
+                          ))}
+                          {qs.length > 3 && <li className="text-xs text-[#bbb]">외 {qs.length-3}개</li>}
+                        </ul>
                       </div>
-                      <div className="space-y-2.5">
-                        {aiReport.suggestions.slice(0, 2).map((s, i) => (
-                          <div key={i} className="rounded-xl p-4 flex gap-3 items-center"
-                            style={{background:'#f0fdf4', border:'1.5px solid #86efac'}}>
-                            <span className="text-[#059669] font-black text-sm shrink-0">▶</span>
-                            <p className="text-[15px] text-[#166534] leading-snug m-0 font-bold">{s}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
             </div>
           </div>
         )}
