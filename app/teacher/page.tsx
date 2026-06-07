@@ -197,6 +197,13 @@ function getImprovePoint(f: Record<string, string> | string | null | undefined):
     : (f as Record<string, string>);
   return obj.improvePoint ?? '';
 }
+function getGoodPoint(f: Record<string, string> | string | null | undefined): string {
+  if (!f) return '';
+  const obj: Record<string, string> = typeof f === 'string'
+    ? (() => { try { return JSON.parse(f); } catch { return {}; } })()
+    : (f as Record<string, string>);
+  return obj.goodPoint ?? '';
+}
 function getGrowthType(r: LearningRow): { emoji: string; label: string; color: string; bg: string } {
   const initSt = getLearnStatus(r.feedback);
   if (initSt === '🟢') return { emoji: '🌟', label: '즉시 이해형', color: '#2e7d32', bg: '#e8f5e9' };
@@ -329,7 +336,7 @@ export default function TeacherPage() {
   const [aiReport,  setAiReport]  = useState<{ report: string; deepQuestions: string[]; suggestions: string[] } | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [refinedLabels, setRefinedLabels] = useState<Record<string, string>>({});
-  const [learnInsight, setLearnInsight] = useState<{ misconception: string; suggestion: string; explorationQuestions?: string[] } | null>(null);
+  const [learnInsight, setLearnInsight] = useState<{ wellUnderstood: string; misconception: string; suggestion: string } | null>(null);
   const [learnInsightLoading, setLearnInsightLoading] = useState(false);
   const [selLearn,        setSelLearn]        = useState<Set<number>>(new Set());
   const [deletingLearn,   setDeletingLearn]   = useState(false);
@@ -393,6 +400,10 @@ export default function TeacherPage() {
     if (!filteredLearnings.length) return;
     setLearnInsightLoading(true);
     try {
+      const goodPoints = filteredLearnings
+        .filter(r => getFinalStatus(r) === '🟢')
+        .map(r => (r.is_revised && r.revised_feedback ? getGoodPoint(r.revised_feedback) : getGoodPoint(r.feedback)))
+        .filter(Boolean);
       const improvePoints = filteredLearnings
         .filter(r => getLearnStatus(r.feedback) !== '🟢')
         .map(r => getImprovePoint(r.feedback)).filter(Boolean);
@@ -408,7 +419,7 @@ export default function TeacherPage() {
       const res = await fetch('/api/learn-insight', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ improvePoints, revisedImprovePoints, statusDist }),
+        body: JSON.stringify({ goodPoints, improvePoints, revisedImprovePoints, statusDist }),
       });
       if (!res.ok) throw new Error();
       setLearnInsight(await res.json());
@@ -535,6 +546,7 @@ export default function TeacherPage() {
   const stats = useMemo(() => {
     const n = filtered.length;
     if (!n) return null;
+    const uniqueStudents = new Set(filtered.map(r => r.name)).size;
 
     const lvDist = LEVEL_OPTS.map(l => ({ ...LV[l], l, cnt: filtered.filter(r => r.analysis?.level === l).length }));
     const maxC   = Math.max(...lvDist.map(d => d.cnt), 1);
@@ -574,7 +586,7 @@ export default function TeacherPage() {
     // 대표 추천 (높은 단계 우선)
     const reco = [...filtered].sort((a,b)=>(b.analysis?.level??1)-(a.analysis?.level??1)).slice(0,5);
 
-    return { lvDist, maxC, avg, highPct, topKw, maxKw, groups, reco, n };
+    return { lvDist, maxC, avg, highPct, topKw, maxKw, groups, reco, n, uniqueStudents };
   }, [filtered]);
 
   useEffect(() => {
@@ -633,12 +645,12 @@ export default function TeacherPage() {
       <div className="max-w-[1200px] mx-auto px-4 pt-5 space-y-4">
 
         {/* ── 필터 ─────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-[#4a4a6a] text-sm m-0">🔍 필터</h2>
+        <div className="bg-white rounded-2xl py-3 px-4 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">필터</h2>
             {hasFilter && <button onClick={clearFilters} className="text-xs text-[#667eea] border-none bg-transparent cursor-pointer font-semibold hover:underline">초기화</button>}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
             <div>
               <div className="text-xs font-bold text-[#999] uppercase tracking-wider mb-2">학년/반</div>
               <ClassDropdown opts={CLASS_LIST} sel={fClass} onToggle={v => setFClass(tog(fClass, v))} />
@@ -658,21 +670,25 @@ export default function TeacherPage() {
 
             {/* 질문 현황 */}
             <div className="bg-white rounded-2xl p-5 shadow-sm">
-              <h2 className="font-bold text-[#4a4a6a] text-sm mb-5">📈 질문 현황</h2>
+              <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-4">질문 현황</h2>
 
-              {/* 요약 카드 3개 */}
-              <div className="grid grid-cols-3 gap-2 mb-5">
+              {/* 요약 카드 4개 */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-5">
                 <div className="rounded-xl p-3 text-center" style={{background:'#f0f2f8'}}>
-                  <div className="text-[10px] text-[#999] mb-1">총 질문</div>
-                  <div className="text-2xl font-black text-[#4a4a6a]">{stats.n}<span className="text-xs font-normal ml-0.5">개</span></div>
+                  <div className="text-[10px] text-[#9ca3af] mb-1">총 질문</div>
+                  <div className="text-xl font-black text-[#1a1a2e]">{stats.n}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">개</span></div>
+                </div>
+                <div className="rounded-xl p-3 text-center" style={{background:'#e8eaf6'}}>
+                  <div className="text-[10px] text-[#9ca3af] mb-1">참여 학생</div>
+                  <div className="text-xl font-black text-[#3949ab]">{stats.uniqueStudents}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">명</span></div>
                 </div>
                 <div className="rounded-xl p-3 text-center" style={{background:'linear-gradient(135deg,#667eea18,#764ba218)'}}>
-                  <div className="text-[10px] text-[#999] mb-1">평균 단계</div>
-                  <div className="text-2xl font-black" style={{color:'#667eea'}}>{stats.avg.toFixed(1)}<span className="text-xs font-normal ml-0.5">단계</span></div>
+                  <div className="text-[10px] text-[#9ca3af] mb-1">평균 단계</div>
+                  <div className="text-xl font-black" style={{color:'#667eea'}}>{stats.avg.toFixed(1)}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">단계</span></div>
                 </div>
                 <div className="rounded-xl p-3 text-center" style={{background: stats.highPct >= 50 ? '#e8f5e9' : '#f0f2f8'}}>
-                  <div className="text-[10px] text-[#999] mb-1">3·4단계</div>
-                  <div className="text-2xl font-black" style={{color: stats.highPct >= 50 ? '#2e7d32' : '#9e9e9e'}}>{stats.highPct}<span className="text-xs font-normal ml-0.5">%</span></div>
+                  <div className="text-[10px] text-[#9ca3af] mb-1">3·4단계</div>
+                  <div className="text-xl font-black" style={{color: stats.highPct >= 50 ? '#2e7d32' : '#9e9e9e'}}>{stats.highPct}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">%</span></div>
                 </div>
               </div>
 
@@ -742,12 +758,15 @@ export default function TeacherPage() {
             {/* 수업 활용 */}
             <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-col">
               <div className="flex items-center justify-between mb-5">
-                <h2 className="font-bold text-[#4a4a6a] text-sm m-0">💡 수업 활용</h2>
-                <button onClick={generateAiReport} disabled={aiLoading || !stats}
-                  className="text-sm px-4 py-2 rounded-full border-none cursor-pointer font-bold text-white disabled:opacity-50 transition-all"
-                  style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)' }}>
-                  {aiLoading ? '분석 중…' : aiReport ? '↺ 다시 분석' : '🤖 분석 생성'}
-                </button>
+                <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">수업 활용</h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#9ca3af]">현재 {filtered.length}개 질문 기준</span>
+                  <button onClick={generateAiReport} disabled={aiLoading || !stats}
+                    className="text-sm px-4 py-2 rounded-full border-none cursor-pointer font-bold text-white disabled:opacity-50 transition-all"
+                    style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)' }}>
+                    {aiLoading ? '분석 중…' : aiReport ? '↺ 다시 분석' : '분석 생성'}
+                  </button>
+                </div>
               </div>
 
               {!aiReport && !aiLoading && (
@@ -769,9 +788,8 @@ export default function TeacherPage() {
 
                   {/* 질문 분석 리포트 */}
                   <div className="rounded-xl p-4" style={{background:'linear-gradient(135deg,#667eea0d,#764ba20d)', border:'1.5px solid #667eea30'}}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-base">📋</span>
-                      <span className="text-base font-black text-[#667eea]">질문 분석 리포트</span>
+                    <div className="mb-2">
+                      <span className="text-sm font-semibold text-[#667eea]">질문 분석 리포트</span>
                     </div>
                     <p className="text-[15px] text-[#2a2a3a] leading-relaxed m-0">{aiReport.report}</p>
                   </div>
@@ -779,9 +797,8 @@ export default function TeacherPage() {
                   {/* 대표 탐구 질문 */}
                   {aiReport.deepQuestions.length > 0 && (
                     <div>
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-base">⭐</span>
-                        <span className="text-base font-black text-[#d97706]">대표 탐구 질문</span>
+                      <div className="mb-2">
+                        <span className="text-sm font-semibold text-[#d97706]">대표 탐구 질문</span>
                       </div>
                       <div className="space-y-2.5">
                         {aiReport.deepQuestions.slice(0, 2).map((q, i) => (
@@ -798,9 +815,8 @@ export default function TeacherPage() {
                   {/* 다음 차시 활동 제안 */}
                   {aiReport.suggestions.length > 0 && (
                     <div>
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-base">🗓</span>
-                        <span className="text-base font-black text-[#059669]">다음 차시 활동 제안</span>
+                      <div className="mb-2">
+                        <span className="text-sm font-semibold text-[#059669]">다음 차시 활동 제안</span>
                       </div>
                       <div className="space-y-2.5">
                         {aiReport.suggestions.slice(0, 2).map((s, i) => (
@@ -824,9 +840,9 @@ export default function TeacherPage() {
         <div className="bg-white rounded-2xl p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
             <div className="flex items-center gap-3 flex-wrap">
-              <h2 className="font-bold text-[#4a4a6a] text-sm m-0 flex items-center gap-2">
-                📝 질문 목록
-                <span className="font-bold text-xs text-white px-2 py-0.5 rounded-full" style={{background:'#667eea'}}>{displayed.length}개</span>
+              <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0 flex items-center gap-2">
+                질문 목록
+                <span className="text-xs font-medium text-[#9ca3af]">{displayed.length}개</span>
               </h2>
               <div className="relative">
                 <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#bbb] text-xs">👤</span>
@@ -885,16 +901,11 @@ export default function TeacherPage() {
                             {info.emoji} {info.short}
                           </span>
                         </div>
-                        <div className="flex flex-wrap gap-1.5 mt-2">
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{background:'#f0f2f8', color:'#555'}}>
-                            {row.class_room}
-                          </span>
-                          <span className="text-xs font-bold px-2 py-0.5 rounded-md" style={{background:'#e8eaf6', color:'#3949ab'}}>
-                            {row.name}
-                          </span>
-                          <span className="text-xs px-2 py-0.5 rounded-md" style={{background:'#f3f0ff', color:'#6b21a8'}}>
-                            {row.project}
-                          </span>
+                        <div className="flex items-baseline gap-1.5 mt-2 flex-wrap">
+                          <span className="text-xs text-[#6b7280]">{row.class_room}</span>
+                          <span className="text-xs text-[#9ca3af]">·</span>
+                          <span className="text-xs font-semibold text-[#374151]">{row.name}</span>
+                          <span className="text-xs text-[#9ca3af]">· {row.project}</span>
                         </div>
                       </div>
                     </div>
@@ -913,15 +924,15 @@ export default function TeacherPage() {
         <div className="max-w-[1200px] mx-auto px-4 pt-5 space-y-4">
 
           {/* 필터 */}
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
+          <div className="bg-white rounded-2xl py-3 px-4 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
               <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">필터</h2>
               {(fLearnClass.length > 0 || fLearnLesson.length > 0 || fLearnStatus.length > 0) && (
                 <button onClick={() => { setFLearnClass([]); setFLearnLesson([]); setFLearnStatus([]); }}
                   className="text-xs text-[#667eea] border-none bg-transparent cursor-pointer font-semibold hover:underline">초기화</button>
               )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
               <div>
                 <div className="text-xs font-bold text-[#999] uppercase tracking-wider mb-2">학년/반</div>
                 <ClassDropdown
@@ -1016,6 +1027,11 @@ export default function TeacherPage() {
               {learnInsight && !learnInsightLoading && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
 
+                  <div className="rounded-xl p-4" style={{background:'#e8f5e9', border:'1.5px solid #a5d6a7'}}>
+                    <div className="text-xs font-semibold text-[#2e7d32] mb-2">잘 이해하고 있는 점</div>
+                    <p className="text-sm text-[#374151] m-0 leading-relaxed">{learnInsight.wellUnderstood}</p>
+                  </div>
+
                   <div className="rounded-xl p-4" style={{background:'#fffbeb', border:'1.5px solid #fde68a'}}>
                     <div className="text-xs font-semibold text-[#92400e] mb-2">학급 공통 오개념</div>
                     <p className="text-sm text-[#374151] m-0 leading-relaxed">{learnInsight.misconception}</p>
@@ -1025,20 +1041,6 @@ export default function TeacherPage() {
                     <div className="text-xs font-semibold text-[#166534] mb-2">수업 개선 제안</div>
                     <p className="text-sm text-[#374151] m-0 leading-relaxed">{learnInsight.suggestion}</p>
                   </div>
-
-                  {learnInsight.explorationQuestions && learnInsight.explorationQuestions.length > 0 && (
-                    <div className="rounded-xl p-4" style={{background:'linear-gradient(135deg,#667eea0d,#764ba20d)', border:'1.5px solid #667eea30'}}>
-                      <div className="text-xs font-semibold text-[#4338ca] mb-2">다음 탐구 질문 추천</div>
-                      <div className="space-y-2">
-                        {learnInsight.explorationQuestions.map((q, i) => (
-                          <div key={i} className="flex items-start gap-2">
-                            <span className="text-xs font-bold text-[#667eea] shrink-0 mt-0.5">Q{i+1}</span>
-                            <p className="text-sm text-[#374151] m-0 leading-relaxed">{q}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
                 </div>
               )}
