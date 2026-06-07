@@ -190,6 +190,13 @@ function statusScore(s: LearnStatus | ''): number {
   if (s === '🔴') return 1;
   return 0;
 }
+function getImprovePoint(f: Record<string, string> | string | null | undefined): string {
+  if (!f) return '';
+  const obj: Record<string, string> = typeof f === 'string'
+    ? (() => { try { return JSON.parse(f); } catch { return {}; } })()
+    : (f as Record<string, string>);
+  return obj.improvePoint ?? '';
+}
 
 // ─── 비밀번호 화면 ────────────────────────────────────
 function PinScreen({ onOk }: { onOk: () => void }) {
@@ -307,6 +314,8 @@ export default function TeacherPage() {
   const [aiReport,  setAiReport]  = useState<{ report: string; deepQuestions: string[]; suggestions: string[] } | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [refinedLabels, setRefinedLabels] = useState<Record<string, string>>({});
+  const [learnInsight, setLearnInsight] = useState<{ misconception: string; suggestion: string; attention: string } | null>(null);
+  const [learnInsightLoading, setLearnInsightLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true); setFetchErr('');
@@ -357,6 +366,42 @@ export default function TeacherPage() {
       setAiReport(await res.json());
     } catch { alert('AI 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'); }
     setAiLoading(false);
+  }
+
+  async function generateLearnInsight() {
+    if (!filteredLearnings.length) return;
+    setLearnInsightLoading(true);
+    try {
+      const improvePoints = filteredLearnings
+        .map(r => getImprovePoint(r.feedback)).filter(Boolean);
+      const revisedImprovePoints = filteredLearnings
+        .filter(r => r.revised_feedback)
+        .map(r => getImprovePoint(r.revised_feedback)).filter(Boolean);
+      const finalSts = filteredLearnings.map(r => getFinalStatus(r));
+      const statusDist = {
+        '🟢': finalSts.filter(s => s === '🟢').length,
+        '🟡': finalSts.filter(s => s === '🟡').length,
+        '🔴': finalSts.filter(s => s === '🔴').length,
+      };
+      const fmt = (r: LearningRow) => {
+        const cls = [r.grade, r.class_name].filter(Boolean).join(' ');
+        return cls ? `${r.student_name}(${cls})` : r.student_name;
+      };
+      const res = await fetch('/api/learn-insight', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          improvePoints,
+          revisedImprovePoints,
+          statusDist,
+          needsHelpNames: growthTypes.needsHelp.map(fmt),
+          tryingNames:    growthTypes.trying.map(fmt),
+        }),
+      });
+      if (!res.ok) throw new Error();
+      setLearnInsight(await res.json());
+    } catch { alert('AI 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'); }
+    setLearnInsightLoading(false);
   }
 
   function tog<T>(a: T[], v: T): T[] { return a.includes(v) ? a.filter(x=>x!==v) : [...a,v]; }
@@ -1012,6 +1057,72 @@ export default function TeacherPage() {
               </div>
             );
           })()}
+
+          {/* AI 인사이트 */}
+          {filteredLearnings.length > 0 && (
+            <div className="bg-white rounded-2xl p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="font-bold text-[#4a4a6a] text-sm m-0">💡 AI 인사이트</h2>
+                <button onClick={generateLearnInsight} disabled={learnInsightLoading}
+                  className="text-sm px-4 py-2 rounded-full border-none cursor-pointer font-bold text-white disabled:opacity-50 transition-all"
+                  style={{background:'linear-gradient(135deg,#667eea,#764ba2)'}}>
+                  {learnInsightLoading ? '분석 중…' : learnInsight ? '↺ 다시 분석' : '🤖 분석 생성'}
+                </button>
+              </div>
+
+              {!learnInsight && !learnInsightLoading && (
+                <div className="flex flex-col items-center justify-center py-10 gap-3">
+                  <span className="text-4xl">🤖</span>
+                  <p className="text-sm text-[#bbb] text-center m-0 leading-relaxed">
+                    분석 생성을 누르면<br/>AI가 수업 개선 방향을 제안합니다.
+                  </p>
+                </div>
+              )}
+
+              {learnInsightLoading && (
+                <div className="flex flex-col items-center justify-center py-10 gap-3">
+                  <span className="text-4xl animate-spin">⚙️</span>
+                  <p className="text-sm text-[#bbb] m-0">피드백 패턴을 분석하는 중…</p>
+                </div>
+              )}
+
+              {learnInsight && !learnInsightLoading && (
+                <div className="space-y-4">
+
+                  {/* 학급 공통 오개념 */}
+                  <div className="rounded-xl p-4" style={{background:'#fff8e1', border:'1.5px solid #ffe082'}}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-base">🔍</span>
+                      <span className="text-sm font-black text-[#f57f17]">학급 공통 오개념</span>
+                      <span className="text-[10px] text-[#aaa] ml-auto">다음 수업 도입부 재설명 포인트</span>
+                    </div>
+                    <p className="text-sm text-[#555] m-0 leading-relaxed">{learnInsight.misconception}</p>
+                  </div>
+
+                  {/* 수업 개선 제안 */}
+                  <div className="rounded-xl p-4" style={{background:'#f0fdf4', border:'1.5px solid #86efac'}}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-base">🗓</span>
+                      <span className="text-sm font-black text-[#059669]">수업 개선 제안</span>
+                      <span className="text-[10px] text-[#aaa] ml-auto">수업 자료 개선</span>
+                    </div>
+                    <p className="text-sm text-[#555] m-0 leading-relaxed">{learnInsight.suggestion}</p>
+                  </div>
+
+                  {/* 주목할 학생 */}
+                  <div className="rounded-xl p-4" style={{background:'#ffebee', border:'1.5px solid #ef9a9a'}}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-base">⚠️</span>
+                      <span className="text-sm font-black text-[#c62828]">주목할 학생</span>
+                      <span className="text-[10px] text-[#aaa] ml-auto">1:1 면담 대상</span>
+                    </div>
+                    <p className="text-sm text-[#555] m-0 leading-relaxed">{learnInsight.attention}</p>
+                  </div>
+
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 배움 목록 */}
           <div className="bg-white rounded-2xl p-5 shadow-sm">
