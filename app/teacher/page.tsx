@@ -949,41 +949,41 @@ export default function TeacherPage() {
             const avgLevelLabel = avg >= 2.5 ? '🟢 이해' : avg >= 1.5 ? '🟡 보완' : '🔴 재학습';
             const avgLevelColor = avg >= 2.5 ? '#2e7d32' : avg >= 1.5 ? '#f57f17' : '#c62828';
             return (
-              <div className="bg-white rounded-2xl p-5 shadow-sm">
-                <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-4">개념 이해 현황</h2>
+              <div className="bg-white rounded-2xl px-5 py-4 shadow-sm">
+                <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-3">개념 이해 현황</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
 
-                  <div className="rounded-xl p-4 text-center" style={{background:'#f0f2f8'}}>
-                    <div className="text-xs text-[#9ca3af] mb-1.5">참여 학생 수</div>
-                    <div className="text-2xl font-black text-[#1a1a2e]">
-                      {learnStats.n}<span className="text-sm font-normal text-[#9ca3af] ml-0.5">명</span>
+                  <div className="rounded-xl py-2.5 px-4 text-center" style={{background:'#f0f2f8'}}>
+                    <div className="text-xs text-[#9ca3af] mb-0.5">참여 학생 수</div>
+                    <div className="text-xl font-black text-[#1a1a2e]">
+                      {learnStats.n}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">명</span>
                     </div>
-                    <div className="text-xs text-[#9ca3af] mt-1.5">핵심개념 작성 참여</div>
+                    <div className="text-xs text-[#9ca3af] mt-0.5">핵심개념 작성 참여</div>
                   </div>
 
-                  <div className="rounded-xl p-4 text-center" style={{background:'linear-gradient(135deg,#667eea18,#764ba218)', border:'1px solid #667eea20'}}>
-                    <div className="text-xs text-[#9ca3af] mb-1.5">평균 이해수준</div>
-                    <div className="text-2xl font-black" style={{color: avgLevelColor}}>
+                  <div className="rounded-xl py-2.5 px-4 text-center" style={{background:'linear-gradient(135deg,#667eea18,#764ba218)', border:'1px solid #667eea20'}}>
+                    <div className="text-xs text-[#9ca3af] mb-0.5">평균 이해수준</div>
+                    <div className="text-xl font-black" style={{color: avgLevelColor}}>
                       {avg.toFixed(1)}
-                      <span className="text-sm font-normal text-[#9ca3af] ml-0.5">/ 3.0</span>
+                      <span className="text-xs font-normal text-[#9ca3af] ml-0.5">/ 3.0</span>
                     </div>
-                    <div className="text-xs font-semibold mt-1.5" style={{color: avgLevelColor}}>{avgLevelLabel}</div>
+                    <div className="text-xs font-semibold mt-0.5" style={{color: avgLevelColor}}>{avgLevelLabel}</div>
                   </div>
 
-                  <div className="rounded-xl p-4 text-center" style={{background:'#e8f5e9'}}>
-                    <div className="text-xs text-[#9ca3af] mb-1.5">이해 완료 학생</div>
-                    <div className="text-2xl font-black text-[#16a34a]">
-                      {learnStats.finalGreenCount}<span className="text-sm font-normal text-[#9ca3af] ml-0.5">명</span>
+                  <div className="rounded-xl py-2.5 px-4 text-center" style={{background:'#e8f5e9'}}>
+                    <div className="text-xs text-[#9ca3af] mb-0.5">이해 완료 학생</div>
+                    <div className="text-xl font-black text-[#16a34a]">
+                      {learnStats.finalGreenCount}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">명</span>
                     </div>
-                    <div className="text-xs text-[#9ca3af] mt-1.5">최종 기준 🟢 이해</div>
+                    <div className="text-xs text-[#9ca3af] mt-0.5">최종 기준 🟢 이해</div>
                   </div>
 
-                  <div className="rounded-xl p-4 text-center" style={{background:'#e8eaf6'}}>
-                    <div className="text-xs text-[#9ca3af] mb-1.5">성장 학생</div>
-                    <div className="text-2xl font-black text-[#3949ab]">
-                      {learnStats.grownCount}<span className="text-sm font-normal text-[#9ca3af] ml-0.5">명</span>
+                  <div className="rounded-xl py-2.5 px-4 text-center" style={{background:'#e8eaf6'}}>
+                    <div className="text-xs text-[#9ca3af] mb-0.5">성장 학생</div>
+                    <div className="text-xl font-black text-[#3949ab]">
+                      {learnStats.grownCount}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">명</span>
                     </div>
-                    <div className="text-xs text-[#9ca3af] mt-1.5">이해수준 단계 향상</div>
+                    <div className="text-xs text-[#9ca3af] mt-0.5">이해수준 단계 향상</div>
                   </div>
 
                 </div>
