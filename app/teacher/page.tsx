@@ -673,15 +673,15 @@ export default function TeacherPage() {
                 <div className="text-xs text-[#9ca3af] mb-0.5">총 질문</div>
                 <div className="text-xl font-black text-[#1a1a2e]">{stats.n}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">개</span></div>
               </div>
-              <div className="rounded-xl py-2.5 px-4 text-center" style={{background:'#e8eaf6'}}>
+              <div className="rounded-xl py-2.5 px-4 text-center" style={{background:'linear-gradient(135deg,#667eea18,#764ba218)', border:'1px solid #667eea20'}}>
                 <div className="text-xs text-[#9ca3af] mb-0.5">참여 학생</div>
                 <div className="text-xl font-black text-[#3949ab]">{stats.uniqueStudents}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">명</span></div>
               </div>
-              <div className="rounded-xl py-2.5 px-4 text-center" style={{background:'linear-gradient(135deg,#667eea18,#764ba218)', border:'1px solid #667eea20'}}>
+              <div className="rounded-xl py-2.5 px-4 text-center" style={{background:'#e8f5e9'}}>
                 <div className="text-xs text-[#9ca3af] mb-0.5">평균 단계</div>
                 <div className="text-xl font-black" style={{color:'#667eea'}}>{stats.avg.toFixed(1)}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">단계</span></div>
               </div>
-              <div className="rounded-xl py-2.5 px-4 text-center" style={{background: stats.highPct >= 50 ? '#e8f5e9' : '#f0f2f8'}}>
+              <div className="rounded-xl py-2.5 px-4 text-center" style={{background:'#e8eaf6'}}>
                 <div className="text-xs text-[#9ca3af] mb-0.5">3·4단계</div>
                 <div className="text-xl font-black" style={{color: stats.highPct >= 50 ? '#2e7d32' : '#9e9e9e'}}>{stats.highPct}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">%</span></div>
               </div>
