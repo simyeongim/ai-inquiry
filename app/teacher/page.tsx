@@ -437,9 +437,12 @@ export default function TeacherPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e.error || `HTTP ${res.status}`);
+      }
       setAiReport(await res.json());
-    } catch { alert('AI 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'); }
+    } catch (err) { alert(`AI 분석 오류: ${err instanceof Error ? err.message : '알 수 없는 오류'}`); }
     setAiLoading(false);
   }
 
@@ -468,9 +471,12 @@ export default function TeacherPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ goodPoints, improvePoints, revisedImprovePoints, statusDist }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e.error || `HTTP ${res.status}`);
+      }
       setLearnInsight(await res.json());
-    } catch { alert('AI 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'); }
+    } catch (err) { alert(`AI 분석 오류: ${err instanceof Error ? err.message : '알 수 없는 오류'}`); }
     setLearnInsightLoading(false);
   }
 

@@ -77,7 +77,10 @@ suggestion: 위 오개념을 해소할 수 있도록 교사가 다음 수업에�
       }),
     });
 
-    if (!resp.ok) throw new Error(`Groq ${resp.status}`);
+    if (!resp.ok) {
+      const errBody = await resp.json().catch(() => ({}));
+      throw new Error(`Groq ${resp.status}: ${JSON.stringify(errBody)}`);
+    }
 
     const data   = await resp.json();
     const raw    = data.choices[0].message.content.trim();
@@ -91,7 +94,8 @@ suggestion: 위 오개념을 해소할 수 있도록 교사가 다음 수업에�
       suggestion:     typeof parsed.suggestion     === 'string' ? parsed.suggestion     : '',
     });
   } catch (err) {
-    console.error('[learn-insight]', err);
-    return NextResponse.json({ error: 'AI 분석 실패' }, { status: 500 });
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[learn-insight]', msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

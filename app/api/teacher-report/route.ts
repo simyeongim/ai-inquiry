@@ -75,6 +75,10 @@ ${groupStr}
 출력 형식 (이 형식 그대로, 다른 텍스트 없이):
 {"report":"문장1. 문장2.","deepQuestions":["질문1?","질문2?"],"suggestions":["활동명1","활동명2"]}`;
 
+  if (!process.env.GROQ_API_KEY) {
+    return NextResponse.json({ error: 'GROQ_API_KEY가 설정되지 않았습니다.' }, { status: 500 });
+  }
+
   try {
     const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -93,7 +97,10 @@ ${groupStr}
       }),
     });
 
-    if (!resp.ok) throw new Error(`Groq ${resp.status}`);
+    if (!resp.ok) {
+      const errBody = await resp.json().catch(() => ({}));
+      throw new Error(`Groq ${resp.status}: ${JSON.stringify(errBody)}`);
+    }
 
     const data   = await resp.json();
     const raw    = data.choices[0].message.content.trim();
@@ -110,7 +117,8 @@ ${groupStr}
       suggestions:   Array.isArray(parsed.suggestions) ? parsed.suggestions : [],
     });
   } catch (err) {
-    console.error('[teacher-report]', err);
-    return NextResponse.json({ error: 'AI 분석 실패' }, { status: 500 });
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[teacher-report]', msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
