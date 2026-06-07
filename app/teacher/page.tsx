@@ -1082,14 +1082,15 @@ export default function TeacherPage() {
               <div className="bg-white rounded-2xl p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">학생 성장 유형 분류</h2>
-                  {fGrowthType ? (
-                    <button onClick={() => setFGrowthType(null)}
-                      className="text-xs px-3 py-1 rounded-lg border border-[#e5e7eb] bg-white cursor-pointer font-medium text-[#6b7280]">
-                      필터 해제
-                    </button>
-                  ) : (
-                    <span className="text-xs text-[#9ca3af]">카드 클릭 시 배움 목록 필터</span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-[#6b7280]">카드를 클릭하면 해당 유형만 배움 목록에 표시됩니다.</span>
+                    {fGrowthType && (
+                      <button onClick={() => setFGrowthType(null)}
+                        className="text-xs px-2.5 py-1 rounded-lg border border-[#e5e7eb] bg-white cursor-pointer font-medium text-[#6b7280] shrink-0">
+                        필터 해제
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {types.map(t => {
@@ -1124,12 +1125,6 @@ export default function TeacherPage() {
 
                         {t.warning && t.rows.length > 0 && (
                           <div className="text-[10px] font-semibold text-[#dc2626] mt-1.5">다음 수업 전 확인</div>
-                        )}
-                        {isActive && (
-                          <div className="text-[10px] font-semibold text-white text-center mt-2 py-0.5 rounded"
-                            style={{background: t.titleColor}}>
-                            필터 적용 중
-                          </div>
                         )}
                       </div>
                     );
