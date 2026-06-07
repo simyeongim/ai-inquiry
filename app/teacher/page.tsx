@@ -712,7 +712,7 @@ export default function TeacherPage() {
             <ClassDropdown opts={CLASS_LIST} sel={fClass} onToggle={v => setFClass(tog(fClass, v))} />
             <FilterDropdown label="프로젝트" opts={PROJECT_LIST} sel={fProject}
               onToggle={v=>setFProject(tog(fProject,v as string))}
-              getLabel={v=>{ const p=PROJECT_SHORT[v as string]; return p?`${p.emoji} ${p.short}`:v as string; }}/>
+              getLabel={v=>v as string}/>
             <FilterDropdown label="질문 수준" opts={LEVEL_OPTS} sel={fLevel}
               onToggle={v=>setFLevel(tog(fLevel,v as number))}
               getLabel={v=>`${LV[v as Level].emoji} ${LV[v as Level].short}  ${LV[v as Level].label}`} getStyle={v=>LV[v as Level]}/>
@@ -835,10 +835,10 @@ export default function TeacherPage() {
               <div className="rounded-xl p-4 flex flex-col" style={{background:'#eef2ff', border:'1.5px solid #c7d2fe'}}>
                 <div className="text-xs font-semibold text-[#4338ca] mb-3">수준 분포</div>
                 <div className="space-y-3 flex-1">
-                  {stats.lvDist.map(({ l, emoji, short, color, cnt }) => (
+                  {stats.lvDist.map(({ l, emoji, short, label, color, cnt }) => (
                     <div key={l}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold" style={{color}}>{emoji} {short}</span>
+                        <span className="text-xs font-semibold" style={{color}}>{emoji} {short}  {label}</span>
                         <span className="text-xs font-bold" style={{color}}>{cnt}</span>
                       </div>
                       <div className="bg-white rounded-full h-3.5 overflow-hidden" style={{border:'1px solid #c7d2fe'}}>
@@ -1004,7 +1004,7 @@ export default function TeacherPage() {
               />
               <FilterDropdown label="프로젝트" opts={PROJECT_LIST} sel={fLearnLesson}
                 onToggle={v => setFLearnLesson(tog(fLearnLesson, v as string))}
-                getLabel={v=>{ const p=PROJECT_SHORT[v as string]; return p?`${p.emoji} ${p.short}`:v as string; }}/>
+                getLabel={v=>v as string}/>
               <FilterDropdown label="이해 수준" opts={LEARN_STATUS_OPTS} sel={fLearnStatus}
                 onToggle={v => setFLearnStatus(tog(fLearnStatus, v as string))}
                 getLabel={v => LEARN_STATUS_INFO[v as LearnStatus].label}
