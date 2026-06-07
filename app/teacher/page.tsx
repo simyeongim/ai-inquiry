@@ -996,6 +996,82 @@ export default function TeacherPage() {
             );
           })()}
 
+          {/* AI 인사이트 */}
+          {filteredLearnings.length > 0 && (
+            <div className="bg-white rounded-2xl p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="font-bold text-[#4a4a6a] text-sm m-0">💡 AI 인사이트</h2>
+                <button onClick={generateLearnInsight} disabled={learnInsightLoading}
+                  className="text-sm px-4 py-2 rounded-full border-none cursor-pointer font-bold text-white disabled:opacity-50 transition-all"
+                  style={{background:'linear-gradient(135deg,#667eea,#764ba2)'}}>
+                  {learnInsightLoading ? '분석 중…' : learnInsight ? '↺ 다시 분석' : '🤖 분석 생성'}
+                </button>
+              </div>
+
+              {!learnInsight && !learnInsightLoading && (
+                <div className="flex flex-col items-center justify-center py-10 gap-3">
+                  <span className="text-4xl">🤖</span>
+                  <p className="text-sm text-[#bbb] text-center m-0 leading-relaxed">
+                    분석 생성을 누르면<br/>AI가 수업 개선 방향을 제안합니다.
+                  </p>
+                </div>
+              )}
+
+              {learnInsightLoading && (
+                <div className="flex flex-col items-center justify-center py-10 gap-3">
+                  <span className="text-4xl animate-spin">⚙️</span>
+                  <p className="text-sm text-[#bbb] m-0">피드백 패턴을 분석하는 중…</p>
+                </div>
+              )}
+
+              {learnInsight && !learnInsightLoading && (
+                <div className="space-y-4">
+
+                  {/* 학급 공통 오개념 */}
+                  <div className="rounded-xl p-4" style={{background:'#fff8e1', border:'1.5px solid #ffe082'}}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-base">🔍</span>
+                      <span className="text-sm font-black text-[#f57f17]">학급 공통 오개념</span>
+                      <span className="text-[10px] text-[#aaa] ml-auto">다음 수업 도입부 재설명 포인트</span>
+                    </div>
+                    <p className="text-sm text-[#555] m-0 leading-relaxed">{learnInsight.misconception}</p>
+                  </div>
+
+                  {/* 수업 개선 제안 */}
+                  <div className="rounded-xl p-4" style={{background:'#f0fdf4', border:'1.5px solid #86efac'}}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-base">🗓</span>
+                      <span className="text-sm font-black text-[#059669]">수업 개선 제안</span>
+                      <span className="text-[10px] text-[#aaa] ml-auto">수업 자료 개선</span>
+                    </div>
+                    <p className="text-sm text-[#555] m-0 leading-relaxed">{learnInsight.suggestion}</p>
+                  </div>
+
+                  {/* 탐구 질문 추천 */}
+                  {learnInsight.explorationQuestions && learnInsight.explorationQuestions.length > 0 && (
+                    <div className="rounded-xl p-4" style={{background:'#f3f0ff', border:'1.5px solid #c4b5fd'}}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-base">🔭</span>
+                        <span className="text-sm font-black text-[#6d28d9]">다음 탐구 질문 추천</span>
+                        <span className="text-[10px] text-[#aaa] ml-auto">다음 수업 탐구 출발점</span>
+                      </div>
+                      <div className="space-y-2">
+                        {learnInsight.explorationQuestions.map((q, i) => (
+                          <div key={i} className="flex items-start gap-2 bg-white rounded-lg px-3 py-2"
+                            style={{border:'1px solid #ddd6fe'}}>
+                            <span className="text-xs font-black mt-0.5 shrink-0" style={{color:'#7c3aed'}}>Q{i+1}</span>
+                            <p className="text-sm text-[#333] m-0 leading-relaxed">{q}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+              )}
+            </div>
+          )}
+
           {/* 성장 유형 분류 */}
           {filteredLearnings.length > 0 && (() => {
             const types = [
@@ -1101,82 +1177,6 @@ export default function TeacherPage() {
               </div>
             );
           })()}
-
-          {/* AI 인사이트 */}
-          {filteredLearnings.length > 0 && (
-            <div className="bg-white rounded-2xl p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="font-bold text-[#4a4a6a] text-sm m-0">💡 AI 인사이트</h2>
-                <button onClick={generateLearnInsight} disabled={learnInsightLoading}
-                  className="text-sm px-4 py-2 rounded-full border-none cursor-pointer font-bold text-white disabled:opacity-50 transition-all"
-                  style={{background:'linear-gradient(135deg,#667eea,#764ba2)'}}>
-                  {learnInsightLoading ? '분석 중…' : learnInsight ? '↺ 다시 분석' : '🤖 분석 생성'}
-                </button>
-              </div>
-
-              {!learnInsight && !learnInsightLoading && (
-                <div className="flex flex-col items-center justify-center py-10 gap-3">
-                  <span className="text-4xl">🤖</span>
-                  <p className="text-sm text-[#bbb] text-center m-0 leading-relaxed">
-                    분석 생성을 누르면<br/>AI가 수업 개선 방향을 제안합니다.
-                  </p>
-                </div>
-              )}
-
-              {learnInsightLoading && (
-                <div className="flex flex-col items-center justify-center py-10 gap-3">
-                  <span className="text-4xl animate-spin">⚙️</span>
-                  <p className="text-sm text-[#bbb] m-0">피드백 패턴을 분석하는 중…</p>
-                </div>
-              )}
-
-              {learnInsight && !learnInsightLoading && (
-                <div className="space-y-4">
-
-                  {/* 학급 공통 오개념 */}
-                  <div className="rounded-xl p-4" style={{background:'#fff8e1', border:'1.5px solid #ffe082'}}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-base">🔍</span>
-                      <span className="text-sm font-black text-[#f57f17]">학급 공통 오개념</span>
-                      <span className="text-[10px] text-[#aaa] ml-auto">다음 수업 도입부 재설명 포인트</span>
-                    </div>
-                    <p className="text-sm text-[#555] m-0 leading-relaxed">{learnInsight.misconception}</p>
-                  </div>
-
-                  {/* 수업 개선 제안 */}
-                  <div className="rounded-xl p-4" style={{background:'#f0fdf4', border:'1.5px solid #86efac'}}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-base">🗓</span>
-                      <span className="text-sm font-black text-[#059669]">수업 개선 제안</span>
-                      <span className="text-[10px] text-[#aaa] ml-auto">수업 자료 개선</span>
-                    </div>
-                    <p className="text-sm text-[#555] m-0 leading-relaxed">{learnInsight.suggestion}</p>
-                  </div>
-
-                  {/* 탐구 질문 추천 */}
-                  {learnInsight.explorationQuestions && learnInsight.explorationQuestions.length > 0 && (
-                    <div className="rounded-xl p-4" style={{background:'#f3f0ff', border:'1.5px solid #c4b5fd'}}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-base">🔭</span>
-                        <span className="text-sm font-black text-[#6d28d9]">다음 탐구 질문 추천</span>
-                        <span className="text-[10px] text-[#aaa] ml-auto">다음 수업 탐구 출발점</span>
-                      </div>
-                      <div className="space-y-2">
-                        {learnInsight.explorationQuestions.map((q, i) => (
-                          <div key={i} className="flex items-start gap-2 bg-white rounded-lg px-3 py-2"
-                            style={{border:'1px solid #ddd6fe'}}>
-                            <span className="text-xs font-black mt-0.5 shrink-0" style={{color:'#7c3aed'}}>Q{i+1}</span>
-                            <p className="text-sm text-[#333] m-0 leading-relaxed">{q}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                </div>
-              )}
-            </div>
-          )}
 
           {/* 배움 목록 */}
           <div className="bg-white rounded-2xl p-5 shadow-sm">
