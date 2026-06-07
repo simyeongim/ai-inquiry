@@ -1311,13 +1311,6 @@ export default function TeacherPage() {
                               {parsedContent.core || row.content}
                             </p>
 
-                            {/* 개선 포인트 — 🟢 제외 */}
-                            {latestImprove && finalSt !== '🟢' && (
-                              <p className="text-xs text-[#d97706] mt-1 m-0 leading-relaxed overflow-hidden"
-                                style={{display:'-webkit-box', WebkitLineClamp:1, WebkitBoxOrient:'vertical'}}>
-                                {latestImprove}
-                              </p>
-                            )}
                           </div>
 
                           <span className="text-[#d1d5db] text-xs shrink-0 mt-0.5">{isExpanded ? '▲' : '▼'}</span>
