@@ -97,8 +97,9 @@ ${groupStr}
 
     const data   = await resp.json();
     const raw    = data.choices[0].message.content.trim();
-    const text   = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-    const parsed = JSON.parse(text);
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('JSON not found');
+    const parsed = JSON.parse(jsonMatch[0]);
 
     const deepQuestions = (Array.isArray(parsed.deepQuestions) ? parsed.deepQuestions : [])
       .map((q: string) => (typeof q === 'string' && !q.endsWith('?') ? q + '?' : q));

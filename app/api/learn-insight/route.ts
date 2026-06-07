@@ -81,8 +81,9 @@ suggestion: 위 오개념을 해소할 수 있도록 교사가 다음 수업에�
 
     const data   = await resp.json();
     const raw    = data.choices[0].message.content.trim();
-    const text   = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-    const parsed = JSON.parse(text);
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('JSON not found');
+    const parsed = JSON.parse(jsonMatch[0]);
 
     return NextResponse.json({
       wellUnderstood: typeof parsed.wellUnderstood === 'string' ? parsed.wellUnderstood : '',
