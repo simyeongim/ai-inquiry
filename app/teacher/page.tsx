@@ -815,23 +815,23 @@ export default function TeacherPage() {
           </div>
         )}
 
-        {/* ── 질문 분포 상세 ─────────────────────────────── */}
+        {/* ── 질문 유형 분류 ─────────────────────────────── */}
         {stats && (
           <div className="bg-white rounded-2xl p-5 shadow-sm">
-            <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-4">질문 분포 상세</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-4">질문 유형 분류</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
 
-              {/* 수준 분포 */}
-              <div className="rounded-xl p-4" style={{background:'#f8f9ff', border:'1.5px solid #e8eaf6'}}>
-                <div className="text-xs font-semibold text-[#667eea] mb-3">수준 분포</div>
-                <div className="space-y-3">
+              {/* 수준 분포 — 인디고 테마 */}
+              <div className="rounded-xl p-4 flex flex-col" style={{background:'#eef2ff', border:'1.5px solid #c7d2fe'}}>
+                <div className="text-xs font-semibold text-[#4338ca] mb-3">수준 분포</div>
+                <div className="space-y-3 flex-1">
                   {stats.lvDist.map(({ l, emoji, short, color, cnt }) => (
                     <div key={l}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-semibold" style={{color}}>{emoji} {short}</span>
                         <span className="text-xs font-bold" style={{color}}>{cnt}</span>
                       </div>
-                      <div className="bg-white rounded-full h-3.5 overflow-hidden" style={{border:'1px solid #e8eaf6'}}>
+                      <div className="bg-white rounded-full h-3.5 overflow-hidden" style={{border:'1px solid #c7d2fe'}}>
                         <div className="h-full rounded-full transition-all duration-500"
                           style={{width:`${Math.max(cnt>0?6:0,(cnt/stats.maxC)*100)}%`, background:color, opacity:0.85}}/>
                       </div>
@@ -840,41 +840,41 @@ export default function TeacherPage() {
                 </div>
               </div>
 
-              {/* 많이 나온 핵심어 */}
-              <div className="rounded-xl p-4" style={{background:'#f8f9ff', border:'1.5px solid #e8eaf6'}}>
-                <div className="text-xs font-semibold text-[#667eea] mb-3">많이 나온 핵심어</div>
+              {/* 많이 나온 핵심어 — 앰버 테마 */}
+              <div className="rounded-xl p-4 flex flex-col" style={{background:'#fefce8', border:'1.5px solid #fef08a'}}>
+                <div className="text-xs font-semibold text-[#b45309] mb-3">많이 나온 핵심어</div>
                 {stats.topKw.length === 0
                   ? <p className="text-xs text-[#ccc]">핵심어 없음</p>
                   : (
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 flex-1">
                       {stats.topKw.map(([kw, cnt], i) => (
                         <div key={kw} className="flex items-center gap-2">
                           <span className="text-[10px] font-bold text-[#9ca3af] w-3 shrink-0">{i + 1}</span>
-                          <div className="relative flex-1 bg-white rounded-full h-6 overflow-hidden" style={{border:'1px solid #e8eaf6'}}>
+                          <div className="relative flex-1 bg-white rounded-full h-6 overflow-hidden" style={{border:'1px solid #fde68a'}}>
                             <div className="absolute inset-0 rounded-full transition-all duration-500"
-                              style={{width:`${(cnt/stats.maxKw)*100}%`, background:'linear-gradient(135deg,#667eea,#764ba2)', opacity:0.18}}/>
-                            <span className="absolute inset-0 flex items-center px-2.5 text-xs font-semibold text-[#3949ab]">{kw}</span>
+                              style={{width:`${(cnt/stats.maxKw)*100}%`, background:'linear-gradient(135deg,#f59e0b,#d97706)', opacity:0.18}}/>
+                            <span className="absolute inset-0 flex items-center px-2.5 text-xs font-semibold text-[#92400e]">{kw}</span>
                           </div>
-                          <span className="text-[10px] font-bold text-[#667eea] shrink-0 w-5 text-right">×{cnt}</span>
+                          <span className="text-[10px] font-bold text-[#d97706] shrink-0 w-5 text-right">×{cnt}</span>
                         </div>
                       ))}
                     </div>
                   )}
               </div>
 
-              {/* 탐구 주제별 묶음 */}
-              <div className="rounded-xl p-4" style={{background:'#f8f9ff', border:'1.5px solid #e8eaf6'}}>
-                <div className="text-xs font-semibold text-[#667eea] mb-3">탐구 주제별 묶음</div>
+              {/* 탐구 주제별 묶음 — 청록 테마 */}
+              <div className="rounded-xl p-4 flex flex-col" style={{background:'#f0fdfa', border:'1.5px solid #99f6e4'}}>
+                <div className="text-xs font-semibold text-[#0f766e] mb-3">탐구 주제별 묶음</div>
                 {stats.groups.length === 0
                   ? <p className="text-xs text-[#ccc]">유사 질문 그룹 없음</p>
                   : (
-                    <div className="space-y-2.5">
+                    <div className="space-y-2.5 flex-1 overflow-y-auto">
                       {stats.groups.map(({ label, key, qs }) => (
-                        <div key={key} className="bg-white rounded-xl p-3" style={{border:'1px solid #e8eaf6'}}>
+                        <div key={key} className="bg-white rounded-xl p-3" style={{border:'1px solid #ccfbf1'}}>
                           <div className="flex items-center gap-1.5 mb-1.5">
                             <span className="text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full shrink-0"
-                              style={{background:'#667eea'}}>{qs.length}</span>
-                            <span className="text-xs font-bold text-[#667eea] leading-tight">{refinedLabels[key] ?? label}</span>
+                              style={{background:'#0d9488'}}>{qs.length}</span>
+                            <span className="text-xs font-bold text-[#0f766e] leading-tight">{refinedLabels[key] ?? label}</span>
                           </div>
                           <ul className="space-y-1">
                             {qs.slice(0,2).map(q => (
@@ -1059,11 +1059,14 @@ export default function TeacherPage() {
             <div className="bg-white rounded-2xl p-5 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">AI 인사이트</h2>
-                <button onClick={generateLearnInsight} disabled={learnInsightLoading}
-                  className="text-sm px-4 py-1.5 rounded-lg border-none cursor-pointer font-semibold text-white disabled:opacity-50 transition-all"
-                  style={{background:'#5850ec'}}>
-                  {learnInsightLoading ? '분석 중…' : learnInsight ? '다시 분석' : '분석 생성'}
-                </button>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#9ca3af]">현재 {filteredLearnings.length}개 응답 기준</span>
+                  <button onClick={generateLearnInsight} disabled={learnInsightLoading}
+                    className="text-sm px-4 py-1.5 rounded-lg border-none cursor-pointer font-semibold text-white disabled:opacity-50 transition-all"
+                    style={{background:'#5850ec'}}>
+                    {learnInsightLoading ? '분석 중…' : learnInsight ? '다시 분석' : '분석 생성'}
+                  </button>
+                </div>
               </div>
 
               {!learnInsight && !learnInsightLoading && (
