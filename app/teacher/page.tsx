@@ -953,7 +953,7 @@ export default function TeacherPage() {
                 <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-4">개념 이해 현황</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
 
-                  <div className="rounded-xl p-4 text-center border border-[#e5e7eb]">
+                  <div className="rounded-xl p-4 text-center" style={{background:'#f0f2f8'}}>
                     <div className="text-xs text-[#9ca3af] mb-1.5">참여 학생 수</div>
                     <div className="text-2xl font-black text-[#1a1a2e]">
                       {learnStats.n}<span className="text-sm font-normal text-[#9ca3af] ml-0.5">명</span>
@@ -961,7 +961,7 @@ export default function TeacherPage() {
                     <div className="text-xs text-[#9ca3af] mt-1.5">핵심개념 작성 참여</div>
                   </div>
 
-                  <div className="rounded-xl p-4 text-center border border-[#e5e7eb]">
+                  <div className="rounded-xl p-4 text-center" style={{background:'linear-gradient(135deg,#667eea18,#764ba218)', border:'1px solid #667eea20'}}>
                     <div className="text-xs text-[#9ca3af] mb-1.5">평균 이해수준</div>
                     <div className="text-2xl font-black" style={{color: avgLevelColor}}>
                       {avg.toFixed(1)}
@@ -970,7 +970,7 @@ export default function TeacherPage() {
                     <div className="text-xs font-semibold mt-1.5" style={{color: avgLevelColor}}>{avgLevelLabel}</div>
                   </div>
 
-                  <div className="rounded-xl p-4 text-center border border-[#e5e7eb]">
+                  <div className="rounded-xl p-4 text-center" style={{background:'#e8f5e9'}}>
                     <div className="text-xs text-[#9ca3af] mb-1.5">이해 완료 학생</div>
                     <div className="text-2xl font-black text-[#16a34a]">
                       {learnStats.finalGreenCount}<span className="text-sm font-normal text-[#9ca3af] ml-0.5">명</span>
@@ -978,9 +978,9 @@ export default function TeacherPage() {
                     <div className="text-xs text-[#9ca3af] mt-1.5">최종 기준 🟢 이해</div>
                   </div>
 
-                  <div className="rounded-xl p-4 text-center border border-[#e5e7eb]">
+                  <div className="rounded-xl p-4 text-center" style={{background:'#e8eaf6'}}>
                     <div className="text-xs text-[#9ca3af] mb-1.5">성장 학생</div>
-                    <div className="text-2xl font-black text-[#2563eb]">
+                    <div className="text-2xl font-black text-[#3949ab]">
                       {learnStats.grownCount}<span className="text-sm font-normal text-[#9ca3af] ml-0.5">명</span>
                     </div>
                     <div className="text-xs text-[#9ca3af] mt-1.5">이해수준 단계 향상</div>
@@ -1016,23 +1016,23 @@ export default function TeacherPage() {
               {learnInsight && !learnInsightLoading && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
 
-                  <div className="rounded-xl p-4 border border-[#e5e7eb]">
-                    <div className="text-xs font-semibold text-[#6b7280] mb-2">학급 공통 오개념</div>
+                  <div className="rounded-xl p-4" style={{background:'#fffbeb', border:'1.5px solid #fde68a'}}>
+                    <div className="text-xs font-semibold text-[#92400e] mb-2">학급 공통 오개념</div>
                     <p className="text-sm text-[#374151] m-0 leading-relaxed">{learnInsight.misconception}</p>
                   </div>
 
-                  <div className="rounded-xl p-4 border border-[#e5e7eb]">
-                    <div className="text-xs font-semibold text-[#6b7280] mb-2">수업 개선 제안</div>
+                  <div className="rounded-xl p-4" style={{background:'#f0fdf4', border:'1.5px solid #86efac'}}>
+                    <div className="text-xs font-semibold text-[#166534] mb-2">수업 개선 제안</div>
                     <p className="text-sm text-[#374151] m-0 leading-relaxed">{learnInsight.suggestion}</p>
                   </div>
 
                   {learnInsight.explorationQuestions && learnInsight.explorationQuestions.length > 0 && (
-                    <div className="rounded-xl p-4 border border-[#e5e7eb]">
-                      <div className="text-xs font-semibold text-[#6b7280] mb-2">다음 탐구 질문 추천</div>
+                    <div className="rounded-xl p-4" style={{background:'linear-gradient(135deg,#667eea0d,#764ba20d)', border:'1.5px solid #667eea30'}}>
+                      <div className="text-xs font-semibold text-[#4338ca] mb-2">다음 탐구 질문 추천</div>
                       <div className="space-y-2">
                         {learnInsight.explorationQuestions.map((q, i) => (
                           <div key={i} className="flex items-start gap-2">
-                            <span className="text-xs font-bold text-[#9ca3af] shrink-0 mt-0.5">Q{i+1}</span>
+                            <span className="text-xs font-bold text-[#667eea] shrink-0 mt-0.5">Q{i+1}</span>
                             <p className="text-sm text-[#374151] m-0 leading-relaxed">{q}</p>
                           </div>
                         ))}
@@ -1049,28 +1049,28 @@ export default function TeacherPage() {
           {filteredLearnings.length > 0 && (() => {
             const types = [
               {
-                key: 'immediate', emoji: '🌟', label: '즉시 이해형',
+                key: 'immediate', label: '즉시 이해형',
                 criterion: '최초 작성부터 핵심 개념 이해',
                 action: '심화 탐구 제공',
                 bg: '#f0faf2', borderColor: '#a5d6a7', titleColor: '#2e7d32',
                 rows: growthTypes.immediate,
               },
               {
-                key: 'grower', emoji: '🌱', label: '성장형',
+                key: 'grower', label: '성장형',
                 criterion: '수정 후 핵심 개념 이해 도달',
                 action: '긍정 강화, 성장 공유',
                 bg: '#e8f9fb', borderColor: '#80deea', titleColor: '#00838f',
                 rows: growthTypes.grower,
               },
               {
-                key: 'trying', emoji: '🔄', label: '지속 노력형',
+                key: 'trying', label: '지속 노력형',
                 criterion: '수정했으나 아직 🟢 미도달',
                 action: '소그룹 지도, 추가 스캐폴딩',
                 bg: '#fffbec', borderColor: '#ffe082', titleColor: '#e65100',
                 rows: growthTypes.trying,
               },
               {
-                key: 'needsHelp', emoji: '⚠️', label: '지원 필요형',
+                key: 'needsHelp', label: '지원 필요형',
                 criterion: '🔴/🟡 상태에서 수정 없음',
                 action: '우선 개별 면담',
                 bg: '#fff3f3', borderColor: '#ef9a9a', titleColor: '#c62828',
@@ -1098,12 +1098,15 @@ export default function TeacherPage() {
                     return (
                       <div key={t.key}
                         onClick={() => setFGrowthType(isActive ? null : t.label)}
-                        className="rounded-xl p-3 border border-[#e5e7eb] border-l-4 cursor-pointer transition-all select-none"
+                        className="rounded-xl p-3 border-l-4 cursor-pointer transition-all select-none"
                         style={{
+                          background: t.bg,
+                          border: `1px solid ${t.borderColor}`,
                           borderLeftColor: t.titleColor,
+                          borderLeftWidth: '4px',
                           outline: isActive ? `2px solid ${t.titleColor}` : undefined,
                           outlineOffset: isActive ? '1px' : undefined,
-                          opacity: fGrowthType && !isActive ? 0.4 : 1,
+                          opacity: fGrowthType && !isActive ? 0.45 : 1,
                         }}>
 
                         <div className="flex items-center justify-between mb-2">
