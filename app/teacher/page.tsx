@@ -977,7 +977,7 @@ export default function TeacherPage() {
                       ) : null; })()}
                       <span className="text-xs text-[#6b7280]">{row.class_room}</span>
                       <span className="text-xs text-[#9ca3af]">·</span>
-                      <span className="text-xs font-semibold text-[#374151]">{row.name}</span>
+                      <span className="text-sm font-bold text-[#1a1a2e]">{row.name}</span>
                     </div>
                     <p className="text-[#111] text-sm font-semibold leading-relaxed m-0">{row.question}</p>
                   </div>
@@ -1293,7 +1293,7 @@ export default function TeacherPage() {
                               ) : null; })()}
                               {classLabel && <span className="text-xs text-[#6b7280]">{classLabel}</span>}
                               <span className="text-xs text-[#9ca3af]">·</span>
-                              <span className="text-xs font-semibold text-[#374151]">{row.student_name}</span>
+                              <span className="text-sm font-bold text-[#1a1a2e]">{row.student_name}</span>
                             </div>
 
                             {/* 수정여부 */}
