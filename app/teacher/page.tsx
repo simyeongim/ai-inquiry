@@ -368,6 +368,7 @@ export default function TeacherPage() {
   const [fLearnLesson,  setFLearnLesson]  = useState<string[]>([]);
   const [fLearnStatus,  setFLearnStatus]  = useState<string[]>([]);
   const [expandedId,    setExpandedId]    = useState<number | null>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [loadingLearn,  setLoadingLearn]  = useState(false);
   const [fetchErrLearn, setFetchErrLearn] = useState('');
 
@@ -868,24 +869,34 @@ export default function TeacherPage() {
                 {stats.groups.length === 0
                   ? <p className="text-xs text-[#ccc]">유사 질문 그룹 없음</p>
                   : (
-                    <div className="space-y-2.5 flex-1 overflow-y-auto">
-                      {stats.groups.map(({ label, key, qs }) => (
-                        <div key={key} className="bg-white rounded-xl p-3" style={{border:'1px solid #ccfbf1'}}>
-                          <div className="flex items-center gap-1.5 mb-1.5">
-                            <span className="text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full shrink-0"
-                              style={{background:'#0d9488'}}>{qs.length}</span>
-                            <span className="text-xs font-bold text-[#0f766e] leading-tight">{refinedLabels[key] ?? label}</span>
+                    <div className="space-y-1.5 flex-1">
+                      {stats.groups.map(({ label, key, qs }) => {
+                        const isOpen = expandedGroups.has(key);
+                        return (
+                          <div key={key} className="bg-white rounded-xl overflow-hidden" style={{border:'1px solid #ccfbf1'}}>
+                            <div className="flex items-center gap-1.5 px-3 py-2 cursor-pointer hover:bg-[#f0fdf9] transition-colors"
+                              onClick={() => setExpandedGroups(prev => {
+                                const next = new Set(prev);
+                                isOpen ? next.delete(key) : next.add(key);
+                                return next;
+                              })}>
+                              <span className="text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full shrink-0"
+                                style={{background:'#0d9488'}}>{qs.length}</span>
+                              <span className="text-xs font-bold text-[#0f766e] leading-tight flex-1">{refinedLabels[key] ?? label}</span>
+                              <span className="text-[10px] text-[#99f6e4] shrink-0">{isOpen ? '▲' : '▼'}</span>
+                            </div>
+                            {isOpen && (
+                              <ul className="px-3 pb-2.5 space-y-1 border-t border-[#e0fdf4]">
+                                {qs.map(q => (
+                                  <li key={q.id} className="text-xs text-[#555] flex gap-1 leading-relaxed pt-1">
+                                    <span className="text-[#99f6e4] shrink-0 mt-0.5">·</span><span>{q.question}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
                           </div>
-                          <ul className="space-y-1">
-                            {qs.slice(0,2).map(q => (
-                              <li key={q.id} className="text-xs text-[#555] flex gap-1 leading-relaxed">
-                                <span className="text-[#ddd] shrink-0 mt-0.5">·</span><span>{q.question}</span>
-                              </li>
-                            ))}
-                            {qs.length > 2 && <li className="text-[10px] text-[#bbb]">외 {qs.length-2}개</li>}
-                          </ul>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
               </div>
