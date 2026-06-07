@@ -19,6 +19,14 @@ const LV: Record<Level, { emoji: string; short: string; label: string; color: st
   4: { emoji:'🔴', short:'4단계', label:'가치판단/토론',  color:'#c62828', bg:'#ffebee' },
 };
 
+const LEARN_STATUS_OPTS = ['🟢', '🟡', '🔴'] as const;
+type LearnStatus = '🟢' | '🟡' | '🔴';
+const LEARN_STATUS_INFO: Record<LearnStatus, { label: string; color: string; bg: string }> = {
+  '🟢': { label: '🟢 이해', color: '#2e7d32', bg: '#e8f5e9' },
+  '🟡': { label: '🟡 보완', color: '#f57f17', bg: '#fff8e1' },
+  '🔴': { label: '🔴 재학습', color: '#c62828', bg: '#ffebee' },
+};
+
 // ─── 키워드 추출 ─────────────────────────────────────
 const SW = new Set([
   // 의문사·부사
@@ -154,6 +162,15 @@ function parseFeedback(f: LearningRow['feedback']): { praise: string; understood
   if (typeof f === 'string') { try { return JSON.parse(f); } catch { return null; } }
   return f as { praise: string; understood: string; nextStep: string };
 }
+function getLearnStatus(f: LearningRow['feedback']): LearnStatus | '' {
+  if (!f) return '';
+  const obj: Record<string, string> = typeof f === 'string' ? (() => { try { return JSON.parse(f); } catch { return {}; } })() : (f as Record<string, string>);
+  const s = obj.status ?? '';
+  if (s.startsWith('🟢')) return '🟢';
+  if (s.startsWith('🟡')) return '🟡';
+  if (s.startsWith('🔴')) return '🔴';
+  return '';
+}
 
 // ─── 비밀번호 화면 ────────────────────────────────────
 function PinScreen({ onOk }: { onOk: () => void }) {
@@ -254,6 +271,7 @@ export default function TeacherPage() {
   const [learningRows,  setLearningRows]  = useState<LearningRow[]>([]);
   const [fLearnClass,   setFLearnClass]   = useState<string[]>([]);
   const [fLearnLesson,  setFLearnLesson]  = useState<string[]>([]);
+  const [fLearnStatus,  setFLearnStatus]  = useState<string[]>([]);
   const [expandedId,    setExpandedId]    = useState<number | null>(null);
   const [loadingLearn,  setLoadingLearn]  = useState(false);
   const [fetchErrLearn, setFetchErrLearn] = useState('');
@@ -350,10 +368,11 @@ export default function TeacherPage() {
 
   const filteredLearnings = useMemo(() => learningRows.filter(r => {
     const classLabel = [r.grade, r.class_name].filter(Boolean).join(' ');
-    if (fLearnClass.length  && !fLearnClass.includes(classLabel)) return false;
-    if (fLearnLesson.length && !fLearnLesson.includes(r.lesson))  return false;
+    if (fLearnClass.length  && !fLearnClass.includes(classLabel))            return false;
+    if (fLearnLesson.length && !fLearnLesson.includes(r.lesson))             return false;
+    if (fLearnStatus.length && !fLearnStatus.includes(getLearnStatus(r.feedback))) return false;
     return true;
-  }), [learningRows, fLearnClass, fLearnLesson]);
+  }), [learningRows, fLearnClass, fLearnLesson, fLearnStatus]);
 
   function toggleOne(id: number) { setSel(p => { const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n; }); }
   function toggleAll() {
@@ -761,12 +780,12 @@ export default function TeacherPage() {
           <div className="bg-white rounded-2xl p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-bold text-[#4a4a6a] text-sm m-0">🔍 필터</h2>
-              {(fLearnClass.length > 0 || fLearnLesson.length > 0) && (
-                <button onClick={() => { setFLearnClass([]); setFLearnLesson([]); }}
+              {(fLearnClass.length > 0 || fLearnLesson.length > 0 || fLearnStatus.length > 0) && (
+                <button onClick={() => { setFLearnClass([]); setFLearnLesson([]); setFLearnStatus([]); }}
                   className="text-xs text-[#667eea] border-none bg-transparent cursor-pointer font-semibold hover:underline">초기화</button>
               )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
               <div>
                 <div className="text-xs font-bold text-[#999] uppercase tracking-wider mb-2">학년/반</div>
                 <ClassDropdown
@@ -775,12 +794,70 @@ export default function TeacherPage() {
                   onToggle={v => setFLearnClass(tog(fLearnClass, v))}
                 />
               </div>
-              <Pills label="수업" opts={PROJECT_LIST} sel={fLearnLesson}
-                onToggle={v => setFLearnLesson(tog(fLearnLesson, v as string))}
-                getLabel={v => v as string} />
+              <div className="pl-6">
+                <Pills label="프로젝트" opts={PROJECT_LIST} sel={fLearnLesson}
+                  onToggle={v => setFLearnLesson(tog(fLearnLesson, v as string))}
+                  getLabel={v => v as string} />
+              </div>
+              <Pills label="핵심개념이해수준" opts={LEARN_STATUS_OPTS} sel={fLearnStatus}
+                onToggle={v => setFLearnStatus(tog(fLearnStatus, v as string))}
+                getLabel={v => LEARN_STATUS_INFO[v as LearnStatus].label}
+                getStyle={v => LEARN_STATUS_INFO[v as LearnStatus]} />
             </div>
             {fetchErrLearn && <p className="text-red-500 text-sm mt-3">{fetchErrLearn}</p>}
           </div>
+
+          {/* 핵심개념이해수준 요약 카드 */}
+          {filteredLearnings.length > 0 && (() => {
+            const n = filteredLearnings.length;
+            const counts = { '🟢': 0, '🟡': 0, '🔴': 0, '': 0 };
+            filteredLearnings.forEach(r => { const s = getLearnStatus(r.feedback); counts[s]++; });
+            const greenPct = Math.round((counts['🟢'] / n) * 100);
+            return (
+              <div className="bg-white rounded-2xl p-5 shadow-sm">
+                <h2 className="font-bold text-[#4a4a6a] text-sm mb-4">📊 핵심개념이해수준 현황</h2>
+                <div className="grid grid-cols-4 gap-2 mb-4">
+                  <div className="rounded-xl p-3 text-center" style={{background:'#f0f2f8'}}>
+                    <div className="text-[10px] text-[#999] mb-1">총 제출</div>
+                    <div className="text-2xl font-black text-[#4a4a6a]">{n}<span className="text-xs font-normal ml-0.5">개</span></div>
+                  </div>
+                  <div className="rounded-xl p-3 text-center" style={{background:'#e8f5e9'}}>
+                    <div className="text-[10px] mb-1" style={{color:'#2e7d32'}}>🟢 이해</div>
+                    <div className="text-2xl font-black" style={{color:'#2e7d32'}}>{counts['🟢']}<span className="text-xs font-normal ml-0.5">명</span></div>
+                  </div>
+                  <div className="rounded-xl p-3 text-center" style={{background:'#fff8e1'}}>
+                    <div className="text-[10px] mb-1" style={{color:'#f57f17'}}>🟡 보완</div>
+                    <div className="text-2xl font-black" style={{color:'#f57f17'}}>{counts['🟡']}<span className="text-xs font-normal ml-0.5">명</span></div>
+                  </div>
+                  <div className="rounded-xl p-3 text-center" style={{background:'#ffebee'}}>
+                    <div className="text-[10px] mb-1" style={{color:'#c62828'}}>🔴 재학습</div>
+                    <div className="text-2xl font-black" style={{color:'#c62828'}}>{counts['🔴']}<span className="text-xs font-normal ml-0.5">명</span></div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {(['🟢', '🟡', '🔴'] as LearnStatus[]).map(s => {
+                    const info = LEARN_STATUS_INFO[s];
+                    const cnt  = counts[s];
+                    return (
+                      <div key={s} className="flex items-center gap-2">
+                        <span className="text-xs w-16 shrink-0 font-medium" style={{color: info.color}}>{info.label}</span>
+                        <div className="flex-1 bg-[#f0f2f8] rounded-full h-5 overflow-hidden">
+                          <div className="h-full rounded-full flex items-center justify-end pr-2 transition-all duration-500"
+                            style={{width:`${Math.max(cnt > 0 ? 6 : 0, (cnt / n) * 100)}%`, background: info.color}}>
+                            {cnt > 0 && <span className="text-white text-[10px] font-bold">{cnt}</span>}
+                          </div>
+                        </div>
+                        <span className="text-xs text-[#bbb] w-10 text-right shrink-0">{cnt}명 ({Math.round((cnt/n)*100)}%)</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {greenPct >= 50 && (
+                  <p className="text-xs text-[#2e7d32] mt-3 font-semibold">✅ 절반 이상의 학생이 핵심 개념을 이해했습니다.</p>
+                )}
+              </div>
+            );
+          })()}
 
           {/* 배움 목록 */}
           <div className="bg-white rounded-2xl p-5 shadow-sm">
@@ -799,6 +876,8 @@ export default function TeacherPage() {
                   const fb         = parseFeedback(row.feedback);
                   const isExpanded = expandedId === row.id;
                   const classLabel = [row.grade, row.class_name].filter(Boolean).join(' ');
+                  const learnSt    = getLearnStatus(row.feedback);
+                  const stInfo     = learnSt ? LEARN_STATUS_INFO[learnSt] : null;
                   return (
                     <div key={row.id} className="border-2 rounded-xl overflow-hidden transition-colors"
                       style={{borderColor: isExpanded ? '#667eea' : '#ebebf5'}}>
@@ -811,6 +890,12 @@ export default function TeacherPage() {
                             <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{background:'#f0f2f8', color:'#555'}}>{classLabel}</span>
                             <span className="text-xs font-bold px-2 py-0.5 rounded-md" style={{background:'#e8eaf6', color:'#3949ab'}}>{row.student_name}</span>
                             <span className="text-xs px-2 py-0.5 rounded-md" style={{background:'#f3f0ff', color:'#6b21a8'}}>{row.lesson}</span>
+                            {stInfo && (
+                              <span className="text-xs font-bold px-2 py-0.5 rounded-md"
+                                style={{background: stInfo.bg, color: stInfo.color}}>
+                                {stInfo.label}
+                              </span>
+                            )}
                           </div>
                           <span className="text-[#bbb] text-xs shrink-0">{isExpanded ? '▲' : '▼'}</span>
                         </div>
