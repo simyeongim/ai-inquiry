@@ -763,62 +763,77 @@ export default function TeacherPage() {
         {stats && (
           <div className="bg-white rounded-2xl p-5 shadow-sm">
             <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-4">질문 분포 상세</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-            <div className="mb-5">
-              <div className="text-sm font-semibold text-[#555] mb-3">수준 분포</div>
-              <div className="space-y-2">
-                {stats.lvDist.map(({ l, emoji, short, color, cnt }) => (
-                  <div key={l} className="flex items-center gap-2">
-                    <span className="text-xs w-16 shrink-0 font-medium" style={{color}}>{emoji} {short}</span>
-                    <div className="flex-1 bg-[#f0f2f8] rounded-full h-5 overflow-hidden">
-                      <div className="h-full rounded-full flex items-center justify-end pr-2 transition-all duration-500"
-                        style={{width:`${Math.max(cnt>0?6:0,(cnt/stats.maxC)*100)}%`, background:color}}>
-                        {cnt > 0 && <span className="text-white text-[10px] font-bold">{cnt}</span>}
+              {/* 수준 분포 */}
+              <div className="rounded-xl p-4" style={{background:'#f8f9ff', border:'1.5px solid #e8eaf6'}}>
+                <div className="text-xs font-semibold text-[#667eea] mb-3">수준 분포</div>
+                <div className="space-y-3">
+                  {stats.lvDist.map(({ l, emoji, short, color, cnt }) => (
+                    <div key={l}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold" style={{color}}>{emoji} {short}</span>
+                        <span className="text-xs font-bold" style={{color}}>{cnt}</span>
+                      </div>
+                      <div className="bg-white rounded-full h-3.5 overflow-hidden" style={{border:'1px solid #e8eaf6'}}>
+                        <div className="h-full rounded-full transition-all duration-500"
+                          style={{width:`${Math.max(cnt>0?6:0,(cnt/stats.maxC)*100)}%`, background:color, opacity:0.85}}/>
                       </div>
                     </div>
-                    <span className="text-xs text-[#bbb] w-5 text-right shrink-0">{cnt}</span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div className="mb-5">
-              <div className="text-sm font-semibold text-[#555] mb-2">많이 나온 핵심어</div>
-              {stats.topKw.length === 0
-                ? <p className="text-xs text-[#ccc]">핵심어 없음</p>
-                : (
-                  <div className="flex flex-wrap gap-2">
-                    {stats.topKw.map(([kw, cnt]) => (
-                      <span key={kw} className="px-2.5 py-1 rounded-full font-semibold"
-                        style={{background:'#e8eaf6', color:'#3949ab', fontSize:`${Math.min(0.88,0.64+(cnt/stats.maxKw)*0.24)}rem`}}>
-                        {kw} <span className="opacity-50 text-[10px]">×{cnt}</span>
-                      </span>
-                    ))}
-                  </div>
-                )}
-            </div>
+              {/* 많이 나온 핵심어 */}
+              <div className="rounded-xl p-4" style={{background:'#f8f9ff', border:'1.5px solid #e8eaf6'}}>
+                <div className="text-xs font-semibold text-[#667eea] mb-3">많이 나온 핵심어</div>
+                {stats.topKw.length === 0
+                  ? <p className="text-xs text-[#ccc]">핵심어 없음</p>
+                  : (
+                    <div className="flex flex-col gap-2">
+                      {stats.topKw.map(([kw, cnt], i) => (
+                        <div key={kw} className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-[#9ca3af] w-3 shrink-0">{i + 1}</span>
+                          <div className="relative flex-1 bg-white rounded-full h-6 overflow-hidden" style={{border:'1px solid #e8eaf6'}}>
+                            <div className="absolute inset-0 rounded-full transition-all duration-500"
+                              style={{width:`${(cnt/stats.maxKw)*100}%`, background:'linear-gradient(135deg,#667eea,#764ba2)', opacity:0.18}}/>
+                            <span className="absolute inset-0 flex items-center px-2.5 text-xs font-semibold text-[#3949ab]">{kw}</span>
+                          </div>
+                          <span className="text-[10px] font-bold text-[#667eea] shrink-0 w-5 text-right">×{cnt}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+              </div>
 
-            <div>
-              <div className="text-sm font-semibold text-[#555] mb-2">탐구 주제별 묶음</div>
-              {stats.groups.length === 0
-                ? <p className="text-xs text-[#ccc]">유사 질문 그룹 없음</p>
-                : (
-                  <div className="space-y-2.5">
-                    {stats.groups.map(({ label, key, qs }) => (
-                      <div key={key} className="bg-[#f8f9ff] rounded-xl p-3">
-                        <div className="text-xs font-bold text-[#667eea] mb-1.5">🔗 {refinedLabels[key] ?? label} ({qs.length}개)</div>
-                        <ul className="space-y-1">
-                          {qs.slice(0,3).map(q => (
-                            <li key={q.id} className="text-xs text-[#555] flex gap-1">
-                              <span className="text-[#ddd] shrink-0">·</span><span>{q.question}</span>
-                            </li>
-                          ))}
-                          {qs.length > 3 && <li className="text-xs text-[#bbb]">외 {qs.length-3}개</li>}
-                        </ul>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              {/* 탐구 주제별 묶음 */}
+              <div className="rounded-xl p-4" style={{background:'#f8f9ff', border:'1.5px solid #e8eaf6'}}>
+                <div className="text-xs font-semibold text-[#667eea] mb-3">탐구 주제별 묶음</div>
+                {stats.groups.length === 0
+                  ? <p className="text-xs text-[#ccc]">유사 질문 그룹 없음</p>
+                  : (
+                    <div className="space-y-2.5">
+                      {stats.groups.map(({ label, key, qs }) => (
+                        <div key={key} className="bg-white rounded-xl p-3" style={{border:'1px solid #e8eaf6'}}>
+                          <div className="flex items-center gap-1.5 mb-1.5">
+                            <span className="text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full shrink-0"
+                              style={{background:'#667eea'}}>{qs.length}</span>
+                            <span className="text-xs font-bold text-[#667eea] leading-tight">{refinedLabels[key] ?? label}</span>
+                          </div>
+                          <ul className="space-y-1">
+                            {qs.slice(0,2).map(q => (
+                              <li key={q.id} className="text-xs text-[#555] flex gap-1 leading-relaxed">
+                                <span className="text-[#ddd] shrink-0 mt-0.5">·</span><span>{q.question}</span>
+                              </li>
+                            ))}
+                            {qs.length > 2 && <li className="text-[10px] text-[#bbb]">외 {qs.length-2}개</li>}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+              </div>
+
             </div>
           </div>
         )}
