@@ -1300,7 +1300,7 @@ export default function TeacherPage() {
                             </div>
 
                             {/* 핵심 내용 미리보기 */}
-                            <p className="text-sm text-[#374151] leading-relaxed m-0 overflow-hidden"
+                            <p className="text-sm font-semibold text-[#111] leading-relaxed m-0 overflow-hidden"
                               style={{display:'-webkit-box', WebkitLineClamp: isExpanded ? undefined : 2, WebkitBoxOrient:'vertical'}}>
                               {parsedContent.core || row.content}
                             </p>
