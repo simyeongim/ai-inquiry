@@ -380,7 +380,8 @@ export default function TeacherPage() {
   const [loading,  setLoading]  = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [fetchErr, setFetchErr] = useState('');
-  const [searchName, setSearchName] = useState('');
+  const [searchName,      setSearchName]      = useState('');
+  const [searchLearnName, setSearchLearnName] = useState('');
   const [aiReport,  setAiReport]  = useState<{ report: string; deepQuestions: string[]; suggestions: string[] } | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [refinedLabels, setRefinedLabels] = useState<Record<string, string>>({});
@@ -571,9 +572,10 @@ export default function TeacherPage() {
   }, [filteredLearnings]);
 
   const displayedLearnings = useMemo(() => {
-    if (!fGrowthType) return filteredLearnings;
-    return filteredLearnings.filter(r => getGrowthType(r).label === fGrowthType);
-  }, [filteredLearnings, fGrowthType]);
+    let list = fGrowthType ? filteredLearnings.filter(r => getGrowthType(r).label === fGrowthType) : filteredLearnings;
+    if (searchLearnName.trim()) list = list.filter(r => r.student_name?.includes(searchLearnName.trim()));
+    return list;
+  }, [filteredLearnings, fGrowthType, searchLearnName]);
 
   function toggleOne(id: number) { setSel(p => { const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n; }); }
   function toggleAll() {
@@ -1193,16 +1195,30 @@ export default function TeacherPage() {
             );
           })()}
 
-          {/* 배움 목록 */}
+          {/* 핵심 개념 목록 */}
           <div className="bg-white rounded-2xl p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
-              <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0 flex items-center gap-2">
-                배움 목록
-                <span className="text-xs font-medium text-[#9ca3af]">{displayedLearnings.length}개</span>
-                {fGrowthType && (
-                  <span className="text-xs font-medium text-[#5850ec]">{fGrowthType}</span>
-                )}
-              </h2>
+              <div className="flex items-center gap-3 flex-wrap">
+                <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0 flex items-center gap-2">
+                  핵심 개념 목록
+                  <span className="text-xs font-medium text-[#9ca3af]">{displayedLearnings.length}개</span>
+                  {fGrowthType && (
+                    <span className="text-xs font-medium text-[#5850ec]">{fGrowthType}</span>
+                  )}
+                </h2>
+                <div className="relative">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#bbb] text-xs">👤</span>
+                  <input
+                    type="text" value={searchLearnName} onChange={e => setSearchLearnName(e.target.value)}
+                    placeholder="작성자 검색..."
+                    className="pl-7 pr-3 py-1.5 text-xs border-2 border-[#e0e0f0] rounded-full focus:outline-none focus:border-[#5850ec] w-36"
+                  />
+                  {searchLearnName && (
+                    <button onClick={() => setSearchLearnName('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[#bbb] hover:text-[#555] border-none bg-transparent cursor-pointer text-xs p-0 leading-none">✕</button>
+                  )}
+                </div>
+              </div>
               <div className="flex gap-2">
                 {displayedLearnings.length > 0 && (
                   <button onClick={toggleLearnAll}
@@ -1213,13 +1229,11 @@ export default function TeacherPage() {
                     {displayedLearnings.every(r => selLearn.has(r.id)) && displayedLearnings.length > 0 ? '전체 선택 해제' : '전체 선택'}
                   </button>
                 )}
-                {selLearn.size > 0 && (
-                  <button onClick={() => setShowDeleteLearn(true)}
-                    className="text-xs px-3 py-1.5 rounded-full font-semibold text-white border-none cursor-pointer"
-                    style={{background:'#dc2626'}}>
-                    삭제 ({selLearn.size})
-                  </button>
-                )}
+                <button onClick={() => setShowDeleteLearn(true)} disabled={selLearn.size === 0}
+                  className="text-xs px-3 py-1.5 rounded-full font-semibold text-white border-none cursor-pointer disabled:opacity-40"
+                  style={{background:'#dc2626'}}>
+                  삭제{selLearn.size > 0 ? ` (${selLearn.size})` : ''}
+                </button>
               </div>
             </div>
 
