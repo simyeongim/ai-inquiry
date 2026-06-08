@@ -801,10 +801,11 @@ export default function TeacherPage() {
         <div className="max-w-[1200px] mx-auto px-4 py-3 flex items-center gap-3">
           <Link href="/" className="text-white/80 text-base font-semibold bg-white/10 border border-white/30 px-4 py-2 rounded-full hover:bg-white/20 no-underline transition-colors shrink-0">← 홈</Link>
           <h1 className="text-xl font-bold m-0 flex-1 text-center">📊 교사용 분석</h1>
-          <button onClick={tab === 'questions' ? load : loadLearnings}
-            disabled={tab === 'questions' ? loading : loadingLearn}
+          <button
+            onClick={tab === 'questions' ? load : tab === 'learnings' ? loadLearnings : loadConcepts}
+            disabled={tab === 'questions' ? loading : tab === 'learnings' ? loadingLearn : loadingConcepts}
             className="text-base font-semibold bg-white/20 border border-white/30 text-white px-4 py-2 rounded-full cursor-pointer hover:bg-white/30 disabled:opacity-50 transition-colors shrink-0">
-            {(tab === 'questions' ? loading : loadingLearn) ? '로딩...' : '새로고침'}
+            {(tab === 'questions' ? loading : tab === 'learnings' ? loadingLearn : loadingConcepts) ? '로딩...' : '새로고침'}
           </button>
         </div>
         {/* 탭 바 */}
