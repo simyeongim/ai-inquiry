@@ -1280,11 +1280,15 @@ export default function TeacherPage() {
                   const parsedRevised = row.revised_content ? parseContent(row.revised_content) : null;
 
                   return (
-                    <div key={row.id} className="rounded-xl overflow-hidden transition-all"
+                    <div key={row.id} className="rounded-xl overflow-hidden transition-all relative"
                       style={{
                         background: growthType.bg,
                         border: isSelected ? `2.5px solid ${growthType.color}` : isExpanded ? `1.5px solid ${growthType.color}80` : '1.5px solid transparent',
                       }}>
+                      <span className="absolute top-2.5 right-2.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md z-10"
+                        style={{background:'rgba(255,255,255,0.7)', color: growthType.color}}>
+                        {growthType.emoji} {growthType.label}
+                      </span>
 
                       <div className="p-3 cursor-pointer transition-colors"
                         onClick={() => toggleLearnOne(row.id)}>
