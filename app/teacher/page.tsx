@@ -1286,6 +1286,12 @@ export default function TeacherPage() {
                         border: isSelected ? `2.5px solid ${growthType.color}` : isExpanded ? `1.5px solid ${growthType.color}80` : '1.5px solid transparent',
                       }}>
 
+                      {levelChanged && initSt && finalSt && (
+                        <div className="h-1.5 w-full" style={{
+                          background: `linear-gradient(to right, ${LEARN_STATUS_INFO[initSt].color} 50%, ${LEARN_STATUS_INFO[finalSt].color} 50%)`,
+                        }} />
+                      )}
+
                       <div className="p-3 cursor-pointer transition-colors"
                         onClick={() => toggleLearnOne(row.id)}>
 
@@ -1306,9 +1312,6 @@ export default function TeacherPage() {
                               {classLabel && <span className="text-xs text-[#6b7280]">{classLabel}</span>}
                               <span className="text-xs text-[#9ca3af]">·</span>
                               <span className="text-sm font-bold text-[#1a1a2e]">{row.student_name}</span>
-                              {levelChanged && (
-                                <span className="text-xs font-semibold text-[#6b7280]">{initSt}→{finalSt}</span>
-                              )}
                             </div>
 
                             {/* 핵심 내용 미리보기 */}
