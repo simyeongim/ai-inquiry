@@ -10,10 +10,20 @@ async function fetchMatchedConcepts(content: string): Promise<string> {
     });
     if (!res.ok) return '';
     const concepts: { keyword: string; key_concept: string }[] = await res.json();
-    const matched = concepts.filter(c => content.includes(c.keyword));
-    if (!matched.length) return '';
+
+    const scored = concepts
+      .map(c => {
+        const keywords = c.keyword.split(',').map((k: string) => k.trim()).filter(Boolean);
+        const matchCount = keywords.filter((k: string) => content.includes(k)).length;
+        return { concept: c, matchCount };
+      })
+      .filter(({ matchCount }) => matchCount > 0)
+      .sort((a, b) => b.matchCount - a.matchCount)
+      .slice(0, 3);
+
+    if (!scored.length) return '';
     return '\n[교사 제공 핵심 개념 — 이것이 정답 기준입니다. 이 내용을 기준으로 학생 답변의 정확성을 판단하세요.]\n'
-      + matched.map(c => `• ${c.keyword}: ${c.key_concept}`).join('\n');
+      + scored.map(({ concept: c }) => `• ${c.keyword.split(',')[0].trim()}: ${c.key_concept}`).join('\n');
   } catch {
     return '';
   }

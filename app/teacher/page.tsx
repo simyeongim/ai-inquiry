@@ -1602,7 +1602,13 @@ export default function TeacherPage() {
                       <div className="flex items-center gap-2 mb-1">
                         <input type="checkbox" checked={checked} readOnly
                           className="accent-[#667eea] w-3.5 h-3.5 shrink-0 cursor-pointer" />
-                        <span className="text-sm font-black text-[#667eea] shrink-0">{c.keyword}</span>
+                        <div className="flex items-center gap-1 flex-wrap min-w-0">
+                          {c.keyword.split(',').map((k, i) => (
+                            <span key={i} className={`text-xs font-bold px-1.5 py-0.5 rounded ${i === 0 ? 'text-[#667eea] bg-[#ede9fe]' : 'text-[#6b7280] bg-[#f3f4f6]'}`}>
+                              {k.trim()}
+                            </span>
+                          ))}
+                        </div>
                         <button onClick={e => { e.stopPropagation(); deleteConcept(c.id); }}
                           className="ml-auto text-[11px] text-red-400 hover:text-red-600 border-none bg-transparent cursor-pointer font-semibold shrink-0">
                           삭제
