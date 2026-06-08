@@ -1280,15 +1280,11 @@ export default function TeacherPage() {
                   const parsedRevised = row.revised_content ? parseContent(row.revised_content) : null;
 
                   return (
-                    <div key={row.id} className="rounded-xl overflow-hidden transition-all relative"
+                    <div key={row.id} className="rounded-xl overflow-hidden transition-all"
                       style={{
                         background: growthType.bg,
                         border: isSelected ? `2.5px solid ${growthType.color}` : isExpanded ? `1.5px solid ${growthType.color}80` : '1.5px solid transparent',
                       }}>
-                      <span className="absolute top-2.5 right-2.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md z-10"
-                        style={{background:'rgba(255,255,255,0.7)', color: growthType.color}}>
-                        {growthType.label}
-                      </span>
 
                       <div className="p-3 cursor-pointer transition-colors"
                         onClick={() => toggleLearnOne(row.id)}>
@@ -1323,12 +1319,18 @@ export default function TeacherPage() {
 
                           </div>
 
-                          <button
-                            onClick={e => { e.stopPropagation(); setExpandedId(isExpanded ? null : row.id); }}
-                            className="text-[#d1d5db] shrink-0 mt-0.5 border-none bg-transparent cursor-pointer p-0 leading-none"
-                            style={{fontSize:'1.125rem'}}>
-                            {isExpanded ? '▲' : '▼'}
-                          </button>
+                          <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md"
+                              style={{background:'rgba(255,255,255,0.7)', color: growthType.color}}>
+                              {growthType.label}
+                            </span>
+                            <button
+                              onClick={e => { e.stopPropagation(); setExpandedId(isExpanded ? null : row.id); }}
+                              className="text-[#d1d5db] border-none bg-transparent cursor-pointer p-0 leading-none"
+                              style={{fontSize:'1.125rem'}}>
+                              {isExpanded ? '▲' : '▼'}
+                            </button>
+                          </div>
                         </div>
                       </div>
 
