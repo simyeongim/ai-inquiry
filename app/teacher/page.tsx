@@ -1585,21 +1585,21 @@ export default function TeacherPage() {
                   저장된 핵심 개념 <span className="text-xs font-medium text-[#9ca3af]">{concepts.length}개</span>
                 </h2>
                 {concepts.length > 0 && (
-                  <button
-                    onClick={() => setSelConcepts(selConcepts.size === concepts.length ? new Set() : new Set(concepts.map(c => c.id)))}
-                    className="text-xs font-semibold border-none bg-transparent cursor-pointer text-[#667eea] hover:underline">
-                    {selConcepts.size === concepts.length ? '전체 해제' : '전체 선택'}
-                  </button>
+                  <>
+                    <button
+                      onClick={() => setSelConcepts(selConcepts.size === concepts.length ? new Set() : new Set(concepts.map(c => c.id)))}
+                      className="text-xs font-semibold border-none bg-transparent cursor-pointer text-[#667eea] hover:underline">
+                      {selConcepts.size === concepts.length ? '전체 해제' : '전체 선택'}
+                    </button>
+                    <button onClick={deleteSelectedConcepts} disabled={deletingConcepts || selConcepts.size === 0}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold text-white border-none cursor-pointer disabled:opacity-40 transition-all"
+                      style={{ background: '#ef4444' }}>
+                      {deletingConcepts ? '삭제 중…' : selConcepts.size > 0 ? `삭제 (${selConcepts.size})` : '삭제'}
+                    </button>
+                  </>
                 )}
               </div>
               <div className="flex items-center gap-3">
-                {selConcepts.size > 0 && (
-                  <button onClick={deleteSelectedConcepts} disabled={deletingConcepts}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-white border-none cursor-pointer disabled:opacity-50"
-                    style={{ background: '#ef4444' }}>
-                    {deletingConcepts ? '삭제 중…' : `선택 삭제 (${selConcepts.size})`}
-                  </button>
-                )}
                 <p className="text-xs text-[#9ca3af] m-0">학생 답변에 핵심어가 포함되면 자동으로 AI 평가 기준에 반영됩니다.</p>
               </div>
             </div>
@@ -1649,16 +1649,10 @@ export default function TeacherPage() {
                                 </span>
                               ))}
                             </div>
-                            <div className="ml-auto flex items-center gap-2 shrink-0">
-                              <button onClick={e => { e.stopPropagation(); setEditingConceptId(c.id); setEditConceptText(`${c.keyword}: ${c.key_concept}`); }}
-                                className="text-[11px] text-[#667eea] hover:text-[#4f46e5] border-none bg-transparent cursor-pointer font-semibold">
-                                수정
-                              </button>
-                              <button onClick={e => { e.stopPropagation(); deleteConcept(c.id); }}
-                                className="text-[11px] text-red-400 hover:text-red-600 border-none bg-transparent cursor-pointer font-semibold">
-                                삭제
-                              </button>
-                            </div>
+                            <button onClick={e => { e.stopPropagation(); setEditingConceptId(c.id); setEditConceptText(`${c.keyword}: ${c.key_concept}`); }}
+                              className="ml-auto text-[11px] text-[#667eea] hover:text-[#4f46e5] border-none bg-transparent cursor-pointer font-semibold shrink-0">
+                              수정
+                            </button>
                           </div>
                           <p className="text-xs text-[#555] m-0 leading-relaxed truncate">{c.key_concept}</p>
                         </>
