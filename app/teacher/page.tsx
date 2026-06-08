@@ -378,6 +378,8 @@ export default function TeacherPage() {
   const [conceptText,       setConceptText]       = useState('');
   const [selConcepts,       setSelConcepts]       = useState<Set<string>>(new Set());
   const [deletingConcepts,  setDeletingConcepts]  = useState(false);
+  const [editingConceptId,  setEditingConceptId]  = useState<string | null>(null);
+  const [editConceptText,   setEditConceptText]   = useState('');
 
   // ── 배움 탭 상태 ──
   const [learningRows,  setLearningRows]  = useState<LearningRow[]>([]);
@@ -520,6 +522,22 @@ export default function TeacherPage() {
       setConcepts(p => p.filter(c => c.id !== id));
       setSelConcepts(p => { const n = new Set(p); n.delete(id); return n; });
     } catch { alert('삭제에 실패했습니다.'); }
+  }
+
+  async function updateConcept(id: string) {
+    const parsed = parseConceptLine(editConceptText);
+    if (!parsed) return;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/concepts?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+        body: JSON.stringify({ keyword: parsed.keyword, key_concept: parsed.key_concept }),
+      });
+      if (!res.ok) throw new Error();
+      const [updated] = await res.json();
+      setConcepts(p => p.map(c => c.id === id ? updated : c));
+      setEditingConceptId(null);
+    } catch { alert('수정에 실패했습니다.'); }
   }
 
   async function deleteSelectedConcepts() {
@@ -1593,29 +1611,58 @@ export default function TeacherPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {concepts.map(c => {
                   const checked = selConcepts.has(c.id);
+                  const isEditing = editingConceptId === c.id;
                   return (
                     <div key={c.id}
-                      onClick={() => setSelConcepts(p => { const n = new Set(p); checked ? n.delete(c.id) : n.add(c.id); return n; })}
-                      className="rounded-xl px-3 py-2.5 cursor-pointer transition-all"
-                      style={{ background: checked ? '#ede9fe' : '#f8f8fc', border: `1px solid ${checked ? '#667eea' : '#e8e8f0'}` }}>
-                      {/* 상단: 체크박스 + 핵심어 + 삭제 */}
-                      <div className="flex items-center gap-2 mb-1">
-                        <input type="checkbox" checked={checked} readOnly
-                          className="accent-[#667eea] w-3.5 h-3.5 shrink-0 cursor-pointer" />
-                        <div className="flex items-center gap-1 flex-wrap min-w-0">
-                          {c.keyword.split(',').map((k, i) => (
-                            <span key={i} className={`text-xs font-bold px-1.5 py-0.5 rounded ${i === 0 ? 'text-[#667eea] bg-[#ede9fe]' : 'text-[#6b7280] bg-[#f3f4f6]'}`}>
-                              {k.trim()}
-                            </span>
-                          ))}
+                      onClick={() => { if (!isEditing) setSelConcepts(p => { const n = new Set(p); checked ? n.delete(c.id) : n.add(c.id); return n; }); }}
+                      className="rounded-xl px-3 py-2.5 transition-all"
+                      style={{ background: checked ? '#ede9fe' : '#f8f8fc', border: `1px solid ${checked ? '#667eea' : '#e8e8f0'}`, cursor: isEditing ? 'default' : 'pointer' }}>
+
+                      {isEditing ? (
+                        /* 수정 모드 */
+                        <div onClick={e => e.stopPropagation()} className="flex flex-col gap-2">
+                          <input
+                            autoFocus
+                            value={editConceptText}
+                            onChange={e => setEditConceptText(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') updateConcept(c.id); if (e.key === 'Escape') setEditingConceptId(null); }}
+                            className="w-full border-2 border-[#667eea] rounded-lg px-2 py-1 text-xs focus:outline-none"
+                          />
+                          <div className="flex gap-2">
+                            <button onClick={() => updateConcept(c.id)}
+                              className="px-3 py-1 rounded-lg text-[11px] font-bold text-white border-none cursor-pointer"
+                              style={{ background: '#667eea' }}>저장</button>
+                            <button onClick={() => setEditingConceptId(null)}
+                              className="px-3 py-1 rounded-lg text-[11px] font-semibold text-[#666] bg-[#f0f0f0] border-none cursor-pointer">취소</button>
+                          </div>
                         </div>
-                        <button onClick={e => { e.stopPropagation(); deleteConcept(c.id); }}
-                          className="ml-auto text-[11px] text-red-400 hover:text-red-600 border-none bg-transparent cursor-pointer font-semibold shrink-0">
-                          삭제
-                        </button>
-                      </div>
-                      {/* 개념 내용 한 줄 */}
-                      <p className="text-xs text-[#555] m-0 leading-relaxed truncate">{c.key_concept}</p>
+                      ) : (
+                        /* 일반 모드 */
+                        <>
+                          <div className="flex items-center gap-2 mb-1">
+                            <input type="checkbox" checked={checked} readOnly
+                              className="accent-[#667eea] w-3.5 h-3.5 shrink-0 cursor-pointer" />
+                            <div className="flex items-center gap-1 flex-wrap min-w-0">
+                              {c.keyword.split(',').map((k, i) => (
+                                <span key={i} className="text-xs font-bold px-1.5 py-0.5 rounded text-[#667eea] bg-[#ede9fe]">
+                                  {k.trim().replace(/^["']|["']$/g, '')}
+                                </span>
+                              ))}
+                            </div>
+                            <div className="ml-auto flex items-center gap-2 shrink-0">
+                              <button onClick={e => { e.stopPropagation(); setEditingConceptId(c.id); setEditConceptText(`${c.keyword}: ${c.key_concept}`); }}
+                                className="text-[11px] text-[#667eea] hover:text-[#4f46e5] border-none bg-transparent cursor-pointer font-semibold">
+                                수정
+                              </button>
+                              <button onClick={e => { e.stopPropagation(); deleteConcept(c.id); }}
+                                className="text-[11px] text-red-400 hover:text-red-600 border-none bg-transparent cursor-pointer font-semibold">
+                                삭제
+                              </button>
+                            </div>
+                          </div>
+                          <p className="text-xs text-[#555] m-0 leading-relaxed truncate">{c.key_concept}</p>
+                        </>
+                      )}
                     </div>
                   );
                 })}
