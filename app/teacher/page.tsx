@@ -959,7 +959,7 @@ export default function TeacherPage() {
           ) : displayed.length === 0 ? (
             <p className="text-center text-[#ccc] py-10 text-sm">조건에 맞는 질문이 없습니다.</p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {displayed.map(row => {
                 const lv   = (row.analysis?.level ?? 1) as Level;
                 const info = LV[lv];
