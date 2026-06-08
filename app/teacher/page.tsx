@@ -1286,11 +1286,6 @@ export default function TeacherPage() {
                         border: isSelected ? `2.5px solid ${growthType.color}` : isExpanded ? `1.5px solid ${growthType.color}80` : '1.5px solid transparent',
                       }}>
 
-                      {levelChanged && initSt && finalSt && (
-                        <div className="h-1.5 w-full" style={{
-                          background: `linear-gradient(to right, ${LEARN_STATUS_INFO[initSt].color} 50%, ${LEARN_STATUS_INFO[finalSt].color} 50%)`,
-                        }} />
-                      )}
 
                       <div className="p-3 cursor-pointer transition-colors"
                         onClick={() => toggleLearnOne(row.id)}>
@@ -1313,6 +1308,18 @@ export default function TeacherPage() {
                               <span className="text-xs text-[#9ca3af]">·</span>
                               <span className="text-sm font-bold text-[#1a1a2e]">{row.student_name}</span>
                             </div>
+
+                            {levelChanged && initSt && finalSt && (() => {
+                              const SHORT: Record<LearnStatus, string> = { '🟢':'이해', '🟡':'보완', '🔴':'재학습' };
+                              return (
+                                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full mb-1.5 text-[11px] font-bold"
+                                  style={{background:'rgba(255,255,255,0.75)', border:`1px solid ${LEARN_STATUS_INFO[finalSt].color}40`}}>
+                                  <span style={{color: LEARN_STATUS_INFO[initSt].color}}>{initSt} {SHORT[initSt]}</span>
+                                  <span className="text-[#9ca3af]">→</span>
+                                  <span style={{color: LEARN_STATUS_INFO[finalSt].color}}>{finalSt} {SHORT[finalSt]}</span>
+                                </div>
+                              );
+                            })()}
 
                             {/* 핵심 내용 미리보기 */}
                             <p className="text-sm font-semibold text-[#111] leading-relaxed m-0 overflow-hidden"
