@@ -11,18 +11,32 @@ async function fetchMatchedConcepts(content: string): Promise<string> {
     if (!res.ok) return '';
     const concepts: { keyword: string; key_concept: string }[] = await res.json();
 
-    const scored = concepts
-      .map(c => {
-        const keywords = c.keyword.split(',').map((k: string) => k.trim()).filter(Boolean);
-        const matchCount = keywords.filter((k: string) => content.includes(k)).length;
-        return { concept: c, matchCount };
-      })
-      .filter(({ matchCount }) => matchCount > 0);
+    const allScored = concepts.map(c => {
+      const keywords = c.keyword.split(',').map((k: string) => k.trim()).filter(Boolean);
+      const matchedKws = keywords.filter((k: string) => content.includes(k));
+      return { concept: c, keywords, matchCount: matchedKws.length, matchedKws };
+    });
 
-    if (!scored.length) return '';
+    console.log('[개념DB 매칭 결과]');
+    allScored.forEach(({ concept: c, keywords, matchCount, matchedKws }) => {
+      console.log(`  ${keywords.join(',')} → ${matchCount}점${matchCount > 0 ? ` (매칭: ${matchedKws.join(', ')})` : ''}`);
+    });
+
+    const scored = allScored.filter(({ matchCount }) => matchCount > 0);
+
+    if (!scored.length) {
+      console.log('[최종 전달] 없음 (매칭된 개념 없음)');
+      return '';
+    }
 
     const maxScore = Math.max(...scored.map(s => s.matchCount));
     const top = scored.filter(s => s.matchCount === maxScore).slice(0, 3);
+
+    console.log('[최종 전달]');
+    top.forEach(({ concept: c, matchCount }, i) => {
+      console.log(`  ${i + 1}. [${matchCount}점] ${c.keyword} → ${c.key_concept}`);
+    });
+
     return '\n[교사 제공 핵심 개념 — 이것이 정답 기준입니다. 이 내용을 기준으로 학생 답변의 정확성을 판단하세요.]\n'
       + top.map(({ concept: c }) => `• ${c.keyword.split(',')[0].trim()}: ${c.key_concept}`).join('\n');
   } catch {
