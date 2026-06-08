@@ -968,7 +968,7 @@ export default function TeacherPage() {
                   <div key={row.id} onClick={()=>toggleOne(row.id)}
                     className="rounded-xl p-4 cursor-pointer transition-all"
                     style={{background: info.bg, border: on ? `2.5px solid ${info.color}` : '1.5px solid transparent'}}>
-                    <div className="flex items-center justify-end gap-1.5 mb-1.5 flex-wrap">
+                    <div className="flex items-center gap-1.5 mb-3 flex-wrap">
                       {(() => { const p = PROJECT_SHORT[row.project]; return p ? (
                         <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md"
                           style={{background:'rgba(255,255,255,0.6)', color:info.color}}>
@@ -1279,7 +1279,7 @@ export default function TeacherPage() {
                       }}>
 
                       <div className="p-3 cursor-pointer transition-colors"
-                        onClick={() => setExpandedId(isExpanded ? null : row.id)}>
+                        onClick={() => toggleLearnOne(row.id)}>
 
                         <div className="flex items-start gap-2">
                           <input type="checkbox" checked={isSelected}
@@ -1311,7 +1311,12 @@ export default function TeacherPage() {
 
                           </div>
 
-                          <span className="text-[#d1d5db] text-xs shrink-0 mt-0.5">{isExpanded ? '▲' : '▼'}</span>
+                          <button
+                            onClick={e => { e.stopPropagation(); setExpandedId(isExpanded ? null : row.id); }}
+                            className="text-[#d1d5db] shrink-0 mt-0.5 border-none bg-transparent cursor-pointer p-0 leading-none"
+                            style={{fontSize:'1.125rem'}}>
+                            {isExpanded ? '▲' : '▼'}
+                          </button>
                         </div>
                       </div>
 
