@@ -499,12 +499,16 @@ export default function TeacherPage() {
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/learnings?id=in.(${ids.join(',')})`, {
         method: 'DELETE',
-        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Prefer: 'return=minimal' },
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Prefer: 'return=representation' },
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const deleted = await res.json();
+      if (!Array.isArray(deleted) || deleted.length === 0) {
+        throw new Error('Supabase DELETE 정책 미설정 — 대시보드 > SQL Editor에서\nCREATE POLICY "allow delete" ON learnings FOR DELETE USING (true);\n을 실행해 주세요.');
+      }
       setLearningRows(p => p.filter(r => !ids.includes(r.id)));
       setSelLearn(p => { const n=new Set(p); ids.forEach(id=>n.delete(id)); return n; });
-    } catch { alert('삭제에 실패했습니다.'); }
+    } catch (err) { alert(`삭제에 실패했습니다.\n${err instanceof Error ? err.message : ''}`); }
     setDeletingLearn(false);
     setShowDeleteLearn(false);
   }
