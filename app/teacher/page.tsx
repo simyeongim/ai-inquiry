@@ -158,7 +158,7 @@ function topicComboLabel(topics: string[]): string {
 interface Row { id: number; class_room: string; project: string; name: string; question: string; analysis: { level: number; label: string; emoji: string; summary: string } | null; time: string; }
 
 interface LearningRow {
-  id: number; grade: string; class_name: string; student_name: string;
+  id: string; grade: string; class_name: string; student_name: string;
   lesson: string; content: string;
   feedback: Record<string, string> | string | null;
   is_revised?: boolean;
@@ -373,7 +373,7 @@ export default function TeacherPage() {
   const [fLearnClass,   setFLearnClass]   = useState<string[]>([]);
   const [fLearnLesson,  setFLearnLesson]  = useState<string[]>([]);
   const [fLearnStatus,  setFLearnStatus]  = useState<string[]>([]);
-  const [expandedId,    setExpandedId]    = useState<number | null>(null);
+  const [expandedId,    setExpandedId]    = useState<string | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [loadingLearn,  setLoadingLearn]  = useState(false);
   const [fetchErrLearn, setFetchErrLearn] = useState('');
@@ -393,7 +393,7 @@ export default function TeacherPage() {
   const [refinedLabels, setRefinedLabels] = useState<Record<string, string>>({});
   const [learnInsight, setLearnInsight] = useState<{ wellUnderstood: string; misconception: string; suggestion: string } | null>(null);
   const [learnInsightLoading, setLearnInsightLoading] = useState(false);
-  const [selLearn,        setSelLearn]        = useState<Set<number>>(new Set());
+  const [selLearn,        setSelLearn]        = useState<Set<string>>(new Set());
   const [deletingLearn,   setDeletingLearn]   = useState(false);
   const [showDeleteLearn, setShowDeleteLearn] = useState(false);
   const [fGrowthType,    setFGrowthType]    = useState<string | null>(null);
@@ -488,12 +488,12 @@ export default function TeacherPage() {
     setLearnInsightLoading(false);
   }
 
-  function toggleLearnOne(id: number) { setSelLearn(p => { const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n; }); }
+  function toggleLearnOne(id: string) { setSelLearn(p => { const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n; }); }
   function toggleLearnAll() {
     const all = displayedLearnings.length > 0 && displayedLearnings.every(r => selLearn.has(r.id));
     setSelLearn(all ? new Set() : new Set(displayedLearnings.map(r => r.id)));
   }
-  async function deleteLearnings(ids: number[]) {
+  async function deleteLearnings(ids: string[]) {
     if (!ids.length) return;
     setDeletingLearn(true);
     try {
@@ -970,8 +970,12 @@ export default function TeacherPage() {
                 const on   = sel.has(row.id);
                 return (
                   <div key={row.id} onClick={()=>toggleOne(row.id)}
-                    className="rounded-xl p-4 cursor-pointer transition-all"
+                    className="rounded-xl p-4 cursor-pointer transition-all relative"
                     style={{background: info.bg, border: on ? `2.5px solid ${info.color}` : '1.5px solid transparent'}}>
+                    <span className="absolute top-2.5 right-2.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md"
+                      style={{background:'rgba(255,255,255,0.7)', color:info.color}}>
+                      {info.short}
+                    </span>
                     <div className="flex items-center gap-1.5 mb-3 flex-wrap">
                       {(() => { const p = PROJECT_SHORT[row.project]; return p ? (
                         <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md"
