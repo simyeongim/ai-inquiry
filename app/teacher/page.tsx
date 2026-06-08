@@ -1608,7 +1608,7 @@ export default function TeacherPage() {
             ) : concepts.length === 0 ? (
               <p className="text-center text-[#ccc] py-8 text-sm">저장된 핵심 개념이 없습니다.</p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 {concepts.map(c => {
                   const checked = selConcepts.has(c.id);
                   const isEditing = editingConceptId === c.id;
