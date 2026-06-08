@@ -1287,7 +1287,7 @@ export default function TeacherPage() {
                       }}>
                       <span className="absolute top-2.5 right-2.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md z-10"
                         style={{background:'rgba(255,255,255,0.7)', color: growthType.color}}>
-                        {growthType.emoji} {growthType.label}
+                        {growthType.label}
                       </span>
 
                       <div className="p-3 cursor-pointer transition-colors"
