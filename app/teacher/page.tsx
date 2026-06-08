@@ -1654,7 +1654,7 @@ export default function TeacherPage() {
                               수정
                             </button>
                           </div>
-                          <p className="text-xs text-[#555] m-0 leading-relaxed truncate">{c.key_concept}</p>
+                          <p className="text-xs text-[#555] m-0 leading-relaxed">{c.key_concept}</p>
                         </>
                       )}
                     </div>
