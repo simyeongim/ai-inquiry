@@ -452,8 +452,8 @@ export default function TeacherPage() {
   function parseConceptLine(line: string): { keyword: string; key_concept: string } | null {
     const idx = line.indexOf(':');
     if (idx < 1) return null;
-    const keyword = line.slice(0, idx).trim();
-    const key_concept = line.slice(idx + 1).trim();
+    const keyword = line.slice(0, idx).trim().replace(/^["']|["']$/g, '');
+    const key_concept = line.slice(idx + 1).trim().replace(/^["']|["']$/g, '');
     if (!keyword || !key_concept) return null;
     return { keyword, key_concept };
   }

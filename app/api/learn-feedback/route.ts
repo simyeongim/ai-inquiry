@@ -12,7 +12,7 @@ async function fetchMatchedConcepts(content: string): Promise<string> {
     const concepts: { keyword: string; key_concept: string }[] = await res.json();
 
     const allScored = concepts.map(c => {
-      const keywords = c.keyword.split(',').map((k: string) => k.trim()).filter(Boolean);
+      const keywords = c.keyword.split(',').map((k: string) => k.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
       const matchedKws = keywords.filter((k: string) => content.includes(k));
       return { concept: c, keywords, matchCount: matchedKws.length, matchedKws };
     });
