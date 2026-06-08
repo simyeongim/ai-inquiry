@@ -968,7 +968,7 @@ export default function TeacherPage() {
                   <div key={row.id} onClick={()=>toggleOne(row.id)}
                     className="rounded-xl p-4 cursor-pointer transition-all"
                     style={{background: info.bg, border: on ? `2.5px solid ${info.color}` : '1.5px solid transparent'}}>
-                    <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                    <div className="flex items-center justify-end gap-1.5 mb-1.5 flex-wrap">
                       {(() => { const p = PROJECT_SHORT[row.project]; return p ? (
                         <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md"
                           style={{background:'rgba(255,255,255,0.6)', color:info.color}}>
@@ -1279,9 +1279,13 @@ export default function TeacherPage() {
                       }}>
 
                       <div className="p-3 cursor-pointer transition-colors"
-                        onClick={() => { toggleLearnOne(row.id); setExpandedId(isExpanded ? null : row.id); }}>
+                        onClick={() => setExpandedId(isExpanded ? null : row.id)}>
 
                         <div className="flex items-start gap-2">
+                          <input type="checkbox" checked={isSelected}
+                            onClick={e => e.stopPropagation()}
+                            onChange={() => toggleLearnOne(row.id)}
+                            className="mt-1 shrink-0 cursor-pointer accent-[#5850ec]" />
                           <div className="flex-1 min-w-0">
                             {/* 프로젝트 칩 + 학년반 + 이름 + 수준 변화 */}
                             <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
