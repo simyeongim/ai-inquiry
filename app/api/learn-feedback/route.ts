@@ -1,5 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+const SUPABASE_URL = 'https://fsrrtopndcrdnqwnspnp.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_z7LexdeBdGJqEy5Z8IAyNA_LEGAxPf_';
+
+async function fetchMatchedConcepts(content: string): Promise<string> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/concepts?select=keyword,key_concept`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+    });
+    if (!res.ok) return '';
+    const concepts: { keyword: string; key_concept: string }[] = await res.json();
+    const matched = concepts.filter(c => content.includes(c.keyword));
+    if (!matched.length) return '';
+    return '\n[교사 제공 핵심 개념 — 이것이 정답 기준입니다. 이 내용을 기준으로 학생 답변의 정확성을 판단하세요.]\n'
+      + matched.map(c => `• ${c.keyword}: ${c.key_concept}`).join('\n');
+  } catch {
+    return '';
+  }
+}
+
 function fallbackFeedback() {
   return {
     status:         '🟡 핵심 개념을 찾아 조금 더 보완해보세요.',
@@ -22,6 +41,8 @@ export async function POST(request: NextRequest) {
 
   if (process.env.GROQ_API_KEY) {
     try {
+      const conceptSection = await fetchMatchedConcepts(content);
+
       const system = `당신은 초등학교 교사입니다. 초등학교 3~6학년 학생의 개념 이해 수준을 진단하는 역할을 합니다.
 평가 기준: 대학교나 중·고등학교 수준이 아닌, 초등 교과서 수준에서 판단하세요. 초등학생이 배운 내용의 핵심을 자신의 말로 설명했다면 충분합니다.
 절대 금지: 학생 문장 그대로 복사, 새로운 개념 강의, 교과서 밖 내용 제시, 억지 보완점 생성, "학생이"·"학생은"으로 문장 시작.
@@ -29,7 +50,7 @@ export async function POST(request: NextRequest) {
 [goodPoint 작성 원칙] goodPoint는 학생이 직접 쓴 표현을 교사 언어로 바꾸는 것입니다. 학생 답변에 없는 과학적 사실을 goodPoint에 절대 추가하지 마세요. AI가 알고 있는 개념 설명을 덧붙이면 오류가 생깁니다.`;
 
       const user = `아래 학생 답변을 분석하여 JSON 피드백을 작성하세요.
-
+${conceptSection}
 --- 학생 답변 ---
 ${content}
 -----------------

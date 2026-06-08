@@ -157,6 +157,8 @@ function topicComboLabel(topics: string[]): string {
 
 interface Row { id: number; class_room: string; project: string; name: string; question: string; analysis: { level: number; label: string; emoji: string; summary: string } | null; time: string; }
 
+interface ConceptRow { id: string; project: string | null; lesson: string | null; keyword: string; key_concept: string; created_at: string; }
+
 interface LearningRow {
   id: string; grade: string; class_name: string; student_name: string;
   lesson: string; content: string;
@@ -366,7 +368,13 @@ function FilterDropdown({ label, opts, sel, onToggle, getLabel, getStyle }: {
 // ─── 메인 대시보드 ────────────────────────────────────
 export default function TeacherPage() {
   const [authed,   setAuthed]   = useState(false);
-  const [tab,      setTab]      = useState<'questions' | 'learnings'>('questions');
+  const [tab,      setTab]      = useState<'questions' | 'learnings' | 'concepts'>('questions');
+
+  // ── 개념DB 탭 상태 ──
+  const [concepts,        setConcepts]        = useState<ConceptRow[]>([]);
+  const [loadingConcepts, setLoadingConcepts] = useState(false);
+  const [savingConcept,   setSavingConcept]   = useState(false);
+  const [conceptForm,     setConceptForm]     = useState({ keyword: '', key_concept: '', project: '', lesson: '' });
 
   // ── 배움 탭 상태 ──
   const [learningRows,  setLearningRows]  = useState<LearningRow[]>([]);
@@ -425,8 +433,55 @@ export default function TeacherPage() {
     setLoadingLearn(false);
   }, []);
 
+  const loadConcepts = useCallback(async () => {
+    setLoadingConcepts(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/concepts?select=*&order=created_at.desc`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+      });
+      if (!res.ok) throw new Error();
+      const d = await res.json();
+      setConcepts(Array.isArray(d) ? d : []);
+    } catch { setConcepts([]); }
+    setLoadingConcepts(false);
+  }, []);
+
+  async function saveConcept() {
+    if (!conceptForm.keyword.trim() || !conceptForm.key_concept.trim()) return;
+    setSavingConcept(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/concepts`, {
+        method: 'POST',
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+        body: JSON.stringify({
+          keyword: conceptForm.keyword.trim(),
+          key_concept: conceptForm.key_concept.trim(),
+          project: conceptForm.project.trim() || null,
+          lesson: conceptForm.lesson.trim() || null,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      const [saved] = await res.json();
+      setConcepts(p => [saved, ...p]);
+      setConceptForm({ keyword: '', key_concept: '', project: '', lesson: '' });
+    } catch { alert('저장에 실패했습니다.'); }
+    setSavingConcept(false);
+  }
+
+  async function deleteConcept(id: string) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/concepts?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Prefer: 'return=minimal' },
+      });
+      if (!res.ok) throw new Error();
+      setConcepts(p => p.filter(c => c.id !== id));
+    } catch { alert('삭제에 실패했습니다.'); }
+  }
+
   useEffect(() => { if (authed && tab === 'questions') load(); },        [authed, tab, load]);
   useEffect(() => { if (authed && tab === 'learnings') loadLearnings(); }, [authed, tab, loadLearnings]);
+  useEffect(() => { if (authed && tab === 'concepts')  loadConcepts();  }, [authed, tab, loadConcepts]);
   useEffect(() => { setLearnInsight(null); }, [fLearnClass, fLearnLesson, fLearnStatus]);
 
   async function generateAiReport() {
@@ -694,13 +749,13 @@ export default function TeacherPage() {
         </div>
         {/* 탭 바 */}
         <div className="max-w-[1200px] mx-auto px-4 flex border-t border-white/20">
-          {(['questions', 'learnings'] as const).map(t => (
+          {(['questions', 'learnings', 'concepts'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
-              className="text-xl font-bold px-12 py-5 border-b-[4px] transition-all cursor-pointer bg-transparent border-x-0 border-t-0"
+              className="text-xl font-bold px-10 py-5 border-b-[4px] transition-all cursor-pointer bg-transparent border-x-0 border-t-0"
               style={tab === t
                 ? { color: 'white', borderBottomColor: 'white' }
                 : { color: 'rgba(255,255,255,0.55)', borderBottomColor: 'transparent' }}>
-              {t === 'questions' ? '📝 질문발견' : '🌱 핵심개념'}
+              {t === 'questions' ? '📝 질문발견' : t === 'learnings' ? '🌱 핵심개념' : '📚 개념DB'}
             </button>
           ))}
         </div>
@@ -1402,6 +1457,85 @@ export default function TeacherPage() {
 
         </div>
       )} {/* /개념학습 탭 */}
+
+      {/* ══ 개념DB 탭 ══ */}
+      {tab === 'concepts' && (
+        <div className="max-w-[1200px] mx-auto px-4 pt-5 space-y-4">
+
+          {/* 추가 폼 */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm">
+            <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-4">핵심 개념 추가</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className="text-xs font-bold text-[#666] mb-1 block">핵심어 <span className="text-red-400">*</span></label>
+                <input type="text" value={conceptForm.keyword}
+                  onChange={e => setConceptForm(p => ({ ...p, keyword: e.target.value }))}
+                  placeholder="예: 자전, 세포, 광합성"
+                  className="w-full border-2 border-[#e0e0f0] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#667eea]" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-[#666] mb-1 block">프로젝트 <span className="text-[#bbb]">(선택)</span></label>
+                <input type="text" value={conceptForm.project}
+                  onChange={e => setConceptForm(p => ({ ...p, project: e.target.value }))}
+                  placeholder="예: 지구와 어떻게 함께 살아갈 것인가"
+                  className="w-full border-2 border-[#e0e0f0] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#667eea]" />
+              </div>
+            </div>
+            <div className="mb-3">
+              <label className="text-xs font-bold text-[#666] mb-1 block">핵심 개념 내용 <span className="text-red-400">*</span></label>
+              <textarea value={conceptForm.key_concept}
+                onChange={e => setConceptForm(p => ({ ...p, key_concept: e.target.value }))}
+                placeholder="예: 지구가 자전축을 중심으로 하루에 한 바퀴 서쪽에서 동쪽 방향으로 회전하는 것"
+                rows={3}
+                className="w-full border-2 border-[#e0e0f0] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#667eea] resize-none" />
+            </div>
+            <button onClick={saveConcept}
+              disabled={savingConcept || !conceptForm.keyword.trim() || !conceptForm.key_concept.trim()}
+              className="px-5 py-2 rounded-xl text-white text-sm font-bold border-none cursor-pointer disabled:opacity-50 transition-all"
+              style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)' }}>
+              {savingConcept ? '저장 중…' : '추가'}
+            </button>
+          </div>
+
+          {/* 목록 */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">
+                저장된 핵심 개념 <span className="text-xs font-medium text-[#9ca3af]">{concepts.length}개</span>
+              </h2>
+              <p className="text-xs text-[#9ca3af] m-0">학생 답변에 핵심어가 포함되면 자동으로 AI 평가 기준에 반영됩니다.</p>
+            </div>
+            {loadingConcepts ? (
+              <p className="text-center text-[#ccc] py-8 text-sm">불러오는 중...</p>
+            ) : concepts.length === 0 ? (
+              <p className="text-center text-[#ccc] py-8 text-sm">저장된 핵심 개념이 없습니다.</p>
+            ) : (
+              <div className="space-y-2">
+                {concepts.map(c => (
+                  <div key={c.id} className="rounded-xl p-4 flex items-start gap-3" style={{ background: '#f8f8fc', border: '1px solid #e8e8f0' }}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                        <span className="text-sm font-black text-[#667eea]">{c.keyword}</span>
+                        {c.project && (
+                          <span className="text-[11px] font-medium text-white px-1.5 py-0.5 rounded-md"
+                            style={{ background: '#667eea99' }}>{c.project}</span>
+                        )}
+                        {c.lesson && <span className="text-[11px] text-[#9ca3af]">{c.lesson}</span>}
+                      </div>
+                      <p className="text-sm text-[#333] m-0 leading-relaxed">{c.key_concept}</p>
+                    </div>
+                    <button onClick={() => deleteConcept(c.id)}
+                      className="text-xs text-red-400 hover:text-red-600 border-none bg-transparent cursor-pointer font-semibold shrink-0 mt-0.5">
+                      삭제
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+        </div>
+      )} {/* /개념DB 탭 */}
 
       {/* 성장 유형 학생 이름 팝업 */}
       {growthPopup && (
