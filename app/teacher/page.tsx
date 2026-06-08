@@ -474,10 +474,23 @@ export default function TeacherPage() {
     setSavingConcept(false);
   }
 
+  function readFileAsText(file: File, encoding: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve((e.target?.result as string) ?? '');
+      reader.onerror = reject;
+      reader.readAsText(file, encoding);
+    });
+  }
+
   async function uploadConceptCSV(file: File) {
     setUploadingConcepts(true);
     try {
-      const text = await file.text();
+      let text = await readFileAsText(file, 'UTF-8');
+      // 한글 깨짐 감지 시 EUC-KR로 재시도
+      if (text.includes('�') || /[\x80-\x9F]/.test(text)) {
+        text = await readFileAsText(file, 'EUC-KR');
+      }
       const lines = text.split(/\r?\n/).filter(l => l.trim());
       const items = lines.map(parseConceptLine).filter((x): x is { keyword: string; key_concept: string } => x !== null);
       if (items.length === 0) { alert('유효한 항목이 없습니다.\n형식: 핵심어: 내용'); return; }
