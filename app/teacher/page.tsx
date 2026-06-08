@@ -371,10 +371,11 @@ export default function TeacherPage() {
   const [tab,      setTab]      = useState<'questions' | 'learnings' | 'concepts'>('questions');
 
   // ── 개념DB 탭 상태 ──
-  const [concepts,        setConcepts]        = useState<ConceptRow[]>([]);
-  const [loadingConcepts, setLoadingConcepts] = useState(false);
-  const [savingConcept,   setSavingConcept]   = useState(false);
-  const [conceptForm,     setConceptForm]     = useState({ keyword: '', key_concept: '', project: '', lesson: '' });
+  const [concepts,          setConcepts]          = useState<ConceptRow[]>([]);
+  const [loadingConcepts,   setLoadingConcepts]   = useState(false);
+  const [savingConcept,     setSavingConcept]     = useState(false);
+  const [uploadingConcepts, setUploadingConcepts] = useState(false);
+  const [conceptText,       setConceptText]       = useState('');
 
   // ── 배움 탭 상태 ──
   const [learningRows,  setLearningRows]  = useState<LearningRow[]>([]);
@@ -446,26 +447,52 @@ export default function TeacherPage() {
     setLoadingConcepts(false);
   }, []);
 
+  function parseConceptLine(line: string): { keyword: string; key_concept: string } | null {
+    const idx = line.indexOf(':');
+    if (idx < 1) return null;
+    const keyword = line.slice(0, idx).trim();
+    const key_concept = line.slice(idx + 1).trim();
+    if (!keyword || !key_concept) return null;
+    return { keyword, key_concept };
+  }
+
   async function saveConcept() {
-    if (!conceptForm.keyword.trim() || !conceptForm.key_concept.trim()) return;
+    const parsed = parseConceptLine(conceptText);
+    if (!parsed) return;
     setSavingConcept(true);
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/concepts`, {
         method: 'POST',
         headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
-        body: JSON.stringify({
-          keyword: conceptForm.keyword.trim(),
-          key_concept: conceptForm.key_concept.trim(),
-          project: conceptForm.project.trim() || null,
-          lesson: conceptForm.lesson.trim() || null,
-        }),
+        body: JSON.stringify({ keyword: parsed.keyword, key_concept: parsed.key_concept, project: null, lesson: null }),
       });
       if (!res.ok) throw new Error();
       const [saved] = await res.json();
       setConcepts(p => [saved, ...p]);
-      setConceptForm({ keyword: '', key_concept: '', project: '', lesson: '' });
+      setConceptText('');
     } catch { alert('저장에 실패했습니다.'); }
     setSavingConcept(false);
+  }
+
+  async function uploadConceptCSV(file: File) {
+    setUploadingConcepts(true);
+    try {
+      const text = await file.text();
+      const lines = text.split(/\r?\n/).filter(l => l.trim());
+      const items = lines.map(parseConceptLine).filter((x): x is { keyword: string; key_concept: string } => x !== null);
+      if (items.length === 0) { alert('유효한 항목이 없습니다.\n형식: 핵심어: 내용'); return; }
+      const payload = items.map(i => ({ keyword: i.keyword, key_concept: i.key_concept, project: null, lesson: null }));
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/concepts`, {
+        method: 'POST',
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error();
+      const saved: ConceptRow[] = await res.json();
+      setConcepts(p => [...saved, ...p]);
+      alert(`${saved.length}개 저장 완료`);
+    } catch { alert('업로드에 실패했습니다.'); }
+    setUploadingConcepts(false);
   }
 
   async function deleteConcept(id: string) {
@@ -1362,19 +1389,18 @@ export default function TeacherPage() {
                               {classLabel && <span className="text-xs text-[#6b7280]">{classLabel}</span>}
                               <span className="text-xs text-[#9ca3af]">·</span>
                               <span className="text-sm font-bold text-[#1a1a2e]">{row.student_name}</span>
+                              {levelChanged && initSt && finalSt && (() => {
+                                const SHORT: Record<LearnStatus, string> = { '🟢':'이해', '🟡':'보완', '🔴':'재학습' };
+                                return (
+                                  <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold"
+                                    style={{background:'rgba(255,255,255,0.75)', border:`1px solid ${LEARN_STATUS_INFO[finalSt].color}40`}}>
+                                    <span style={{color: LEARN_STATUS_INFO[initSt].color}}>{initSt} {SHORT[initSt]}</span>
+                                    <span className="text-[#9ca3af]">→</span>
+                                    <span style={{color: LEARN_STATUS_INFO[finalSt].color}}>{finalSt} {SHORT[finalSt]}</span>
+                                  </div>
+                                );
+                              })()}
                             </div>
-
-                            {levelChanged && initSt && finalSt && (() => {
-                              const SHORT: Record<LearnStatus, string> = { '🟢':'이해', '🟡':'보완', '🔴':'재학습' };
-                              return (
-                                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full mb-1.5 text-[11px] font-bold"
-                                  style={{background:'rgba(255,255,255,0.75)', border:`1px solid ${LEARN_STATUS_INFO[finalSt].color}40`}}>
-                                  <span style={{color: LEARN_STATUS_INFO[initSt].color}}>{initSt} {SHORT[initSt]}</span>
-                                  <span className="text-[#9ca3af]">→</span>
-                                  <span style={{color: LEARN_STATUS_INFO[finalSt].color}}>{finalSt} {SHORT[finalSt]}</span>
-                                </div>
-                              );
-                            })()}
 
                             {/* 핵심 내용 미리보기 */}
                             <p className="text-sm font-semibold text-[#111] leading-relaxed m-0 overflow-hidden"
@@ -1464,37 +1490,39 @@ export default function TeacherPage() {
 
           {/* 추가 폼 */}
           <div className="bg-white rounded-2xl p-5 shadow-sm">
-            <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-4">핵심 개념 추가</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-              <div>
-                <label className="text-xs font-bold text-[#666] mb-1 block">핵심어 <span className="text-red-400">*</span></label>
-                <input type="text" value={conceptForm.keyword}
-                  onChange={e => setConceptForm(p => ({ ...p, keyword: e.target.value }))}
-                  placeholder="예: 자전, 세포, 광합성"
-                  className="w-full border-2 border-[#e0e0f0] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#667eea]" />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[#666] mb-1 block">프로젝트 <span className="text-[#bbb]">(선택)</span></label>
-                <input type="text" value={conceptForm.project}
-                  onChange={e => setConceptForm(p => ({ ...p, project: e.target.value }))}
-                  placeholder="예: 지구와 어떻게 함께 살아갈 것인가"
-                  className="w-full border-2 border-[#e0e0f0] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#667eea]" />
-              </div>
+            <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-1">핵심 개념 추가</h2>
+            <p className="text-xs text-[#9ca3af] mb-4">형식: <span className="font-mono font-semibold text-[#667eea]">핵심어: 개념 내용</span>&nbsp;&nbsp;예) 자전: 지구가 자전축을 중심으로 하루에 한 바퀴 도는 것</p>
+
+            {/* 한 줄 입력 */}
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                value={conceptText}
+                onChange={e => setConceptText(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') saveConcept(); }}
+                placeholder="자전: 지구가 자전축을 중심으로 하루에 한 바퀴 도는 것"
+                className="flex-1 border-2 border-[#e0e0f0] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#667eea]"
+              />
+              <button onClick={saveConcept}
+                disabled={savingConcept || !parseConceptLine(conceptText)}
+                className="px-5 py-2 rounded-xl text-white text-sm font-bold border-none cursor-pointer disabled:opacity-50 transition-all shrink-0"
+                style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)' }}>
+                {savingConcept ? '저장 중…' : '추가'}
+              </button>
             </div>
-            <div className="mb-3">
-              <label className="text-xs font-bold text-[#666] mb-1 block">핵심 개념 내용 <span className="text-red-400">*</span></label>
-              <textarea value={conceptForm.key_concept}
-                onChange={e => setConceptForm(p => ({ ...p, key_concept: e.target.value }))}
-                placeholder="예: 지구가 자전축을 중심으로 하루에 한 바퀴 서쪽에서 동쪽 방향으로 회전하는 것"
-                rows={3}
-                className="w-full border-2 border-[#e0e0f0] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#667eea] resize-none" />
+
+            {/* CSV 업로드 */}
+            <div className="flex items-center gap-3 pt-4 border-t border-[#f0f0f8]">
+              <span className="text-xs font-bold text-[#666]">일괄 업로드</span>
+              <label className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold cursor-pointer border-2 border-[#667eea] text-[#667eea] hover:bg-[#667eea] hover:text-white transition-all">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                {uploadingConcepts ? '업로드 중…' : 'CSV 파일 선택'}
+                <input type="file" accept=".csv,.txt" className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) { uploadConceptCSV(f); e.target.value = ''; } }}
+                  disabled={uploadingConcepts} />
+              </label>
+              <span className="text-[11px] text-[#bbb]">한 줄에 하나씩 · 핵심어: 내용 형식 · .csv 또는 .txt</span>
             </div>
-            <button onClick={saveConcept}
-              disabled={savingConcept || !conceptForm.keyword.trim() || !conceptForm.key_concept.trim()}
-              className="px-5 py-2 rounded-xl text-white text-sm font-bold border-none cursor-pointer disabled:opacity-50 transition-all"
-              style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)' }}>
-              {savingConcept ? '저장 중…' : '추가'}
-            </button>
           </div>
 
           {/* 목록 */}
@@ -1514,13 +1542,8 @@ export default function TeacherPage() {
                 {concepts.map(c => (
                   <div key={c.id} className="rounded-xl p-4 flex items-start gap-3" style={{ background: '#f8f8fc', border: '1px solid #e8e8f0' }}>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <div className="flex items-center gap-2 mb-1.5">
                         <span className="text-sm font-black text-[#667eea]">{c.keyword}</span>
-                        {c.project && (
-                          <span className="text-[11px] font-medium text-white px-1.5 py-0.5 rounded-md"
-                            style={{ background: '#667eea99' }}>{c.project}</span>
-                        )}
-                        {c.lesson && <span className="text-[11px] text-[#9ca3af]">{c.lesson}</span>}
                       </div>
                       <p className="text-sm text-[#333] m-0 leading-relaxed">{c.key_concept}</p>
                     </div>
