@@ -376,6 +376,8 @@ export default function TeacherPage() {
   const [savingConcept,     setSavingConcept]     = useState(false);
   const [uploadingConcepts, setUploadingConcepts] = useState(false);
   const [conceptText,       setConceptText]       = useState('');
+  const [selConcepts,       setSelConcepts]       = useState<Set<string>>(new Set());
+  const [deletingConcepts,  setDeletingConcepts]  = useState(false);
 
   // ── 배움 탭 상태 ──
   const [learningRows,  setLearningRows]  = useState<LearningRow[]>([]);
@@ -516,7 +518,25 @@ export default function TeacherPage() {
       });
       if (!res.ok) throw new Error();
       setConcepts(p => p.filter(c => c.id !== id));
+      setSelConcepts(p => { const n = new Set(p); n.delete(id); return n; });
     } catch { alert('삭제에 실패했습니다.'); }
+  }
+
+  async function deleteSelectedConcepts() {
+    if (selConcepts.size === 0) return;
+    setDeletingConcepts(true);
+    try {
+      const ids = [...selConcepts];
+      const filter = ids.map(id => `id.eq.${id}`).join(',');
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/concepts?or=(${filter})`, {
+        method: 'DELETE',
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Prefer: 'return=minimal' },
+      });
+      if (!res.ok) throw new Error();
+      setConcepts(p => p.filter(c => !selConcepts.has(c.id)));
+      setSelConcepts(new Set());
+    } catch { alert('삭제에 실패했습니다.'); }
+    setDeletingConcepts(false);
   }
 
   useEffect(() => { if (authed && tab === 'questions') load(); },        [authed, tab, load]);
@@ -1540,32 +1560,58 @@ export default function TeacherPage() {
 
           {/* 목록 */}
           <div className="bg-white rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">
-                저장된 핵심 개념 <span className="text-xs font-medium text-[#9ca3af]">{concepts.length}개</span>
-              </h2>
-              <p className="text-xs text-[#9ca3af] m-0">학생 답변에 핵심어가 포함되면 자동으로 AI 평가 기준에 반영됩니다.</p>
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <div className="flex items-center gap-3">
+                <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">
+                  저장된 핵심 개념 <span className="text-xs font-medium text-[#9ca3af]">{concepts.length}개</span>
+                </h2>
+                {concepts.length > 0 && (
+                  <button
+                    onClick={() => setSelConcepts(selConcepts.size === concepts.length ? new Set() : new Set(concepts.map(c => c.id)))}
+                    className="text-xs font-semibold border-none bg-transparent cursor-pointer text-[#667eea] hover:underline">
+                    {selConcepts.size === concepts.length ? '전체 해제' : '전체 선택'}
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                {selConcepts.size > 0 && (
+                  <button onClick={deleteSelectedConcepts} disabled={deletingConcepts}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-white border-none cursor-pointer disabled:opacity-50"
+                    style={{ background: '#ef4444' }}>
+                    {deletingConcepts ? '삭제 중…' : `선택 삭제 (${selConcepts.size})`}
+                  </button>
+                )}
+                <p className="text-xs text-[#9ca3af] m-0">학생 답변에 핵심어가 포함되면 자동으로 AI 평가 기준에 반영됩니다.</p>
+              </div>
             </div>
             {loadingConcepts ? (
               <p className="text-center text-[#ccc] py-8 text-sm">불러오는 중...</p>
             ) : concepts.length === 0 ? (
               <p className="text-center text-[#ccc] py-8 text-sm">저장된 핵심 개념이 없습니다.</p>
             ) : (
-              <div className="space-y-2">
-                {concepts.map(c => (
-                  <div key={c.id} className="rounded-xl p-4 flex items-start gap-3" style={{ background: '#f8f8fc', border: '1px solid #e8e8f0' }}>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className="text-sm font-black text-[#667eea]">{c.keyword}</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {concepts.map(c => {
+                  const checked = selConcepts.has(c.id);
+                  return (
+                    <div key={c.id}
+                      onClick={() => setSelConcepts(p => { const n = new Set(p); checked ? n.delete(c.id) : n.add(c.id); return n; })}
+                      className="rounded-xl px-3 py-2.5 cursor-pointer transition-all"
+                      style={{ background: checked ? '#ede9fe' : '#f8f8fc', border: `1px solid ${checked ? '#667eea' : '#e8e8f0'}` }}>
+                      {/* 상단: 체크박스 + 핵심어 + 삭제 */}
+                      <div className="flex items-center gap-2 mb-1">
+                        <input type="checkbox" checked={checked} readOnly
+                          className="accent-[#667eea] w-3.5 h-3.5 shrink-0 cursor-pointer" />
+                        <span className="text-sm font-black text-[#667eea] shrink-0">{c.keyword}</span>
+                        <button onClick={e => { e.stopPropagation(); deleteConcept(c.id); }}
+                          className="ml-auto text-[11px] text-red-400 hover:text-red-600 border-none bg-transparent cursor-pointer font-semibold shrink-0">
+                          삭제
+                        </button>
                       </div>
-                      <p className="text-sm text-[#333] m-0 leading-relaxed">{c.key_concept}</p>
+                      {/* 개념 내용 한 줄 */}
+                      <p className="text-xs text-[#555] m-0 leading-relaxed truncate">{c.key_concept}</p>
                     </div>
-                    <button onClick={() => deleteConcept(c.id)}
-                      className="text-xs text-red-400 hover:text-red-600 border-none bg-transparent cursor-pointer font-semibold shrink-0 mt-0.5">
-                      삭제
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
