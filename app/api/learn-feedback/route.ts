@@ -17,13 +17,14 @@ async function fetchMatchedConcepts(content: string): Promise<string> {
         const matchCount = keywords.filter((k: string) => content.includes(k)).length;
         return { concept: c, matchCount };
       })
-      .filter(({ matchCount }) => matchCount > 0)
-      .sort((a, b) => b.matchCount - a.matchCount)
-      .slice(0, 3);
+      .filter(({ matchCount }) => matchCount > 0);
 
     if (!scored.length) return '';
+
+    const maxScore = Math.max(...scored.map(s => s.matchCount));
+    const top = scored.filter(s => s.matchCount === maxScore).slice(0, 3);
     return '\n[교사 제공 핵심 개념 — 이것이 정답 기준입니다. 이 내용을 기준으로 학생 답변의 정확성을 판단하세요.]\n'
-      + scored.map(({ concept: c }) => `• ${c.keyword.split(',')[0].trim()}: ${c.key_concept}`).join('\n');
+      + top.map(({ concept: c }) => `• ${c.keyword.split(',')[0].trim()}: ${c.key_concept}`).join('\n');
   } catch {
     return '';
   }
