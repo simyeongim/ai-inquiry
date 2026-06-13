@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
-const GRADE_OPTS = ['3학년', '4학년', '6학년'] as const;
-const CLASS_OPTS = ['1반', '2반', '3반', '4반', '5반', '6반'] as const;
+const CLASS_LIST = ['3학년 1반','3학년 4반','4학년 4반','6학년 1반','6학년 2반','6학년 3반','6학년 3반 과학','6학년 4반','6학년 5반','6학년 6반'] as const;
 
 const METHODS = [
   '자료 조사',
@@ -24,7 +23,6 @@ const MOCK_PERSPECTIVES = [
 ];
 
 export default function ExplorePage() {
-  const [grade,       setGrade]       = useState('');
   const [classRoom,   setClassRoom]   = useState('');
   const [name,        setName]        = useState('');
   const [question,    setQuestion]    = useState('');
@@ -68,21 +66,14 @@ export default function ExplorePage() {
           <p className="text-white/75 text-sm mt-1 m-0">탐구 과정과 결과를 나만의 말로 기록해 보세요.</p>
         </div>
 
-        {/* 학년 · 반 · 이름 */}
+        {/* 학년/반 · 이름 */}
         <Card>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>학년</Label>
-              <Select value={grade} onChange={e => setGrade(e.target.value)}>
-                <option value="">학년</option>
-                {GRADE_OPTS.map(v => <option key={v}>{v}</option>)}
-              </Select>
-            </div>
-            <div>
-              <Label>반</Label>
+              <Label>학년/반</Label>
               <Select value={classRoom} onChange={e => setClassRoom(e.target.value)}>
-                <option value="">반</option>
-                {CLASS_OPTS.map(v => <option key={v}>{v}</option>)}
+                <option value="">학년/반 선택</option>
+                {CLASS_LIST.map(v => <option key={v}>{v}</option>)}
               </Select>
             </div>
             <div>
