@@ -17,7 +17,7 @@ const MENU_AREAS = [
   },
   {
     label: "탐구토론",
-    href: null,
+    href: "/explore",
     pos: { left: "51%", top: "71%", width: "24%", height: "29%" },
   },
   {
