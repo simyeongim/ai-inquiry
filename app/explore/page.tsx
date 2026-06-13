@@ -5,23 +5,78 @@ import Link from 'next/link';
 
 const CLASS_LIST = ['3학년 1반','3학년 4반','4학년 4반','6학년 1반','6학년 2반','6학년 3반','6학년 3반 과학','6학년 4반','6학년 5반','6학년 6반'] as const;
 
-const METHODS = [
-  '자료 조사',
-  '생성형 AI 활용',
-  '친구와 토론',
-  '영상 시청',
-  '관찰·실험',
-  '사례 분석',
-  '기타',
-] as const;
+const METHODS = ['자료 조사','생성형 AI 활용','친구와 토론','영상 시청','관찰·실험','사례 분석','기타'] as const;
 
-const MOCK_PERSPECTIVES = [
-  '환경에는 어떤 영향이 있을까?',
-  '사람들의 생활은 어떻게 달라질까?',
-  '동물과 식물은 어떤 영향을 받을까?',
-  '갑자기 변화하는 경우와 천천히 변화하는 경우는 같을까?',
+// ── mock 힌트 데이터 ─────────────────────────────────────
+// 키워드 → 더 생각해볼 질문들 (AI 대체용)
+const HINT_MAP: { keywords: string[]; questions: string[] }[] = [
+  {
+    keywords: ['자전','공전','지구','태양','달','계절','낮','밤','방향'],
+    questions: [
+      '바람의 방향은 어떻게 달라질까?',
+      '기후에는 어떤 영향이 있을까?',
+      '인간의 생활은 어떻게 달라질까?',
+      '갑자기 변화하는 경우와 천천히 변화하는 경우는 같을까?',
+    ],
+  },
+  {
+    keywords: ['식물','뿌리','줄기','잎','꽃','씨앗','광합성','성장','물','영양'],
+    questions: [
+      '동물과 인간의 삶에는 어떤 영향이 있을까?',
+      '환경이 달라지면 식물은 어떻게 달라질까?',
+      '미래에는 어떤 변화가 생길까?',
+      '비슷한 원리가 적용되는 다른 사례는 없을까?',
+    ],
+  },
+  {
+    keywords: ['자연','환경','보호','생태','오염','쓰레기','탄소','멸종','숲'],
+    questions: [
+      '경제적으로는 어떤 영향이 있을까?',
+      '미래 세대는 어떤 세상을 물려받게 될까?',
+      '개인과 사회 중 누가 더 큰 책임이 있을까?',
+      '우리가 당장 실천할 수 있는 일은 무엇일까?',
+    ],
+  },
+  {
+    keywords: ['동물','곤충','물고기','포유류','먹이','서식지','적응','진화'],
+    questions: [
+      '환경이 달라지면 어떻게 적응할까?',
+      '인간의 활동과는 어떤 관계가 있을까?',
+      '먹이사슬에는 어떤 변화가 생길까?',
+      '비슷한 상황에 처한 다른 동물은 없을까?',
+    ],
+  },
+  {
+    keywords: ['물','강','바다','해양','수자원','홍수','가뭄','강수','기온'],
+    questions: [
+      '사람들의 생활에는 어떤 영향이 있을까?',
+      '농업과 식량에는 어떤 변화가 생길까?',
+      '다른 나라나 지역에서는 어떨까?',
+      '시간이 지날수록 문제는 커질까, 작아질까?',
+    ],
+  },
 ];
 
+const DEFAULT_QUESTIONS = [
+  '다른 관점에서 보면 어떻게 달라질까?',
+  '시간이 지나면 어떤 변화가 생길까?',
+  '가장 큰 영향을 받는 대상은 누구(무엇)일까?',
+  '찬성하는 입장과 반대하는 입장은 어떻게 다를까?',
+];
+
+function getHints(text: string): string[] {
+  for (const { keywords, questions } of HINT_MAP) {
+    if (keywords.some(k => text.includes(k))) return questions;
+  }
+  return DEFAULT_QUESTIONS;
+}
+
+function getSnippet(text: string): string {
+  const trimmed = text.trim();
+  return trimmed.length > 22 ? trimmed.slice(0, 22) + '…' : trimmed;
+}
+
+// ── 메인 컴포넌트 ─────────────────────────────────────────
 export default function ExplorePage() {
   const [classRoom,   setClassRoom]   = useState('');
   const [name,        setName]        = useState('');
@@ -30,15 +85,13 @@ export default function ExplorePage() {
   const [process,     setProcess]     = useState('');
   const [explanation, setExplanation] = useState('');
   const [insight,     setInsight]     = useState('');
-  const [showExpand,  setShowExpand]  = useState(false);
+
+  const showHelper = explanation.trim().length >= 20;
+  const hints      = getHints(explanation);
+  const snippet    = getSnippet(explanation);
 
   function toggleMethod(m: string) {
     setMethods(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
-  }
-
-  function handleExpand() {
-    setShowExpand(true);
-    setTimeout(() => document.getElementById('expand-card')?.scrollIntoView({ behavior: 'smooth' }), 100);
   }
 
   function handleSubmit() {
@@ -140,6 +193,37 @@ export default function ExplorePage() {
             style={{ minHeight: '220px' }} />
         </Card>
 
+        {/* 💡 탐구 도우미 — 20자 이상 입력 시 자동 표시 */}
+        {showHelper && (
+          <div className="mb-1.5 rounded-2xl px-4 py-3.5 transition-all"
+            style={{ background: '#fffbeb', border: '1.5px solid #fde68a' }}>
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="text-base">💡</span>
+              <span className="text-sm font-black text-[#92400e]">탐구 도우미</span>
+            </div>
+            <p className="text-xs text-[#a37020] mb-3 leading-relaxed">
+              탐구 내용을 더 깊고 풍부하게 설명할 수 있도록 생각거리를 제공합니다.
+            </p>
+
+            {/* 현재 작성 내용 스니펫 */}
+            <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-xl" style={{ background: '#fef3c7' }}>
+              <span className="text-[11px] font-bold text-[#92400e] shrink-0">내가 다룬 내용</span>
+              <span className="text-[11px] text-[#b45309]">✓ {snippet}</span>
+            </div>
+
+            {/* 생각거리 질문 */}
+            <p className="text-[11px] font-bold text-[#92400e] mb-2">더 생각해 볼 수 있는 점</p>
+            <div className="space-y-1.5">
+              {hints.map((q, i) => (
+                <div key={i} className="flex items-start gap-2 px-3 py-2 rounded-xl" style={{ background: 'white' }}>
+                  <span className="text-[#f59e0b] font-black text-xs shrink-0 mt-0.5">•</span>
+                  <p className="text-sm text-[#78350f] m-0 leading-relaxed">{q}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* 새롭게 이해한 점 */}
         <Card>
           <Label>새롭게 이해한 점</Label>
@@ -152,46 +236,19 @@ export default function ExplorePage() {
             style={{ minHeight: '110px' }} />
         </Card>
 
-        {/* 버튼 */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <button type="button" onClick={handleExpand}
-            className="w-full font-bold text-[0.95rem] py-3 rounded-xl border-2 cursor-pointer transition-all hover:opacity-90"
-            style={{ background: '#f3f0ff', color: '#667eea', borderColor: '#667eea' }}>
-            🔭 탐구 넓히기
-          </button>
-          <button type="button" onClick={handleSubmit}
-            className="w-full text-white font-bold text-[0.95rem] py-3 rounded-xl border-none cursor-pointer transition-all hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0"
-            style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)' }}>
-            제출하기 →
-          </button>
-        </div>
-
-        {/* 탐구 넓히기 mock 카드 */}
-        {showExpand && (
-          <div id="expand-card"
-            className="rounded-2xl p-5 mb-4 shadow-[0_4px_24px_rgba(80,60,160,0.13)]"
-            style={{ background: 'white', border: '1.5px solid #e8e4ff' }}>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-xl">🔭</span>
-              <h3 className="font-black text-[#4a3a8a] text-[0.95rem] m-0">더 생각해 볼 수 있는 관점</h3>
-            </div>
-            <div className="space-y-2">
-              {MOCK_PERSPECTIVES.map((p, i) => (
-                <div key={i} className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl"
-                  style={{ background: '#f3f0ff' }}>
-                  <span className="font-black text-sm shrink-0 mt-0.5" style={{ color: '#667eea' }}>Q.</span>
-                  <p className="text-sm font-semibold m-0 leading-relaxed" style={{ color: '#4a3a8a' }}>{p}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* 제출 버튼 */}
+        <button type="button" onClick={handleSubmit}
+          className="w-full text-white font-bold text-[0.95rem] py-3.5 rounded-xl border-none cursor-pointer transition-all hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 mb-4"
+          style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)' }}>
+          제출하기 →
+        </button>
 
       </div>
     </div>
   );
 }
 
+// ── 공통 UI 서브컴포넌트 ─────────────────────────────────
 function Card({ children }: { children: React.ReactNode }) {
   return <div className="bg-white rounded-2xl p-3 mb-1.5 shadow-[0_4px_20px_rgba(80,60,160,0.10)]">{children}</div>;
 }
