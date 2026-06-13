@@ -19,6 +19,12 @@ const PROJECT_SHORT: Record<string, { emoji: string; short: string }> = {
   '우리는 어떻게 자신을 조직하는가':  { emoji: '🤝', short: '우리' },
 };
 
+const DEPTH_INFO: Record<string, { label: string; color: string; bg: string }> = {
+  '🟡': { label: '사실 나열형', color: '#f57f17', bg: '#fff8e1' },
+  '🔵': { label: '연결 설명형', color: '#1565c0', bg: '#e3f2fd' },
+  '🟢': { label: '관계 탐구형', color: '#2e7d32', bg: '#e8f5e9' },
+};
+
 const LV: Record<Level, { emoji: string; short: string; label: string; color: string; bg: string }> = {
   1: { emoji:'🟢', short:'1단계', label:'단순 사실 확인', color:'#2e7d32', bg:'#e8f5e9' },
   2: { emoji:'🔵', short:'2단계', label:'개념 이해',      color:'#1565c0', bg:'#e3f2fd' },
@@ -439,8 +445,7 @@ export default function TeacherPage() {
   const [selExplore,            setSelExplore]            = useState<Set<string>>(new Set());
   const [deletingExplore,       setDeletingExplore]       = useState(false);
   const [showDeleteExplore,     setShowDeleteExplore]     = useState(false);
-  const [expandedBestId,        setExpandedBestId]        = useState<string | null>(null);
-  const [showExploreList,       setShowExploreList]       = useState(false);
+  const [expandedDepthGroups,   setExpandedDepthGroups]   = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     setLoading(true); setFetchErr('');
@@ -974,6 +979,56 @@ export default function TeacherPage() {
       .then(data => { if (data) setRefinedLabels(data); })
       .catch(() => {});
   }, [stats]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function renderExploreDetail(r: ExplorationRow, info: { label: string; color: string; bg: string }) {
+    return (
+      <div>
+        {(r.question || r.methods) && (
+          <div className="px-3 py-2 flex gap-3 items-start border-b border-[#f4f4fc]" style={{background:'#fafafa'}}>
+            {r.question && (
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">탐구 질문</div>
+                <p className="text-xs text-[#4a4a6a] m-0 leading-snug">{r.question}</p>
+              </div>
+            )}
+            {r.methods && (
+              <div className="shrink-0 max-w-[40%]">
+                <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5 text-right">방법</div>
+                <div className="flex flex-wrap gap-1 justify-end">
+                  {r.methods.split(',').map((m: string, i: number) => (
+                    <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
+                      style={{background:'#ede9fe', color:'#5c35cc'}}>{m.trim()}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        {r.explanation && (
+          <div className="px-3 py-2 border-b border-[#f4f4fc]" style={{background: info.bg + '55'}}>
+            <div className="text-[10px] font-black mb-1" style={{color: info.color}}>2. 알게 된 점</div>
+            <p className="text-xs text-[#374151] m-0 leading-relaxed whitespace-pre-wrap">{r.explanation}</p>
+          </div>
+        )}
+        {(r.process || r.insight) && (
+          <div className={`px-3 py-2 grid gap-3 ${r.process && r.insight ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            {r.process && (
+              <div>
+                <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">1. 탐구 과정</div>
+                <p className="text-xs text-[#555] m-0 leading-snug whitespace-pre-wrap">{r.process}</p>
+              </div>
+            )}
+            {r.insight && (
+              <div>
+                <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">3. 생각 변화</div>
+                <p className="text-xs text-[#555] m-0 leading-snug whitespace-pre-wrap">{r.insight}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   if (!authed) return <PinScreen onOk={() => setAuthed(true)} />;
 
@@ -2020,60 +2075,8 @@ export default function TeacherPage() {
           </div>
 
           {/* ─ 탐구 깊이 분석 ─ */}
-          {(() => {
-            const DEPTH_INFO: Record<string, {label: string; color: string; bg: string}> = {
-              '🟡': { label: '사실 나열형', color: '#f57f17', bg: '#fff8e1' },
-              '🔵': { label: '연결 설명형', color: '#1565c0', bg: '#e3f2fd' },
-              '🟢': { label: '관계 탐구형', color: '#2e7d32', bg: '#e8f5e9' },
-            };
+          {(()  => {
             const classified = filteredExplorations.filter(r => exploreDepthMap[r.id]);
-            const renderDetail = (r: ExplorationRow, info: {label:string;color:string;bg:string}) => (
-              <>
-                {(r.question || r.methods) && (
-                  <div className="px-3 py-2 flex gap-3 items-start border-b border-[#f4f4fc]" style={{background:'#fafafa'}}>
-                    {r.question && (
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">탐구 질문</div>
-                        <p className="text-xs text-[#4a4a6a] m-0 leading-snug">{r.question}</p>
-                      </div>
-                    )}
-                    {r.methods && (
-                      <div className="shrink-0 max-w-[40%]">
-                        <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5 text-right">방법</div>
-                        <div className="flex flex-wrap gap-1 justify-end">
-                          {r.methods.split(',').map((m: string, i: number) => (
-                            <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
-                              style={{background:'#ede9fe', color:'#5c35cc'}}>{m.trim()}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {r.explanation && (
-                  <div className="px-3 py-2 border-b border-[#f4f4fc]" style={{background: info.bg + '88'}}>
-                    <div className="text-[10px] font-black mb-1" style={{color: info.color}}>2. 알게 된 점</div>
-                    <p className="text-xs text-[#374151] m-0 leading-relaxed whitespace-pre-wrap">{r.explanation}</p>
-                  </div>
-                )}
-                {(r.process || r.insight) && (
-                  <div className={`px-3 py-2 grid gap-3 ${r.process && r.insight ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                    {r.process && (
-                      <div>
-                        <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">1. 탐구 과정</div>
-                        <p className="text-xs text-[#555] m-0 leading-snug whitespace-pre-wrap">{r.process}</p>
-                      </div>
-                    )}
-                    {r.insight && (
-                      <div>
-                        <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">3. 생각 변화</div>
-                        <p className="text-xs text-[#555] m-0 leading-snug whitespace-pre-wrap">{r.insight}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </>
-            );
             return (
               <div className="bg-white rounded-2xl px-5 py-4 shadow-sm">
                 <div className="flex items-center justify-between mb-2">
@@ -2091,7 +2094,6 @@ export default function TeacherPage() {
                   </div>
                 </div>
 
-                {/* 분류 기준 설명 */}
                 {showExploreCriteria && (
                   <div className="grid grid-cols-3 gap-2 mb-3">
                     {[
@@ -2120,256 +2122,150 @@ export default function TeacherPage() {
                     AI 분석하기를 눌러 학생의 탐구 깊이를 분류하세요.
                   </p>
                 ) : (
-                  <>
-                    {/* 분포 요약 */}
-                    <div className="grid grid-cols-3 gap-3 mb-4">
-                      {(['🟡','🔵','🟢'] as const).map(lv => {
-                        const cnt = classified.filter(r => exploreDepthMap[r.id]?.level === lv).length;
-                        const info = DEPTH_INFO[lv];
-                        return (
-                          <div key={lv} className="rounded-xl py-3 px-3 text-center"
-                            style={{background: info.bg}}>
-                            <div className="text-sm font-black mb-1" style={{color: info.color}}>{lv} {info.label}</div>
-                            <div className="text-2xl font-black" style={{color: info.color}}>
-                              {cnt}<span className="text-xs font-normal ml-0.5" style={{color:'#9ca3af'}}>명</span>
-                            </div>
-                            <div className="text-xs mt-0.5" style={{color:'#9ca3af'}}>
-                              {Math.round(cnt / classified.length * 100)}%
-                            </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    {(['🟡','🔵','🟢'] as const).map(lv => {
+                      const cnt = classified.filter(r => exploreDepthMap[r.id]?.level === lv).length;
+                      const info = DEPTH_INFO[lv];
+                      return (
+                        <div key={lv} className="rounded-xl py-3 px-3 text-center" style={{background: info.bg}}>
+                          <div className="text-sm font-black mb-1" style={{color: info.color}}>{lv} {info.label}</div>
+                          <div className="text-2xl font-black" style={{color: info.color}}>
+                            {cnt}<span className="text-xs font-normal ml-0.5" style={{color:'#9ca3af'}}>명</span>
                           </div>
-                        );
-                      })}
-                    </div>
-                    {/* 학생 목록 — 3열 그리드 */}
-                    <div className="grid grid-cols-3 gap-3">
-                      {(['🟡','🔵','🟢'] as const).map(lv => {
-                        const info = DEPTH_INFO[lv];
-                        const students = filteredExplorations.filter(r => exploreDepthMap[r.id]?.level === lv);
-                        return (
-                          <div key={lv}>
-                            <div className="text-xs font-black mb-2" style={{color: info.color}}>
-                              {lv} {info.label} ({students.length}명)
-                            </div>
-                            <div className="space-y-1.5">
-                              {students.map(r => {
-                                const isExpanded = expandedExploreId === r.id;
-                                const preview = r.explanation?.trim().slice(0, 72);
-                                return (
-                                  <div key={r.id} className="rounded-xl overflow-hidden"
-                                    style={{
-                                      background: info.bg,
-                                      border: `1px solid ${info.color}25`,
-                                      borderLeft: `3px solid ${info.color}`,
-                                    }}>
-                                    <button
-                                      onClick={() => setExpandedExploreId(isExpanded ? null : r.id)}
-                                      className="w-full px-2.5 pt-2 pb-1.5 cursor-pointer bg-transparent border-none text-left hover:opacity-75 transition-opacity">
-                                      <div className="flex items-center justify-between gap-1 mb-0.5">
-                                        <span className="text-xs font-bold text-[#222]">{r.class_room} {r.name}</span>
-                                        <span className="text-[9px] text-[#bbb] shrink-0">{isExpanded ? '▲' : '▼'}</span>
-                                      </div>
-                                      {preview && !isExpanded && (
-                                        <p className="text-[10px] m-0 leading-snug" style={{color: info.color + 'cc'}}>
-                                          {preview}{(r.explanation?.trim().length ?? 0) > 72 ? '…' : ''}
-                                        </p>
-                                      )}
-                                    </button>
-                                    {isExpanded && (
-                                      <div className="border-t" style={{borderColor: info.color + '25', background:'white'}}>
-                                        {renderExploreDetail(r, info)}
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
+                          <div className="text-xs mt-0.5" style={{color:'#9ca3af'}}>
+                            {Math.round(cnt / classified.length * 100)}%
                           </div>
-                        );
-                      })}
-                    </div>
-                  </>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             );
-            // renderExploreDetail 헬퍼
-            function renderExploreDetail(r: ExplorationRow, info: {label:string;color:string;bg:string}) {
-              return (
-                <div>
-                  {(r.question || r.methods) && (
-                    <div className="px-3 py-2 flex gap-3 items-start border-b border-[#f4f4fc]" style={{background:'#fafafa'}}>
-                      {r.question && (
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">탐구 질문</div>
-                          <p className="text-xs text-[#4a4a6a] m-0 leading-snug">{r.question}</p>
-                        </div>
-                      )}
-                      {r.methods && (
-                        <div className="shrink-0 max-w-[40%]">
-                          <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5 text-right">방법</div>
-                          <div className="flex flex-wrap gap-1 justify-end">
-                            {r.methods.split(',').map((m: string, i: number) => (
-                              <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
-                                style={{background:'#ede9fe', color:'#5c35cc'}}>{m.trim()}</span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {r.explanation && (
-                    <div className="px-3 py-2 border-b border-[#f4f4fc]" style={{background: info.bg + '55'}}>
-                      <div className="text-[10px] font-black mb-1" style={{color: info.color}}>2. 알게 된 점</div>
-                      <p className="text-xs text-[#374151] m-0 leading-relaxed whitespace-pre-wrap">{r.explanation}</p>
-                    </div>
-                  )}
-                  {(r.process || r.insight) && (
-                    <div className={`px-3 py-2 grid gap-3 ${r.process && r.insight ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                      {r.process && (
-                        <div>
-                          <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">1. 탐구 과정</div>
-                          <p className="text-xs text-[#555] m-0 leading-snug whitespace-pre-wrap">{r.process}</p>
-                        </div>
-                      )}
-                      {r.insight && (
-                        <div>
-                          <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">3. 생각 변화</div>
-                          <p className="text-xs text-[#555] m-0 leading-snug whitespace-pre-wrap">{r.insight}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            }
           })()}
 
-          {/* ─ 우수 탐구 사례 ─ */}
-          {(() => {
-            const best = filteredExplorations
-              .filter(r => exploreDepthMap[r.id]?.level === '🟢')
-              .slice(0, 8);
-            if (!best.length) return null;
-            return (
-              <div className="bg-white rounded-2xl px-5 py-4 shadow-sm">
-                <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-3">🟢 우수 탐구 사례</h2>
-                <div className="space-y-2">
-                  {best.map(r => {
-                    const isOpen = expandedBestId === r.id;
-                    const depth = exploreDepthMap[r.id];
-                    return (
-                      <div key={r.id} className="rounded-xl border-2 overflow-hidden" style={{borderColor:'#bbf7d0'}}>
-                        {/* 헤더 */}
-                        <button
-                          onClick={() => setExpandedBestId(isOpen ? null : r.id)}
-                          className="w-full flex items-center gap-2 px-4 py-2.5 cursor-pointer bg-transparent border-none text-left hover:opacity-80 transition-opacity"
-                          style={{background:'#f0fdf4'}}>
-                          <span className="text-xs font-bold text-[#16a34a] shrink-0">{r.class_room}</span>
-                          <span className="text-sm font-black text-[#166534] shrink-0">{r.name}</span>
-                          {depth?.comment && <span className="text-xs text-[#6ee7b7] flex-1 truncate">{depth.comment}</span>}
-                          {r.project && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0"
-                              style={{background:'#dcfce7', color:'#15803d'}}>
-                              {PROJECT_SHORT[r.project]?.short ?? r.project}
-                            </span>
-                          )}
-                          <span className="text-[10px] text-[#a7f3d0] shrink-0 ml-1">{isOpen ? '▲' : '▼'}</span>
-                        </button>
-                        {/* 펼친 내용 */}
-                        {isOpen && (
-                          <div className="border-t border-[#bbf7d0]">
-                            {r.question && (
-                              <div className="px-4 py-2.5 border-b border-[#f0fdf4]" style={{background:'#fafafa'}}>
-                                <div className="text-[10px] font-black text-[#9ca3af] mb-0.5">탐구 질문</div>
-                                <p className="text-sm text-[#374151] m-0 leading-snug">{r.question}</p>
-                              </div>
-                            )}
-                            {r.methods && (
-                              <div className="px-4 py-2 border-b border-[#f0fdf4]" style={{background:'#fafafa'}}>
-                                <div className="text-[10px] font-black text-[#9ca3af] mb-1">탐구 방법</div>
-                                <div className="flex flex-wrap gap-1">
-                                  {r.methods.split(',').map((m: string, i: number) => (
-                                    <span key={i} className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
-                                      style={{background:'#dcfce7', color:'#15803d'}}>{m.trim()}</span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            {r.process && (
-                              <div className="px-4 py-2.5 border-b border-[#f0fdf4]">
-                                <div className="text-[10px] font-black text-[#9ca3af] mb-0.5">1. 탐구 과정</div>
-                                <p className="text-sm text-[#555] m-0 leading-relaxed whitespace-pre-wrap">{r.process}</p>
-                              </div>
-                            )}
-                            {r.explanation && (
-                              <div className="px-4 py-2.5 border-b border-[#f0fdf4]" style={{background:'#f0fdf4'}}>
-                                <div className="text-[10px] font-black text-[#16a34a] mb-0.5">2. 알게 된 점</div>
-                                <p className="text-sm text-[#166534] m-0 leading-relaxed whitespace-pre-wrap">{r.explanation}</p>
-                              </div>
-                            )}
-                            {r.insight && (
-                              <div className="px-4 py-2.5">
-                                <div className="text-[10px] font-black text-[#9ca3af] mb-0.5">3. 생각 변화</div>
-                                <p className="text-sm text-[#555] m-0 leading-relaxed whitespace-pre-wrap">{r.insight}</p>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* ─ 응답 관리 (하단, 기본 접힘) ─ */}
+          {/* ─ 학생 응답 목록 ─ */}
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            <button
-              onClick={() => setShowExploreList(p => !p)}
-              className="w-full flex items-center justify-between px-5 py-3 cursor-pointer bg-transparent border-none text-left hover:bg-[#f8f8fc] transition-colors">
-              <span className="text-sm font-semibold text-[#888]">
-                응답 관리
-                <span className="ml-1.5 text-xs font-normal text-[#bbb]">({filteredExplorations.length}건)</span>
-              </span>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-[#f4f4fc]">
+              <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">학생 응답 목록</h2>
               <div className="flex items-center gap-2">
-                {selExplore.size > 0 && (
-                  <button
-                    onClick={e => { e.stopPropagation(); setShowDeleteExplore(true); }}
-                    className="text-xs px-2.5 py-1 rounded-full text-white font-semibold border-none cursor-pointer"
-                    style={{background:'#dc2626'}}>
-                    삭제 ({selExplore.size})
-                  </button>
-                )}
-                <span className="text-xs text-[#ccc]">{showExploreList ? '▲' : '▼'}</span>
+                <button
+                  onClick={() => {
+                    const allSel = filteredExplorations.length > 0 && filteredExplorations.every(r => selExplore.has(r.id));
+                    setSelExplore(allSel ? new Set() : new Set(filteredExplorations.map(r => r.id)));
+                  }}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-full border-2 cursor-pointer transition-all"
+                  style={filteredExplorations.length > 0 && filteredExplorations.every(r => selExplore.has(r.id))
+                    ? { background: '#e8eaf6', color: '#667eea', borderColor: '#667eea' }
+                    : { background: 'white', color: '#777', borderColor: '#e0e0e0' }}>
+                  {filteredExplorations.length > 0 && filteredExplorations.every(r => selExplore.has(r.id)) ? '전체 해제' : '전체 선택'}
+                </button>
+                <button
+                  onClick={() => { if (selExplore.size > 0) setShowDeleteExplore(true); }}
+                  disabled={deletingExplore || selExplore.size === 0}
+                  className="px-3 py-1.5 rounded-full text-xs font-bold text-white border-none cursor-pointer disabled:opacity-40 transition-all"
+                  style={{ background: '#ef4444' }}>
+                  {deletingExplore ? '삭제 중…' : selExplore.size > 0 ? `삭제 (${selExplore.size})` : '삭제'}
+                </button>
               </div>
-            </button>
+            </div>
 
-            {showExploreList && (
-              <div className="border-t border-[#f4f4fc]">
-                {/* 전체 선택 행 */}
-                <label className="flex items-center gap-3 px-5 py-2.5 border-b border-[#f0f0f8] cursor-pointer hover:bg-[#f8f8fc]">
-                  <input type="checkbox"
-                    checked={filteredExplorations.length > 0 && filteredExplorations.every(r => selExplore.has(r.id))}
-                    onChange={() => {
-                      const allSelected = filteredExplorations.every(r => selExplore.has(r.id));
-                      setSelExplore(allSelected ? new Set() : new Set(filteredExplorations.map(r => r.id)));
-                    }}
-                    className="accent-[#667eea] w-3.5 h-3.5 shrink-0" />
-                  <span className="text-xs font-semibold text-[#999]">전체 선택</span>
-                </label>
-                {/* 응답 행 */}
-                {filteredExplorations.map(r => (
-                  <label key={r.id} className="flex items-center gap-3 px-5 py-2 border-b border-[#f9f9fc] cursor-pointer hover:bg-[#f8f8fc] transition-colors last:border-none">
-                    <input type="checkbox" checked={selExplore.has(r.id)}
-                      onChange={() => setSelExplore(p => { const n = new Set(p); n.has(r.id) ? n.delete(r.id) : n.add(r.id); return n; })}
-                      className="accent-[#667eea] w-3.5 h-3.5 shrink-0" />
-                    <span className="text-sm font-semibold text-[#333] shrink-0">{r.name}</span>
-                    <span className="text-xs text-[#aaa] shrink-0">{r.class_room}</span>
-                    <span className="text-[10px] text-[#ccc] ml-auto shrink-0">{r.created_at?.slice(0,10)}</span>
-                  </label>
-                ))}
-              </div>
-            )}
+            <div>
+              {[
+                { lv: '🟡', label: DEPTH_INFO['🟡'].label, color: DEPTH_INFO['🟡'].color },
+                { lv: '🔵', label: DEPTH_INFO['🔵'].label, color: DEPTH_INFO['🔵'].color },
+                { lv: '🟢', label: DEPTH_INFO['🟢'].label, color: DEPTH_INFO['🟢'].color },
+                { lv: '미분류', label: '미분류', color: '#9ca3af' },
+              ].map(({ lv, label, color }) => {
+                const students = lv === '미분류'
+                  ? filteredExplorations.filter(r => !exploreDepthMap[r.id])
+                  : filteredExplorations.filter(r => exploreDepthMap[r.id]?.level === lv);
+                if (!students.length) return null;
+                const groupIds = students.map(r => r.id);
+                const selectedCount = groupIds.filter(id => selExplore.has(id)).length;
+                const allGroupSelected = groupIds.length > 0 && selectedCount === groupIds.length;
+                const isOpen = expandedDepthGroups.has(lv);
+                return (
+                  <div key={lv} className="border-b border-[#f4f4fc] last:border-none">
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-[#f8f8fc]">
+                      <button
+                        onClick={() => setExpandedDepthGroups(prev => {
+                          const next = new Set(prev); isOpen ? next.delete(lv) : next.add(lv); return next;
+                        })}
+                        className="flex items-center gap-2 cursor-pointer border-none bg-transparent p-0 flex-1 min-w-0 text-left">
+                        <span className="text-[10px] text-[#bbb]"
+                          style={{ display: 'inline-block', transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}>▶</span>
+                        <span className="text-xs font-black text-white px-2.5 py-0.5 rounded-full shrink-0"
+                          style={{ background: color }}>
+                          {lv === '미분류' ? '미분류' : `${lv} ${label}`}
+                        </span>
+                        <span className="text-xs text-[#bbb]">{students.length}명</span>
+                        {selectedCount > 0 && (
+                          <span className="text-xs font-semibold" style={{ color }}>({selectedCount}명 선택됨)</span>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => {
+                          const next = new Set(selExplore);
+                          if (allGroupSelected) groupIds.forEach(id => next.delete(id));
+                          else groupIds.forEach(id => next.add(id));
+                          setSelExplore(next);
+                        }}
+                        className="text-xs font-semibold px-2.5 py-1 rounded-full border cursor-pointer transition-all shrink-0"
+                        style={allGroupSelected
+                          ? { background: '#e8eaf6', color, borderColor: color }
+                          : { background: 'white', color: '#999', borderColor: '#e0e0e0' }}>
+                        {allGroupSelected ? '해제' : '전체 선택'}
+                      </button>
+                    </div>
+
+                    {isOpen && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-3">
+                        {students.map(r => {
+                          const isChecked = selExplore.has(r.id);
+                          const isExpanded = expandedExploreId === r.id;
+                          const depth = exploreDepthMap[r.id];
+                          const cardInfo = depth ? (DEPTH_INFO[depth.level] ?? DEPTH_INFO['🟡']) : DEPTH_INFO['🟡'];
+                          return (
+                            <div key={r.id} className="rounded-xl overflow-hidden transition-all"
+                              style={{
+                                background: isChecked ? '#ede9fe' : '#f8f8fc',
+                                border: `1px solid ${isChecked ? '#667eea' : '#e8e8f0'}`,
+                              }}>
+                              <div className="flex items-center gap-2 px-3 py-2.5">
+                                <input type="checkbox" checked={isChecked}
+                                  onChange={() => setSelExplore(p => { const n = new Set(p); n.has(r.id) ? n.delete(r.id) : n.add(r.id); return n; })}
+                                  className="accent-[#667eea] w-3.5 h-3.5 shrink-0 cursor-pointer" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-xs font-bold text-[#222]">{r.name}</span>
+                                    <span className="text-[10px] text-[#aaa]">{r.class_room}</span>
+                                    {depth?.comment && <span className="text-[10px] text-[#bbb] truncate max-w-[120px]">{depth.comment}</span>}
+                                  </div>
+                                  {r.project && (
+                                    <span className="text-[9px] text-[#ccc]">{PROJECT_SHORT[r.project]?.short ?? r.project}</span>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={() => setExpandedExploreId(isExpanded ? null : r.id)}
+                                  className="text-[10px] text-[#bbb] border-none bg-transparent cursor-pointer shrink-0 hover:text-[#667eea] transition-colors px-1">
+                                  {isExpanded ? '▲' : '▼'}
+                                </button>
+                              </div>
+                              {isExpanded && (
+                                <div className="border-t border-[#e8e8f0]" style={{background:'white'}}>
+                                  {renderExploreDetail(r, cardInfo)}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           </>
