@@ -2218,8 +2218,8 @@ export default function TeacherPage() {
                     return (
                       <div key={r.id} className="rounded-xl overflow-hidden transition-all"
                         style={{
-                          background: isChecked ? '#ede9fe' : cardInfo.bg,
-                          border: `1.5px solid ${isChecked ? '#667eea' : cardInfo.color + '50'}`,
+                          background: isChecked ? '#ede9fe' : '#f8f8fc',
+                          border: `1px solid ${isChecked ? '#667eea' : '#e8e8f0'}`,
                         }}>
                         {/* 카드 상단 행: checkbox + 뱃지들 + 화살표 */}
                         <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1">
@@ -2228,7 +2228,7 @@ export default function TeacherPage() {
                             className="w-3.5 h-3.5 shrink-0 cursor-pointer accent-[#667eea]" />
                           {proj && (
                             <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold shrink-0 whitespace-nowrap"
-                              style={{ background: cardInfo.color + '22', color: cardInfo.color }}>
+                              style={{ background: '#ede9fe', color: '#667eea' }}>
                               {proj.emoji} {proj.short}
                             </span>
                           )}
@@ -2243,39 +2243,33 @@ export default function TeacherPage() {
                             onClick={() => setCollapsedExploreIds(p => {
                               const n = new Set(p); n.has(r.id) ? n.delete(r.id) : n.add(r.id); return n;
                             })}
-                            className="text-sm border-none bg-transparent cursor-pointer shrink-0 px-0.5 hover:opacity-60 transition-opacity"
-                            style={{ color: cardInfo.color }}>
+                            className="text-sm border-none bg-transparent cursor-pointer shrink-0 px-0.5 hover:opacity-50 transition-opacity text-[#bbb]">
                             {isCollapsed ? '▼' : '▲'}
                           </button>
                         </div>
 
-                        {/* 항상 표시 내용 (접힌 경우 숨김) */}
+                        {/* 펼침 내용 */}
                         {!isCollapsed && (
                           <div className="px-3 pb-3 space-y-1.5">
-                            {/* 학년반 + 이름 */}
                             <div className="flex items-baseline gap-1.5">
                               <span className="text-[11px] text-[#888]">{r.class_room}</span>
                               <span className="text-sm font-black text-[#1a1a2e]">{r.name}</span>
                             </div>
-                            {/* 탐구 질문 */}
                             {r.question && (
                               <p className="text-sm text-[#5a5a8a] m-0 leading-snug">{r.question}</p>
                             )}
-                            {/* 1. 탐구 과정 */}
                             {r.process && (
                               <div>
                                 <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">1. 탐구 과정</div>
                                 <p className="text-xs text-[#bbb] m-0 leading-snug whitespace-pre-wrap">{r.process}</p>
                               </div>
                             )}
-                            {/* 2. 알게 된 점 */}
                             {r.explanation && (
                               <div>
-                                <div className="text-[10px] font-black mb-0.5" style={{color: cardInfo.color}}>2. 알게 된 점</div>
+                                <div className="text-[10px] font-black text-[#667eea] mb-0.5">2. 알게 된 점</div>
                                 <p className="text-sm text-[#1a1a2e] m-0 leading-relaxed whitespace-pre-wrap font-medium">{r.explanation}</p>
                               </div>
                             )}
-                            {/* 3. 생각 변화 */}
                             {r.insight && (
                               <div>
                                 <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">3. 생각 변화</div>
@@ -2285,7 +2279,7 @@ export default function TeacherPage() {
                           </div>
                         )}
 
-                        {/* 접힌 상태: 이름만 표시 */}
+                        {/* 접힘 상태: 이름만 */}
                         {isCollapsed && (
                           <div className="px-3 pb-2 flex items-baseline gap-1.5">
                             <span className="text-[11px] text-[#888]">{r.class_room}</span>
