@@ -37,9 +37,11 @@ export default function ExplorePage() {
   const [hints,        setHints]        = useState<string[]>([]);
   const [loadingHints, setLoadingHints] = useState(false);
   const [submitting,   setSubmitting]   = useState(false);
+  const [forceHelper,  setForceHelper]  = useState(false);
 
-  const trimmed    = explanation.trim();
-  const showHelper = trimmed.length >= 100 && countSentences(trimmed) >= 3;
+  const trimmed        = explanation.trim();
+  const meetsCondition = trimmed.length >= 100 && countSentences(trimmed) >= 3;
+  const showHelper     = meetsCondition || (forceHelper && trimmed.length > 0);
 
   useEffect(() => {
     if (!showHelper) { setStrength(''); setHints([]); setLoadingHints(false); return; }
@@ -214,9 +216,16 @@ export default function ExplorePage() {
             className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
             style={{ minHeight: '220px' }} />
           {!showHelper && trimmed.length > 0 && (
-            <p className="text-right text-[11px] mt-1 text-[#ccc]">
-              {trimmed.length}/100자 · {countSentences(trimmed)}/3문장
-            </p>
+            <div className="mt-2 flex items-center gap-2 justify-between">
+              <p className="text-[11px] text-[#bbb] m-0 leading-relaxed">
+                조금 더 자세히 쓰면 깊이 있는 탐구 도움을 받을 수 있어요.
+              </p>
+              <button type="button" onClick={() => setForceHelper(true)}
+                className="text-[11px] text-[#667eea] border border-[#667eea]/30 bg-[#667eea]/5 px-2.5 py-1 rounded-full cursor-pointer hover:bg-[#667eea]/10 transition-colors shrink-0 whitespace-nowrap"
+                style={{ fontWeight: 500 }}>
+                그래도 도움받기
+              </button>
+            </div>
           )}
         </Accordion>
 
@@ -225,7 +234,7 @@ export default function ExplorePage() {
           <div className="mb-1.5 rounded-2xl overflow-hidden" style={{ border: '1.5px solid #fde68a' }}>
             <div className="px-4 py-3" style={{ background: '#fffbeb' }}>
               <div className="flex items-center gap-1.5">
-                <span className="text-base">🔍</span>
+                <span className="text-base">💡</span>
                 <span className="text-sm font-black text-[#92400e]">깊이 있는 탐구</span>
               </div>
             </div>
