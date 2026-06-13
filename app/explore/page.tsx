@@ -107,29 +107,19 @@ export default function ExplorePage() {
           </Select>
         </Card>
 
-        {/* 탐구 질문(좌) + 탐구 방법 토글(우) */}
+        {/* 탐구 질문 + 탐구 방법 */}
         <Card>
-          <div className="grid grid-cols-2 gap-3 items-start">
-
-            {/* 좌: 탐구 질문 */}
-            <div className="flex flex-col">
-              <Label>탐구 질문</Label>
-              <textarea value={question} onChange={e => setQuestion(e.target.value)}
-                placeholder="지구의 자전 방향이 바뀌면 어떤 일이 일어날까?"
-                className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-none leading-relaxed transition-colors"
-                style={{ minHeight: '90px' }} />
-            </div>
-
-            {/* 우: 탐구 방법 드롭다운 */}
-            <div>
-              <Label>탐구 방법</Label>
-              <Select value={method} onChange={e => setMethod(e.target.value)}>
-                <option value="">선택해주세요</option>
-                {METHODS.map(v => <option key={v}>{v}</option>)}
-              </Select>
-            </div>
-
-          </div>
+          <Label>탐구 질문</Label>
+          <textarea value={question} onChange={e => setQuestion(e.target.value)}
+            placeholder="지구의 자전 방향이 바뀌면 어떤 일이 일어날까?"
+            className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
+            style={{ minHeight: '120px' }} />
+          <div className="border-t border-[#eeeef8] my-3" />
+          <Label>탐구 방법</Label>
+          <Select value={method} onChange={e => setMethod(e.target.value)}>
+            <option value="">선택해주세요</option>
+            {METHODS.map(v => <option key={v}>{v}</option>)}
+          </Select>
         </Card>
 
         {/* 탐구 과정에서 중요했던 내용 */}
