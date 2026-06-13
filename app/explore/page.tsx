@@ -106,8 +106,7 @@ export default function ExplorePage() {
           style={{ maxHeight: '220px', objectFit: 'cover' }} draggable={false} />
 
         {/* 학년/반 + 이름 */}
-        <Accordion id="info" title="학년/반 · 이름" done={done.info} summary={summary.info}
-          isOpen={open.has('info')} onToggle={() => toggle('info')}>
+        <Card>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>학년/반</Label>
@@ -122,16 +121,16 @@ export default function ExplorePage() {
                 className="w-full border-2 border-[#e0e0f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] transition-colors" />
             </div>
           </div>
-        </Accordion>
+        </Card>
 
         {/* 프로젝트 */}
-        <Accordion id="project" title="프로젝트" done={done.project} summary={summary.project}
-          isOpen={open.has('project')} onToggle={() => toggle('project')}>
+        <Card>
+          <Label>프로젝트</Label>
           <Select value={project} onChange={e => setProject(e.target.value)}>
             <option value="">프로젝트를 선택하세요</option>
             {PROJECT_LIST.map(v => <option key={v}>{v}</option>)}
           </Select>
-        </Accordion>
+        </Card>
 
         {/* 탐구 질문 + 탐구 방법 */}
         <Accordion id="qmethod" title="탐구 질문 · 탐구 방법" done={done.qmethod} summary={summary.qmethod}
@@ -289,6 +288,9 @@ function Accordion({ title, done, summary, isOpen, onToggle, children }: {
 }
 
 // ── 공통 UI ─────────────────────────────────────────────
+function Card({ children }: { children: React.ReactNode }) {
+  return <div className="bg-white rounded-2xl p-3 mb-1.5 shadow-[0_4px_20px_rgba(80,60,160,0.10)]">{children}</div>;
+}
 function Label({ children }: { children: React.ReactNode }) {
   return <label className="block font-bold text-[#4a4a6a] mb-1.5 text-[0.88rem]">{children}</label>;
 }
