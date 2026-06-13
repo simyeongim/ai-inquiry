@@ -2127,8 +2127,16 @@ export default function TeacherPage() {
                     {(['🟡','🔵','🟢'] as const).map(lv => {
                       const cnt = classified.filter(r => exploreDepthMap[r.id]?.level === lv).length;
                       const info = DEPTH_INFO[lv];
+                      const isActive = filterExploreDepth === lv;
                       return (
-                        <div key={lv} className="rounded-xl py-3 px-3 text-center" style={{background: info.bg}}>
+                        <button key={lv}
+                          onClick={() => setFilterExploreDepth(isActive ? null : lv)}
+                          className="rounded-xl py-3 px-3 text-center cursor-pointer border-none transition-all"
+                          style={{
+                            background: info.bg,
+                            outline: isActive ? `2.5px solid ${info.color}` : '2.5px solid transparent',
+                            opacity: filterExploreDepth && !isActive ? 0.5 : 1,
+                          }}>
                           <div className="text-sm font-black mb-1" style={{color: info.color}}>{lv} {info.label}</div>
                           <div className="text-2xl font-black" style={{color: info.color}}>
                             {cnt}<span className="text-xs font-normal ml-0.5" style={{color:'#9ca3af'}}>명</span>
@@ -2136,7 +2144,7 @@ export default function TeacherPage() {
                           <div className="text-xs mt-0.5" style={{color:'#9ca3af'}}>
                             {Math.round(cnt / classified.length * 100)}%
                           </div>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -2147,157 +2155,112 @@ export default function TeacherPage() {
 
           {/* ─ 학생 응답 목록 ─ */}
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            {/* 헤더: 제목 + 전체선택 + 삭제 */}
-            <div className="px-5 pt-3 pb-2.5 border-b border-[#f4f4fc] space-y-2.5">
-              <div className="flex items-center justify-between">
-                <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">학생 응답 목록</h2>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      const allSel = filteredExplorations.length > 0 && filteredExplorations.every(r => selExplore.has(r.id));
-                      setSelExplore(allSel ? new Set() : new Set(filteredExplorations.map(r => r.id)));
-                    }}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-full border-2 cursor-pointer transition-all"
-                    style={filteredExplorations.length > 0 && filteredExplorations.every(r => selExplore.has(r.id))
-                      ? { background: '#e8eaf6', color: '#667eea', borderColor: '#667eea' }
-                      : { background: 'white', color: '#777', borderColor: '#e0e0e0' }}>
-                    {filteredExplorations.length > 0 && filteredExplorations.every(r => selExplore.has(r.id)) ? '전체 해제' : '전체 선택'}
-                  </button>
-                  <button
-                    onClick={() => { if (selExplore.size > 0) setShowDeleteExplore(true); }}
-                    disabled={deletingExplore || selExplore.size === 0}
-                    className="px-3 py-1.5 rounded-full text-xs font-bold text-white border-none cursor-pointer disabled:opacity-40 transition-all"
-                    style={{ background: '#ef4444' }}>
-                    {deletingExplore ? '삭제 중…' : selExplore.size > 0 ? `삭제 (${selExplore.size})` : '삭제'}
-                  </button>
-                </div>
-              </div>
-              {/* 작성자 검색 */}
+            {/* 헤더: 제목 + 검색 + 전체선택 + 삭제 */}
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-[#f4f4fc]">
+              <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0 shrink-0">학생 응답 목록</h2>
               <input
                 type="text"
                 value={searchExploreAuthor}
                 onChange={e => setSearchExploreAuthor(e.target.value)}
-                placeholder="학생 이름으로 검색..."
-                className="w-full border border-[#e8e8f0] rounded-xl px-3 py-2 text-sm text-[#333] focus:outline-none focus:border-[#667eea] transition-colors"
+                placeholder="이름 검색"
+                className="border border-[#e8e8f0] rounded-full px-2.5 py-1 text-xs text-[#333] focus:outline-none focus:border-[#667eea] transition-colors"
+                style={{ width: '90px' }}
               />
+              {filterExploreDepth && (
+                <button onClick={() => setFilterExploreDepth(null)}
+                  className="text-[10px] px-2 py-0.5 rounded-full border-none cursor-pointer shrink-0"
+                  style={{ background: DEPTH_INFO[filterExploreDepth]?.color + '22', color: DEPTH_INFO[filterExploreDepth]?.color }}>
+                  {filterExploreDepth} {DEPTH_INFO[filterExploreDepth]?.label} ✕
+                </button>
+              )}
+              <div className="flex items-center gap-2 ml-auto shrink-0">
+                <button
+                  onClick={() => {
+                    const allSel = filteredExplorations.length > 0 && filteredExplorations.every(r => selExplore.has(r.id));
+                    setSelExplore(allSel ? new Set() : new Set(filteredExplorations.map(r => r.id)));
+                  }}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-full border-2 cursor-pointer transition-all"
+                  style={filteredExplorations.length > 0 && filteredExplorations.every(r => selExplore.has(r.id))
+                    ? { background: '#e8eaf6', color: '#667eea', borderColor: '#667eea' }
+                    : { background: 'white', color: '#777', borderColor: '#e0e0e0' }}>
+                  {filteredExplorations.length > 0 && filteredExplorations.every(r => selExplore.has(r.id)) ? '전체 해제' : '전체 선택'}
+                </button>
+                <button
+                  onClick={() => { if (selExplore.size > 0) setShowDeleteExplore(true); }}
+                  disabled={deletingExplore || selExplore.size === 0}
+                  className="px-3 py-1.5 rounded-full text-xs font-bold text-white border-none cursor-pointer disabled:opacity-40 transition-all"
+                  style={{ background: '#ef4444' }}>
+                  {deletingExplore ? '삭제 중…' : selExplore.size > 0 ? `삭제 (${selExplore.size})` : '삭제'}
+                </button>
+              </div>
             </div>
 
-            {/* 그룹별 목록 */}
-            <div>
-              {[
-                { lv: '🟡', label: DEPTH_INFO['🟡'].label, color: DEPTH_INFO['🟡'].color, bg: DEPTH_INFO['🟡'].bg },
-                { lv: '🔵', label: DEPTH_INFO['🔵'].label, color: DEPTH_INFO['🔵'].color, bg: DEPTH_INFO['🔵'].bg },
-                { lv: '🟢', label: DEPTH_INFO['🟢'].label, color: DEPTH_INFO['🟢'].color, bg: DEPTH_INFO['🟢'].bg },
-                { lv: '미분류', label: '미분류', color: '#9ca3af', bg: '#f9fafb' },
-              ].map(({ lv, label, color, bg }) => {
-                const base = lv === '미분류'
-                  ? filteredExplorations.filter(r => !exploreDepthMap[r.id])
-                  : filteredExplorations.filter(r => exploreDepthMap[r.id]?.level === lv);
-                const students = searchExploreAuthor.trim()
-                  ? base.filter(r => r.name?.includes(searchExploreAuthor.trim()))
-                  : base;
-                if (!students.length) return null;
-                const groupIds = students.map(r => r.id);
-                const selectedCount = groupIds.filter(id => selExplore.has(id)).length;
-                const allGroupSelected = groupIds.length > 0 && selectedCount === groupIds.length;
-                const isOpen = expandedDepthGroups.has(lv);
-                return (
-                  <div key={lv} className="border-b border-[#f4f4fc] last:border-none">
-                    {/* 그룹 헤더 */}
-                    <div className="flex items-center gap-2 px-4 py-2.5 bg-[#f8f8fc]">
-                      <button
-                        onClick={() => setExpandedDepthGroups(prev => {
-                          const next = new Set(prev); isOpen ? next.delete(lv) : next.add(lv); return next;
-                        })}
-                        className="flex items-center gap-2 cursor-pointer border-none bg-transparent p-0 flex-1 min-w-0 text-left">
-                        <span className="text-[10px] text-[#bbb]"
-                          style={{ display: 'inline-block', transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}>▶</span>
-                        <span className="text-xs font-black text-white px-2.5 py-0.5 rounded-full shrink-0"
-                          style={{ background: color }}>
-                          {lv === '미분류' ? '미분류' : `${lv} ${label}`}
-                        </span>
-                        <span className="text-xs text-[#bbb]">{students.length}명</span>
-                        {selectedCount > 0 && (
-                          <span className="text-xs font-semibold" style={{ color }}>({selectedCount}명 선택됨)</span>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => {
-                          const next = new Set(selExplore);
-                          if (allGroupSelected) groupIds.forEach(id => next.delete(id));
-                          else groupIds.forEach(id => next.add(id));
-                          setSelExplore(next);
-                        }}
-                        className="text-xs font-semibold px-2.5 py-1 rounded-full border cursor-pointer transition-all shrink-0"
-                        style={allGroupSelected
-                          ? { background: '#e8eaf6', color, borderColor: color }
-                          : { background: 'white', color: '#999', borderColor: '#e0e0e0' }}>
-                        {allGroupSelected ? '해제' : '전체 선택'}
-                      </button>
-                    </div>
-
-                    {/* 카드 그리드 */}
-                    {isOpen && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-3">
-                        {students.map(r => {
-                          const isChecked = selExplore.has(r.id);
-                          const isExpanded = expandedExploreId === r.id;
-                          const depth = exploreDepthMap[r.id];
-                          const cardInfo = depth
-                            ? (DEPTH_INFO[depth.level] ?? { label: '미분류', color: '#9ca3af', bg: '#f9fafb' })
-                            : { label: '미분류', color: '#9ca3af', bg: '#f9fafb' };
-                          const proj = r.project ? PROJECT_SHORT[r.project] : null;
-                          return (
-                            <div key={r.id} className="rounded-xl overflow-hidden transition-all"
-                              style={{
-                                background: isChecked ? '#ede9fe' : cardInfo.bg,
-                                border: `1.5px solid ${isChecked ? '#667eea' : cardInfo.color + '50'}`,
-                              }}>
-                              {/* 카드 헤더 */}
-                              <div className="flex items-center gap-2 px-3 py-2.5">
-                                <input type="checkbox" checked={isChecked}
-                                  onChange={() => setSelExplore(p => { const n = new Set(p); n.has(r.id) ? n.delete(r.id) : n.add(r.id); return n; })}
-                                  className="w-3.5 h-3.5 shrink-0 cursor-pointer accent-[#667eea]" />
-                                {proj && (
-                                  <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold shrink-0 whitespace-nowrap"
-                                    style={{ background: cardInfo.color + '22', color: cardInfo.color }}>
-                                    {proj.emoji} {proj.short}
-                                  </span>
-                                )}
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-baseline gap-1.5 min-w-0 flex-wrap">
-                                    <span className="text-[11px] text-[#888] shrink-0">{r.class_room}</span>
-                                    <span className="text-sm font-black text-[#1a1a2e]">{r.name}</span>
-                                  </div>
-                                </div>
-                                {depth && (
-                                  <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold shrink-0 whitespace-nowrap"
-                                    style={{ background: cardInfo.color + '22', color: cardInfo.color }}>
-                                    {depth.level} {cardInfo.label}
-                                  </span>
-                                )}
-                                <button
-                                  onClick={() => setExpandedExploreId(isExpanded ? null : r.id)}
-                                  className="text-[11px] border-none bg-transparent cursor-pointer shrink-0 px-0.5 hover:opacity-60 transition-opacity"
-                                  style={{ color: cardInfo.color }}>
-                                  {isExpanded ? '▲' : '▼'}
-                                </button>
-                              </div>
-                              {/* 펼친 내용 */}
-                              {isExpanded && (
-                                <div className="border-t" style={{ borderColor: cardInfo.color + '30', background: 'white' }}>
-                                  {renderExploreDetail(r, cardInfo)}
-                                </div>
-                              )}
+            {/* 응답 카드 목록 — 입력 순서 */}
+            {(() => {
+              const students = filteredExplorations
+                .filter(r => !filterExploreDepth || exploreDepthMap[r.id]?.level === filterExploreDepth)
+                .filter(r => !searchExploreAuthor.trim() || r.name?.includes(searchExploreAuthor.trim()));
+              if (!students.length) return (
+                <p className="text-sm text-[#ccc] py-8 text-center m-0">검색 결과가 없습니다.</p>
+              );
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-3">
+                  {students.map(r => {
+                    const isChecked = selExplore.has(r.id);
+                    const isExpanded = expandedExploreId === r.id;
+                    const depth = exploreDepthMap[r.id];
+                    const cardInfo = depth
+                      ? (DEPTH_INFO[depth.level] ?? { label: '미분류', color: '#9ca3af', bg: '#f9fafb' })
+                      : { label: '미분류', color: '#9ca3af', bg: '#f9fafb' };
+                    const proj = r.project ? PROJECT_SHORT[r.project] : null;
+                    return (
+                      <div key={r.id} className="rounded-xl overflow-hidden transition-all"
+                        style={{
+                          background: isChecked ? '#ede9fe' : cardInfo.bg,
+                          border: `1.5px solid ${isChecked ? '#667eea' : cardInfo.color + '50'}`,
+                        }}>
+                        {/* 카드 헤더 */}
+                        <div className="flex items-center gap-2 px-3 py-2.5">
+                          <input type="checkbox" checked={isChecked}
+                            onChange={() => setSelExplore(p => { const n = new Set(p); n.has(r.id) ? n.delete(r.id) : n.add(r.id); return n; })}
+                            className="w-3.5 h-3.5 shrink-0 cursor-pointer accent-[#667eea]" />
+                          {proj && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold shrink-0 whitespace-nowrap"
+                              style={{ background: cardInfo.color + '22', color: cardInfo.color }}>
+                              {proj.emoji} {proj.short}
+                            </span>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-baseline gap-1.5 min-w-0 flex-wrap">
+                              <span className="text-[11px] text-[#888] shrink-0">{r.class_room}</span>
+                              <span className="text-sm font-black text-[#1a1a2e]">{r.name}</span>
                             </div>
-                          );
-                        })}
+                          </div>
+                          {depth && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold shrink-0 whitespace-nowrap"
+                              style={{ background: cardInfo.color + '22', color: cardInfo.color }}>
+                              {depth.level} {cardInfo.label}
+                            </span>
+                          )}
+                          <button
+                            onClick={() => setExpandedExploreId(isExpanded ? null : r.id)}
+                            className="text-[11px] border-none bg-transparent cursor-pointer shrink-0 px-0.5 hover:opacity-60 transition-opacity"
+                            style={{ color: cardInfo.color }}>
+                            {isExpanded ? '▲' : '▼'}
+                          </button>
+                        </div>
+                        {/* 펼친 내용 */}
+                        {isExpanded && (
+                          <div className="border-t" style={{ borderColor: cardInfo.color + '30', background: 'white' }}>
+                            {renderExploreDetail(r, cardInfo)}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
 
           </>
