@@ -91,10 +91,15 @@ export default function ExplorePage() {
           insight:     insight.trim(),
         }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        console.error('[explore submit]', res.status, errText);
+        throw new Error(`HTTP ${res.status}: ${errText}`);
+      }
       alert('탐구 기록이 저장되었습니다! 🎉');
-    } catch {
-      alert('저장에 실패했습니다. 다시 시도해주세요.');
+    } catch (err) {
+      console.error('[explore submit error]', err);
+      alert(`저장에 실패했습니다.\n${err instanceof Error ? err.message : '다시 시도해주세요.'}`);
     }
     setSubmitting(false);
   }
