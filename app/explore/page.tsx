@@ -75,12 +75,8 @@ export default function ExplorePage() {
         </div>
 
         {/* 헤더 배너 */}
-        <div className="w-full rounded-2xl mb-1.5 px-6 pt-7 pb-6 flex flex-col justify-end"
-          style={{ background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)', minHeight: '140px' }}>
-          <p className="text-white/60 text-[11px] font-bold tracking-widest uppercase m-0 mb-1">Inquiry Report</p>
-          <h1 className="text-white text-2xl font-black leading-tight m-0">탐구 결과 정리</h1>
-          <p className="text-white/75 text-sm mt-1 m-0">탐구 과정과 결과를 나만의 말로 기록해 보세요.</p>
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/explore.png" alt="탐구 결과 정리" className="w-full rounded-2xl mb-1.5 block" draggable={false} />
 
         {/* 학년/반 · 이름 */}
         <Card>
