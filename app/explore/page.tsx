@@ -16,7 +16,7 @@ export default function ExplorePage() {
   const [name,         setName]         = useState('');
   const [project,      setProject]      = useState('');
   const [question,     setQuestion]     = useState('');
-  const [method,       setMethod]        = useState('');
+  const [methods,      setMethods]       = useState<string[]>([]);
   const [process,      setProcess]      = useState('');
   const [explanation,  setExplanation]  = useState('');
   const [insight,      setInsight]      = useState('');
@@ -54,6 +54,10 @@ export default function ExplorePage() {
     }, 1200);
     return () => clearTimeout(timer);
   }, [explanation, showHelper]);
+
+  function toggleMethod(m: string) {
+    setMethods(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
+  }
 
   function handleSubmit() {
     if (!classRoom)   { alert('학년/반을 선택해주세요!'); return; }
@@ -115,11 +119,25 @@ export default function ExplorePage() {
             className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
             style={{ minHeight: '120px' }} />
           <div className="border-t border-[#eeeef8] my-3" />
-          <Label>탐구 방법</Label>
-          <Select value={method} onChange={e => setMethod(e.target.value)}>
-            <option value="">선택해주세요</option>
-            {METHODS.map(v => <option key={v}>{v}</option>)}
-          </Select>
+          <Label>탐구 방법 <span className="text-xs font-normal text-[#bbb] ml-1">복수 선택 가능</span></Label>
+          <div className="grid grid-cols-3 gap-1.5">
+            {METHODS.map(m => {
+              const checked = methods.includes(m);
+              return (
+                <button key={m} type="button" onClick={() => toggleMethod(m)}
+                  className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl border-2 text-sm font-semibold cursor-pointer transition-all"
+                  style={checked
+                    ? { background: '#ede9fe', borderColor: '#667eea', color: '#5c35cc' }
+                    : { background: '#f8f8fc', borderColor: '#e0e0f0', color: '#666' }}>
+                  <span className="w-3.5 h-3.5 rounded border-2 flex items-center justify-center shrink-0"
+                    style={checked ? { borderColor: '#667eea', background: '#667eea' } : { borderColor: '#ccc', background: 'white' }}>
+                    {checked && <span className="text-white text-[8px] font-black leading-none">✓</span>}
+                  </span>
+                  {m}
+                </button>
+              );
+            })}
+          </div>
         </Card>
 
         {/* 탐구 과정에서 중요했던 내용 */}
