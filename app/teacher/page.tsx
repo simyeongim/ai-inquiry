@@ -170,6 +170,14 @@ interface LearningRow {
   revised_status?: string | null;
   created_at: string;
 }
+
+interface ExplorationRow {
+  id: string; class_room: string; name: string; project: string;
+  question: string; methods: string; process: string;
+  explanation: string; insight: string; depth_level: string | null;
+  created_at: string;
+}
+
 function parseFeedback(f: LearningRow['feedback']): { praise: string; understood: string; nextStep: string } | null {
   if (!f) return null;
   if (typeof f === 'string') { try { return JSON.parse(f); } catch { return null; } }
@@ -369,7 +377,7 @@ function FilterDropdown({ label, opts, sel, onToggle, getLabel, getStyle }: {
 // ─── 메인 대시보드 ────────────────────────────────────
 export default function TeacherPage() {
   const [authed,   setAuthed]   = useState(false);
-  const [tab,      setTab]      = useState<'questions' | 'learnings' | 'concepts'>('questions');
+  const [tab,      setTab]      = useState<'questions' | 'learnings' | 'concepts' | 'explorations'>('questions');
 
   // ── 개념DB 탭 상태 ──
   const [concepts,          setConcepts]          = useState<ConceptRow[]>([]);
@@ -416,6 +424,16 @@ export default function TeacherPage() {
   const [fGrowthType,    setFGrowthType]    = useState<string | null>(null);
   const [growthPopup,    setGrowthPopup]    = useState<{ label: string; rows: LearningRow[]; titleColor: string; borderColor: string } | null>(null);
 
+  // ── 탐구결과 탭 상태 ──
+  const [explorationRows,       setExplorationRows]       = useState<ExplorationRow[]>([]);
+  const [loadingExplore,        setLoadingExplore]        = useState(false);
+  const [fetchErrExplore,       setFetchErrExplore]       = useState('');
+  const [fExploreClass,         setFExploreClass]         = useState<string[]>([]);
+  const [fExploreProject,       setFExploreProject]       = useState<string[]>([]);
+  const [exploreDepthMap,       setExploreDepthMap]       = useState<Record<string, {level: string; comment: string}>>({});
+  const [exploreInsightLoading, setExploreInsightLoading] = useState(false);
+  const [expandedExploreId,     setExpandedExploreId]     = useState<string | null>(null);
+
   const load = useCallback(async () => {
     setLoading(true); setFetchErr('');
     try {
@@ -453,6 +471,19 @@ export default function TeacherPage() {
       setConcepts(Array.isArray(d) ? d : []);
     } catch { setConcepts([]); }
     setLoadingConcepts(false);
+  }, []);
+
+  const loadExplorations = useCallback(async () => {
+    setLoadingExplore(true); setFetchErrExplore('');
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/explorations?select=*&order=created_at.desc&limit=1000`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const d = await res.json();
+      setExplorationRows(Array.isArray(d) ? d : []);
+    } catch { setFetchErrExplore('탐구 데이터를 불러오지 못했습니다.'); setExplorationRows([]); }
+    setLoadingExplore(false);
   }, []);
 
   function parseConceptLine(line: string): { keyword: string; key_concept: string } | null {
@@ -563,7 +594,8 @@ export default function TeacherPage() {
 
   useEffect(() => { if (authed && tab === 'questions') load(); },        [authed, tab, load]);
   useEffect(() => { if (authed && tab === 'learnings') loadLearnings(); }, [authed, tab, loadLearnings]);
-  useEffect(() => { if (authed && tab === 'concepts')  loadConcepts();  }, [authed, tab, loadConcepts]);
+  useEffect(() => { if (authed && tab === 'concepts')      loadConcepts();      }, [authed, tab, loadConcepts]);
+  useEffect(() => { if (authed && tab === 'explorations') loadExplorations(); }, [authed, tab, loadExplorations]);
   useEffect(() => { setLearnInsight(null); }, [fLearnClass, fLearnLesson, fLearnStatus]);
 
   const filteredConcepts = useMemo(() => {
@@ -639,6 +671,29 @@ export default function TeacherPage() {
       setLearnInsight(await res.json());
     } catch (err) { alert(`AI 분석 오류: ${err instanceof Error ? err.message : '알 수 없는 오류'}`); }
     setLearnInsightLoading(false);
+  }
+
+  async function generateExploreInsight() {
+    const toClassify = filteredExplorations
+      .filter(r => r.explanation && r.explanation.trim().length > 30)
+      .map(r => ({ id: r.id, explanation: r.explanation }));
+    if (!toClassify.length) return;
+    setExploreInsightLoading(true);
+    try {
+      const res = await fetch('/api/explore-insight', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ explorations: toClassify }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const map: Record<string, {level: string; comment: string}> = {};
+      (data.results ?? []).forEach((r: {id: string; level: string; comment: string}) => {
+        map[r.id] = { level: r.level, comment: r.comment };
+      });
+      setExploreDepthMap(map);
+    } catch (err) { alert(`AI 분석 오류: ${err instanceof Error ? err.message : '알 수 없는 오류'}`); }
+    setExploreInsightLoading(false);
   }
 
   function toggleLearnOne(id: string) { setSelLearn(p => { const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n; }); }
@@ -740,6 +795,33 @@ export default function TeacherPage() {
     return list;
   }, [filteredLearnings, fGrowthType, searchLearnName]);
 
+  const filteredExplorations = useMemo(() => {
+    return explorationRows.filter(r => {
+      if (fExploreClass.length   && !fExploreClass.includes(r.class_room)) return false;
+      if (fExploreProject.length && !fExploreProject.includes(r.project))  return false;
+      return true;
+    });
+  }, [explorationRows, fExploreClass, fExploreProject]);
+
+  const exploreStats = useMemo(() => {
+    const n = filteredExplorations.length;
+    if (!n) return null;
+    const classMap: Record<string, number> = {};
+    filteredExplorations.forEach(r => { classMap[r.class_room] = (classMap[r.class_room] ?? 0) + 1; });
+    const avgChars = Math.round(
+      filteredExplorations.reduce((s, r) => s + (r.explanation?.trim().length ?? 0), 0) / n
+    );
+    const methodMap: Record<string, number> = {};
+    filteredExplorations.forEach(r => {
+      (r.methods ?? '').split(',').map((m: string) => m.trim()).filter(Boolean).forEach((m: string) => {
+        methodMap[m] = (methodMap[m] ?? 0) + 1;
+      });
+    });
+    const submittedClasses = new Set(filteredExplorations.map(r => r.class_room));
+    const missingClasses = (CLASS_LIST as readonly string[]).filter(c => !submittedClasses.has(c));
+    return { n, classMap, avgChars, methodMap, missingClasses };
+  }, [filteredExplorations]);
+
   function toggleOne(id: number) { setSel(p => { const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n; }); }
   function toggleAll() {
     const all = displayed.length > 0 && displayed.every(r => sel.has(r.id));
@@ -840,21 +922,21 @@ export default function TeacherPage() {
           <Link href="/" className="text-white/80 text-base font-semibold bg-white/10 border border-white/30 px-4 py-2 rounded-full hover:bg-white/20 no-underline transition-colors shrink-0">← 홈</Link>
           <h1 className="text-xl font-bold m-0 flex-1 text-center">📊 교사용 분석</h1>
           <button
-            onClick={tab === 'questions' ? load : tab === 'learnings' ? loadLearnings : loadConcepts}
-            disabled={tab === 'questions' ? loading : tab === 'learnings' ? loadingLearn : loadingConcepts}
+            onClick={tab === 'questions' ? load : tab === 'learnings' ? loadLearnings : tab === 'explorations' ? loadExplorations : loadConcepts}
+            disabled={tab === 'questions' ? loading : tab === 'learnings' ? loadingLearn : tab === 'explorations' ? loadingExplore : loadingConcepts}
             className="text-base font-semibold bg-white/20 border border-white/30 text-white px-4 py-2 rounded-full cursor-pointer hover:bg-white/30 disabled:opacity-50 transition-colors shrink-0">
-            {(tab === 'questions' ? loading : tab === 'learnings' ? loadingLearn : loadingConcepts) ? '로딩...' : '새로고침'}
+            {(tab === 'questions' ? loading : tab === 'learnings' ? loadingLearn : tab === 'explorations' ? loadingExplore : loadingConcepts) ? '로딩...' : '새로고침'}
           </button>
         </div>
         {/* 탭 바 */}
         <div className="max-w-[1200px] mx-auto px-4 flex border-t border-white/20">
-          {(['questions', 'learnings', 'concepts'] as const).map(t => (
+          {(['questions', 'learnings', 'explorations', 'concepts'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className="text-xl font-bold px-10 py-5 border-b-[4px] transition-all cursor-pointer bg-transparent border-x-0 border-t-0"
               style={tab === t
                 ? { color: 'white', borderBottomColor: 'white' }
                 : { color: 'rgba(255,255,255,0.55)', borderBottomColor: 'transparent' }}>
-              {t === 'questions' ? '📝 질문발견' : t === 'learnings' ? '🌱 핵심개념' : '📚 개념DB'}
+              {t === 'questions' ? '📝 질문발견' : t === 'learnings' ? '🌱 핵심개념' : t === 'explorations' ? '🔭 탐구결과' : '📚 개념DB'}
             </button>
           ))}
         </div>
@@ -1789,6 +1871,210 @@ export default function TeacherPage() {
 
         </div>
       )} {/* /개념DB 탭 */}
+
+      {/* ══ 탐구결과 탭 ══ */}
+      {tab === 'explorations' && (
+        <div className="max-w-[1200px] mx-auto px-4 pt-5 space-y-4">
+
+          {/* 필터 */}
+          <div className="bg-white rounded-2xl px-4 py-2.5 shadow-sm flex items-center gap-2">
+            <div className="grid grid-cols-2 gap-2 flex-1">
+              <ClassDropdown opts={CLASS_LIST} sel={fExploreClass} onToggle={v => setFExploreClass(tog(fExploreClass, v))} />
+              <FilterDropdown label="프로젝트" opts={PROJECT_LIST} sel={fExploreProject}
+                onToggle={v => setFExploreProject(tog(fExploreProject, v as string))}
+                getLabel={v => v as string} />
+            </div>
+            {(fExploreClass.length > 0 || fExploreProject.length > 0) && (
+              <button onClick={() => { setFExploreClass([]); setFExploreProject([]); }}
+                className="text-xs text-[#667eea] border-none bg-transparent cursor-pointer font-semibold hover:underline whitespace-nowrap shrink-0">
+                초기화
+              </button>
+            )}
+            {fetchErrExplore && <p className="text-red-500 text-xs w-full m-0">{fetchErrExplore}</p>}
+          </div>
+
+          {loadingExplore ? (
+            <div className="text-center py-12 text-[#888] bg-white rounded-2xl shadow-sm">불러오는 중...</div>
+          ) : !filteredExplorations.length ? (
+            <div className="text-center py-12 text-[#aaa] bg-white rounded-2xl shadow-sm">
+              아직 제출된 탐구 기록이 없습니다.
+            </div>
+          ) : !exploreStats ? null : (
+          <>
+
+          {/* ─ 참여 현황 ─ */}
+          <div className="bg-white rounded-2xl px-5 py-4 shadow-sm">
+            <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-3">참여 현황</h2>
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="rounded-xl py-2.5 px-4 text-center" style={{background:'#f0f2f8'}}>
+                <div className="text-xs text-[#9ca3af] mb-0.5">총 제출</div>
+                <div className="text-xl font-black text-[#1a1a2e]">{exploreStats.n}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">건</span></div>
+              </div>
+              <div className="rounded-xl py-2.5 px-4 text-center" style={{background:'linear-gradient(135deg,#667eea18,#764ba218)', border:'1px solid #667eea20'}}>
+                <div className="text-xs text-[#9ca3af] mb-0.5">참여 반 수</div>
+                <div className="text-xl font-black text-[#667eea]">{Object.keys(exploreStats.classMap).length}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">개 반</span></div>
+              </div>
+              <div className="rounded-xl py-2.5 px-4 text-center" style={{background:'#f0fdf4'}}>
+                <div className="text-xs text-[#9ca3af] mb-0.5">평균 설명 분량</div>
+                <div className="text-xl font-black text-[#16a34a]">{exploreStats.avgChars}<span className="text-xs font-normal text-[#9ca3af] ml-0.5">자</span></div>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {Object.entries(exploreStats.classMap).sort((a,b) => b[1]-a[1]).map(([cls, cnt]) => (
+                <span key={cls} className="text-xs px-3 py-1 rounded-full font-semibold"
+                  style={{background:'#ede9fe', color:'#5c35cc'}}>
+                  {cls} <span className="font-black">{cnt}명</span>
+                </span>
+              ))}
+            </div>
+            {exploreStats.missingClasses.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-[#f0f0f8]">
+                <span className="text-xs text-[#9ca3af] mr-2">미참여 반:</span>
+                <span className="text-xs text-[#f59e0b] font-semibold">{exploreStats.missingClasses.join(', ')}</span>
+              </div>
+            )}
+          </div>
+
+          {/* ─ 탐구 방법 분석 ─ */}
+          {Object.keys(exploreStats.methodMap).length > 0 && (
+            <div className="bg-white rounded-2xl px-5 py-4 shadow-sm">
+              <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-3">탐구 방법 분석</h2>
+              <div className="space-y-2">
+                {Object.entries(exploreStats.methodMap).sort((a,b) => b[1]-a[1]).map(([method, cnt]) => {
+                  const maxCnt = Math.max(...Object.values(exploreStats.methodMap));
+                  const pct = Math.round(cnt / maxCnt * 100);
+                  return (
+                    <div key={method} className="flex items-center gap-3">
+                      <span className="text-sm text-[#4a4a6a] font-medium shrink-0" style={{width:'7rem'}}>{method}</span>
+                      <div className="flex-1 bg-[#f0f2f8] rounded-full h-5 overflow-hidden">
+                        <div className="h-full rounded-full transition-all"
+                          style={{width:`${pct}%`, background:'linear-gradient(90deg,#667eea,#764ba2)'}} />
+                      </div>
+                      <span className="text-sm font-black text-[#667eea] shrink-0" style={{width:'2.5rem', textAlign:'right'}}>{cnt}명</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ─ 탐구 깊이 분석 ─ */}
+          {(() => {
+            const DEPTH_INFO: Record<string, {label: string; color: string; bg: string}> = {
+              '🟡': { label: '사실 나열형', color: '#f57f17', bg: '#fff8e1' },
+              '🔵': { label: '연결 설명형', color: '#1565c0', bg: '#e3f2fd' },
+              '🟢': { label: '관계 탐구형', color: '#2e7d32', bg: '#e8f5e9' },
+            };
+            const classified = filteredExplorations.filter(r => exploreDepthMap[r.id]);
+            return (
+              <div className="bg-white rounded-2xl px-5 py-4 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-[15px] font-bold text-[#1a1a2e]">탐구 깊이 분석</h2>
+                  <button onClick={generateExploreInsight} disabled={exploreInsightLoading}
+                    className="text-sm font-bold px-4 py-1.5 rounded-full border-none cursor-pointer disabled:opacity-50 transition-all"
+                    style={{background:'linear-gradient(135deg,#667eea,#764ba2)', color:'white'}}>
+                    {exploreInsightLoading ? '분석 중...' : 'AI 분석하기'}
+                  </button>
+                </div>
+
+                {classified.length === 0 ? (
+                  <p className="text-sm text-[#aaa] py-4 text-center m-0">
+                    AI 분석하기를 눌러 학생의 탐구 깊이를 분류하세요.
+                  </p>
+                ) : (
+                  <>
+                    {/* 분포 요약 */}
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      {(['🟡','🔵','🟢'] as const).map(lv => {
+                        const cnt = classified.filter(r => exploreDepthMap[r.id]?.level === lv).length;
+                        const info = DEPTH_INFO[lv];
+                        return (
+                          <div key={lv} className="rounded-xl py-3 px-3 text-center" style={{background: info.bg}}>
+                            <div className="text-sm font-black mb-1" style={{color: info.color}}>{lv} {info.label}</div>
+                            <div className="text-2xl font-black" style={{color: info.color}}>
+                              {cnt}<span className="text-xs font-normal ml-0.5" style={{color:'#9ca3af'}}>명</span>
+                            </div>
+                            <div className="text-xs mt-0.5" style={{color:'#9ca3af'}}>
+                              {Math.round(cnt / classified.length * 100)}%
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* 학생 목록 */}
+                    <div className="space-y-1.5">
+                      {filteredExplorations.filter(r => exploreDepthMap[r.id]).map(r => {
+                        const depth = exploreDepthMap[r.id];
+                        const info = DEPTH_INFO[depth.level] ?? {label: depth.level, color:'#666', bg:'#f5f5f5'};
+                        const isExpanded = expandedExploreId === r.id;
+                        return (
+                          <div key={r.id} className="rounded-xl border overflow-hidden" style={{borderColor:'#f0f0f8'}}>
+                            <button
+                              onClick={() => setExpandedExploreId(isExpanded ? null : r.id)}
+                              className="w-full flex items-center gap-2 px-3 py-2 cursor-pointer bg-transparent border-none text-left hover:bg-[#fafafa] transition-colors">
+                              <span className="text-xs px-2 py-0.5 rounded-full font-black shrink-0"
+                                style={{background: info.bg, color: info.color}}>{depth.level}</span>
+                              <span className="text-sm font-semibold text-[#333] shrink-0">{r.class_room} {r.name}</span>
+                              <span className="text-xs text-[#aaa] flex-1 truncate ml-1">{depth.comment}</span>
+                              <span className="text-xs text-[#ccc] shrink-0">{isExpanded ? '▲' : '▼'}</span>
+                            </button>
+                            {isExpanded && r.explanation && (
+                              <div className="px-4 pb-3 pt-1 border-t border-[#f4f4fc] text-sm text-[#555] leading-relaxed whitespace-pre-wrap">
+                                {r.explanation}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* ─ 우수 탐구 사례 ─ */}
+          {(() => {
+            const best = filteredExplorations
+              .filter(r => exploreDepthMap[r.id]?.level === '🟢')
+              .slice(0, 5);
+            if (!best.length) return null;
+            return (
+              <div className="bg-white rounded-2xl px-5 py-4 shadow-sm">
+                <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-3">🟢 우수 탐구 사례</h2>
+                <div className="space-y-3">
+                  {best.map(r => (
+                    <div key={r.id} className="rounded-xl p-4 border" style={{background:'#f0fdf4', borderColor:'#bbf7d0'}}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-bold text-[#16a34a]">{r.class_room}</span>
+                        <span className="text-sm font-black text-[#166534]">{r.name}</span>
+                        {r.project && (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-semibold ml-auto"
+                            style={{background:'#dcfce7', color:'#15803d'}}>
+                            {PROJECT_SHORT[r.project]?.emoji ?? ''} {PROJECT_SHORT[r.project]?.short ?? r.project}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-[#374151] leading-relaxed m-0">
+                        {r.explanation.slice(0, 350)}{r.explanation.length > 350 ? '…' : ''}
+                      </p>
+                      {exploreDepthMap[r.id]?.comment && (
+                        <p className="text-xs text-[#16a34a] mt-2 m-0 font-semibold">
+                          💬 {exploreDepthMap[r.id].comment}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
+          </>
+          )}
+
+        </div>
+      )} {/* /탐구결과 탭 */}
 
       {/* 성장 유형 학생 이름 팝업 */}
       {growthPopup && (

@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
+const SUPABASE_URL = 'https://fsrrtopndcrdnqwnspnp.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_z7LexdeBdGJqEy5Z8IAyNA_LEGAxPf_';
+
 const CLASS_LIST   = ['3학년 1반','3학년 4반','4학년 4반','6학년 1반','6학년 2반','6학년 3반','6학년 3반 과학','6학년 4반','6학년 5반','6학년 6반'] as const;
 const PROJECT_LIST = ['세계는 어떻게 움직이는가','지구와 어떻게 함께 살아갈 것인가','우리는 어떻게 자신을 조직하는가'] as const;
 const METHODS      = ['자료 조사','생성형 AI 활용','토론','관찰·실험','사례 분석','기타'] as const;
@@ -33,6 +36,7 @@ export default function ExplorePage() {
   const [strength,     setStrength]     = useState('');
   const [hints,        setHints]        = useState<string[]>([]);
   const [loadingHints, setLoadingHints] = useState(false);
+  const [submitting,   setSubmitting]   = useState(false);
 
   const trimmed    = explanation.trim();
   const showHelper = trimmed.length >= 100 && countSentences(trimmed) >= 3;
@@ -62,11 +66,37 @@ export default function ExplorePage() {
   function toggleMethod(m: string) {
     setMethods(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
   }
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!classRoom)   { alert('학년/반을 선택해주세요!'); return; }
     if (!project)     { alert('프로젝트를 선택해주세요!'); return; }
     if (!name.trim()) { alert('이름을 입력해주세요!'); return; }
-    alert('탐구 기록이 작성되었습니다. 다음 단계에서 저장 기능을 연결합니다.');
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/explorations`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({
+          class_room:  classRoom,
+          name:        name.trim(),
+          project,
+          question:    question.trim(),
+          methods:     methods.join(', '),
+          process:     process.trim(),
+          explanation: explanation.trim(),
+          insight:     insight.trim(),
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      alert('탐구 기록이 저장되었습니다! 🎉');
+    } catch {
+      alert('저장에 실패했습니다. 다시 시도해주세요.');
+    }
+    setSubmitting(false);
   }
 
   // 완료 여부 & 헤더 요약
@@ -233,10 +263,10 @@ export default function ExplorePage() {
         </Accordion>
 
         {/* 제출 버튼 */}
-        <button type="button" onClick={handleSubmit}
-          className="mt-1.5 w-full text-white font-bold text-[0.95rem] py-2.5 rounded-xl border-none cursor-pointer transition-all hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 mb-4"
+        <button type="button" onClick={handleSubmit} disabled={submitting}
+          className="mt-1.5 w-full text-white font-bold text-[0.95rem] py-2.5 rounded-xl border-none cursor-pointer transition-all hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 mb-4 disabled:opacity-60 disabled:cursor-not-allowed"
           style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)' }}>
-          제출하기 →
+          {submitting ? '저장 중...' : '제출하기 →'}
         </button>
 
       </div>
