@@ -277,12 +277,14 @@ export default function ExplorePage() {
             </div>
             <div className="px-4 py-3 border-t space-y-3" style={{ background: 'white', borderColor: '#fde68a' }}>
               {/* 탐구 심화 안내 */}
-              <div className="px-3 py-2.5 rounded-xl space-y-1" style={{background:'#fffbeb', border:'1px solid #fde68a'}}>
-                <p className="text-xs font-black text-[#92400e] m-0">지금 쓴 내용에서 한 단계 더 나아가 볼까요?</p>
-                <p className="text-xs text-[#a37020] m-0 leading-relaxed">알게 된 사실의 <span className="font-semibold">이유</span>를 내 말로 설명해 보세요.</p>
-                <p className="text-xs text-[#a37020] m-0 leading-relaxed">배운 것들이 서로 <span className="font-semibold">어떻게 연결</span>되는지 생각해 보세요.</p>
-                <p className="text-xs text-[#a37020] m-0 leading-relaxed">상황이 달라지면 결과도 <span className="font-semibold">달라질지 상상</span>해 보세요.</p>
-                <p className="text-xs text-[#a37020] m-0 leading-relaxed">탐구하며 새로 생긴 <span className="font-semibold">궁금점을 질문</span>으로 남겨 보세요.</p>
+              <div className="px-3 py-2.5 rounded-xl" style={{background:'#fffbeb', border:'1px solid #fde68a'}}>
+                <p className="text-xs font-black text-[#92400e] m-0 mb-2">더 깊이 탐구하려면 이렇게 생각해 보세요.</p>
+                <ul className="m-0 pl-4 space-y-1" style={{listStyleType:'disc'}}>
+                  <li className="text-xs text-[#a37020] leading-relaxed">왜 그런 일이 일어날까?</li>
+                  <li className="text-xs text-[#a37020] leading-relaxed">이것 때문에 또 무엇이 달라질까?</li>
+                  <li className="text-xs text-[#a37020] leading-relaxed">다른 상황에서도 그럴까?</li>
+                  <li className="text-xs text-[#a37020] leading-relaxed">새롭게 궁금해진 것은 없을까?</li>
+                </ul>
               </div>
 
               {loadingHints ? (
