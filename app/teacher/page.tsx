@@ -1611,6 +1611,24 @@ export default function TeacherPage() {
                   onChange={e => { const f = e.target.files?.[0]; if (f) { uploadConceptCSV(f); e.target.value = ''; } }}
                   disabled={uploadingConcepts} />
               </label>
+              <button
+                onClick={() => {
+                  const sample = [
+                    '자전: 지구가 자전축을 중심으로 하루에 한 바퀴 도는 것',
+                    '공전: 지구가 태양 주위를 1년에 한 바퀴 도는 것',
+                    '계절: 지구의 자전축이 기울어진 채 공전하기 때문에 생기는 현상',
+                  ].join('\n');
+                  const blob = new Blob(['﻿' + sample], { type: 'text/csv;charset=utf-8;' });
+                  const a = document.createElement('a');
+                  a.href = URL.createObjectURL(blob);
+                  a.download = '개념DB_샘플.csv';
+                  a.click();
+                  URL.revokeObjectURL(a.href);
+                }}
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold cursor-pointer border-2 border-[#e0e0f0] text-[#888] hover:border-[#667eea] hover:text-[#667eea] transition-all bg-white">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                샘플 다운로드
+              </button>
               <span className="text-[11px] text-[#bbb]">한 줄에 하나씩 · 핵심어: 내용 형식 · .csv 또는 .txt</span>
             </div>
           </div>
