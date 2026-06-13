@@ -1560,86 +1560,57 @@ export default function TeacherPage() {
         <div className="max-w-[1200px] mx-auto px-4 pt-5 space-y-4">
 
           {/* 추가 폼 */}
-          <div className="bg-white rounded-2xl p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">핵심 개념 추가</h2>
-            </div>
+          <div className="bg-white rounded-2xl p-5 shadow-sm space-y-3">
+            <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">핵심 개념 추가</h2>
 
-            {/* ① 학년 선택 — 가장 먼저 */}
-            <div className="rounded-xl bg-[#f8f8fc] border border-[#e8e8f0] px-4 py-3">
-              <div className="text-xs font-bold text-[#666] mb-2">학년 선택 <span className="font-normal text-[#bbb]">· 직접 입력과 파일 업로드 모두에 적용됩니다</span></div>
-              <div className="flex gap-2 flex-wrap">
-                {([null, ...GRADE_LIST] as (string | null)[]).map(g => {
-                  const label = g ?? '공통';
-                  const isSelected = newConceptProject === g;
-                  return (
-                    <button key={label} onClick={() => setNewConceptProject(g)}
-                      className="text-sm font-semibold px-4 py-1.5 rounded-full border-2 cursor-pointer transition-all"
-                      style={isSelected
-                        ? { background: '#667eea', color: 'white', borderColor: '#667eea' }
-                        : { background: 'white', color: '#999', borderColor: '#e0e0e0' }}>
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* ② 직접 입력 */}
+            {/* 학년 토글 + 입력 + 추가 버튼 한 줄 */}
             <div>
-              <div className="text-xs font-bold text-[#666] mb-1.5">
-                직접 입력
-                <span className="font-normal text-[#9ca3af] ml-2">형식: <span className="font-mono text-[#667eea]">핵심어: 개념 내용</span>&nbsp; 예) 자전: 지구가 자전축을 중심으로 하루에 한 바퀴 도는 것</span>
-              </div>
-              <div className="flex gap-2">
+              <p className="text-xs text-[#9ca3af] mb-2">형식: <span className="font-mono font-semibold text-[#667eea]">핵심어: 개념 내용</span>&nbsp; 예) 자전: 지구가 자전축을 중심으로 하루에 한 바퀴 도는 것</p>
+              <div className="flex gap-2 items-stretch">
+                {/* 학년 토글 */}
+                <div className="flex rounded-xl border-2 border-[#e0e0f0] overflow-hidden shrink-0">
+                  {([null, ...GRADE_LIST] as (string | null)[]).map(g => {
+                    const label = g ?? '공통';
+                    const isSelected = newConceptProject === g;
+                    return (
+                      <button key={label} onClick={() => setNewConceptProject(g)}
+                        className="text-xs font-semibold px-3 py-2 cursor-pointer border-none transition-all"
+                        style={isSelected
+                          ? { background: '#667eea', color: 'white' }
+                          : { background: 'white', color: '#aaa' }}>
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
                 <input
                   type="text"
                   value={conceptText}
                   onChange={e => setConceptText(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') saveConcept(); }}
                   placeholder="자전: 지구가 자전축을 중심으로 하루에 한 바퀴 도는 것"
-                  className="flex-1 border-2 border-[#e0e0f0] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#667eea]"
+                  className="flex-1 border-2 border-[#e0e0f0] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#667eea]"
                 />
                 <button onClick={saveConcept}
                   disabled={savingConcept || !parseConceptLine(conceptText)}
-                  className="px-6 py-2.5 rounded-xl text-white text-sm font-bold border-none cursor-pointer disabled:opacity-50 transition-all shrink-0"
+                  className="px-5 py-2 rounded-xl text-white text-sm font-bold border-none cursor-pointer disabled:opacity-50 transition-all shrink-0"
                   style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)' }}>
                   {savingConcept ? '저장 중…' : '추가'}
                 </button>
               </div>
             </div>
 
-            {/* ③ 파일 업로드 */}
-            <div className="border-t border-[#f0f0f8] pt-4">
-              <div className="text-xs font-bold text-[#666] mb-2.5">파일로 일괄 업로드</div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <label className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold cursor-pointer border-2 border-[#667eea] text-[#667eea] hover:bg-[#667eea] hover:text-white transition-all">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                  {uploadingConcepts ? '업로드 중…' : 'CSV 파일 선택'}
-                  <input type="file" accept=".csv,.txt" className="hidden"
-                    onChange={e => { const f = e.target.files?.[0]; if (f) { uploadConceptCSV(f); e.target.value = ''; } }}
-                    disabled={uploadingConcepts} />
-                </label>
-                <button
-                  onClick={() => {
-                    const sample = [
-                      '자전: 지구가 자전축을 중심으로 하루에 한 바퀴 도는 것',
-                      '공전: 지구가 태양 주위를 1년에 한 바퀴 도는 것',
-                      '계절: 지구의 자전축이 기울어진 채 공전하기 때문에 생기는 현상',
-                    ].join('\n');
-                    const blob = new Blob(['﻿' + sample], { type: 'text/csv;charset=utf-8;' });
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    a.download = '개념DB_샘플.csv';
-                    a.click();
-                    URL.revokeObjectURL(a.href);
-                  }}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold cursor-pointer border-2 border-[#e0e0f0] text-[#888] hover:border-[#667eea] hover:text-[#667eea] transition-all bg-white">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  샘플 다운로드
-                </button>
-                <span className="text-[11px] text-[#bbb]">한 줄에 하나씩 · 핵심어: 내용 형식 · .csv 또는 .txt</span>
-              </div>
+            {/* 파일 업로드 */}
+            <div className="flex items-center gap-3 pt-2 border-t border-[#f0f0f8]">
+              <span className="text-xs font-bold text-[#666] shrink-0">일괄 업로드</span>
+              <label className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold cursor-pointer border-2 border-[#667eea] text-[#667eea] hover:bg-[#667eea] hover:text-white transition-all shrink-0">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                {uploadingConcepts ? '업로드 중…' : 'CSV 파일 선택'}
+                <input type="file" accept=".csv,.txt" className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) { uploadConceptCSV(f); e.target.value = ''; } }}
+                  disabled={uploadingConcepts} />
+              </label>
+              <span className="text-[11px] text-[#bbb]">한 줄에 하나씩 · 핵심어: 내용 형식 · .csv 또는 .txt · 위에서 선택한 학년 적용</span>
             </div>
           </div>
 
