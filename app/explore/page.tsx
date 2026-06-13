@@ -23,7 +23,7 @@ export default function ExplorePage() {
   const [loadingHints, setLoadingHints] = useState(false);
 
   const trimmed    = explanation.trim();
-  const showHelper = trimmed.length >= 150 && countSentences(trimmed) >= 3;
+  const showHelper = trimmed.length >= 100 && countSentences(trimmed) >= 3;
 
   // 탐구 도우미: 입력 멈춘 뒤 1.2초 후 AI 질문 생성
   useEffect(() => {
@@ -156,7 +156,7 @@ export default function ExplorePage() {
             style={{ minHeight: '220px' }} />
           {!showHelper && trimmed.length > 0 && (
             <p className="text-right text-[11px] mt-1 text-[#ccc]">
-              {trimmed.length}/150자 · {countSentences(trimmed)}/3문장
+              {trimmed.length}/100자 · {countSentences(trimmed)}/3문장
             </p>
           )}
         </Card>

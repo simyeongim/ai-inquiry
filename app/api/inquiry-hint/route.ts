@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   const { explanation } = await request.json();
 
-  if (!explanation || explanation.trim().length < 150) {
+  if (!explanation || explanation.trim().length < 100) {
     return NextResponse.json({ hints: [] });
   }
 
