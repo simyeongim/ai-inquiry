@@ -440,6 +440,7 @@ export default function TeacherPage() {
   const [deletingExplore,       setDeletingExplore]       = useState(false);
   const [showDeleteExplore,     setShowDeleteExplore]     = useState(false);
   const [expandedBestId,        setExpandedBestId]        = useState<string | null>(null);
+  const [showExploreList,       setShowExploreList]       = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true); setFetchErr('');
@@ -1950,6 +1951,13 @@ export default function TeacherPage() {
                 onToggle={v => setFExploreProject(tog(fExploreProject, v as string))}
                 getLabel={v => v as string} />
             </div>
+            {!loadingExplore && filteredExplorations.length > 0 && (
+              <button onClick={exportExplorations}
+                className="text-xs px-3 py-1.5 rounded-full font-semibold border-none cursor-pointer shrink-0 whitespace-nowrap"
+                style={{background:'#667eea', color:'white'}}>
+                ↓ CSV
+              </button>
+            )}
             {(fExploreClass.length > 0 || fExploreProject.length > 0) && (
               <button onClick={() => { setFExploreClass([]); setFExploreProject([]); }}
                 className="text-xs text-[#667eea] border-none bg-transparent cursor-pointer font-semibold hover:underline whitespace-nowrap shrink-0">
@@ -1967,46 +1975,6 @@ export default function TeacherPage() {
             </div>
           ) : !exploreStats ? null : (
           <>
-
-          {/* ─ 응답 목록 (삭제·내보내기) ─ */}
-          <div className="bg-white rounded-2xl px-5 py-4 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[15px] font-bold text-[#1a1a2e]">응답 목록 ({filteredExplorations.length}건)</h2>
-              <div className="flex items-center gap-2">
-                {filteredExplorations.length > 0 && filteredExplorations.every(r => selExplore.has(r.id))
-                  ? <button onClick={() => setSelExplore(new Set())}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-full border-2 cursor-pointer"
-                      style={{background:'#ede9fe', color:'#5850ec', borderColor:'#5850ec'}}>전체 선택 해제</button>
-                  : <button onClick={() => setSelExplore(new Set(filteredExplorations.map(r => r.id)))}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-full border-2 cursor-pointer"
-                      style={{background:'white', color:'#777', borderColor:'#e0e0e0'}}>전체 선택</button>
-                }
-                <button onClick={() => setShowDeleteExplore(true)} disabled={selExplore.size === 0}
-                  className="text-xs px-3 py-1.5 rounded-full font-semibold text-white border-none cursor-pointer disabled:opacity-40"
-                  style={{background:'#dc2626'}}>
-                  삭제{selExplore.size > 0 ? ` (${selExplore.size})` : ''}
-                </button>
-                <button onClick={exportExplorations}
-                  className="text-xs px-3 py-1.5 rounded-full font-semibold border-none cursor-pointer"
-                  style={{background:'#667eea', color:'white'}}>
-                  CSV 내보내기
-                </button>
-              </div>
-            </div>
-            <div className="space-y-1">
-              {filteredExplorations.map(r => (
-                <label key={r.id} className="flex items-center gap-2.5 px-3 py-2 rounded-xl cursor-pointer hover:bg-[#f8f8fc] transition-colors">
-                  <input type="checkbox" checked={selExplore.has(r.id)}
-                    onChange={() => setSelExplore(p => { const n = new Set(p); n.has(r.id) ? n.delete(r.id) : n.add(r.id); return n; })}
-                    className="accent-[#667eea] w-3.5 h-3.5 shrink-0" />
-                  <span className="text-xs text-[#888] shrink-0 w-20">{r.class_room}</span>
-                  <span className="text-sm font-semibold text-[#333] shrink-0">{r.name}</span>
-                  {r.project && <span className="text-[10px] text-[#aaa] flex-1 truncate">{r.project}</span>}
-                  <span className="text-[10px] text-[#ccc] shrink-0">{r.created_at?.slice(0,10)}</span>
-                </label>
-              ))}
-            </div>
-          </div>
 
           {/* ─ 참여 현황 + 탐구 방법 ─ */}
           <div className="bg-white rounded-2xl px-5 py-4 shadow-sm">
@@ -2353,6 +2321,56 @@ export default function TeacherPage() {
               </div>
             );
           })()}
+
+          {/* ─ 응답 관리 (하단, 기본 접힘) ─ */}
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <button
+              onClick={() => setShowExploreList(p => !p)}
+              className="w-full flex items-center justify-between px-5 py-3 cursor-pointer bg-transparent border-none text-left hover:bg-[#f8f8fc] transition-colors">
+              <span className="text-sm font-semibold text-[#888]">
+                응답 관리
+                <span className="ml-1.5 text-xs font-normal text-[#bbb]">({filteredExplorations.length}건)</span>
+              </span>
+              <div className="flex items-center gap-2">
+                {selExplore.size > 0 && (
+                  <button
+                    onClick={e => { e.stopPropagation(); setShowDeleteExplore(true); }}
+                    className="text-xs px-2.5 py-1 rounded-full text-white font-semibold border-none cursor-pointer"
+                    style={{background:'#dc2626'}}>
+                    삭제 ({selExplore.size})
+                  </button>
+                )}
+                <span className="text-xs text-[#ccc]">{showExploreList ? '▲' : '▼'}</span>
+              </div>
+            </button>
+
+            {showExploreList && (
+              <div className="border-t border-[#f4f4fc]">
+                {/* 전체 선택 행 */}
+                <label className="flex items-center gap-3 px-5 py-2.5 border-b border-[#f0f0f8] cursor-pointer hover:bg-[#f8f8fc]">
+                  <input type="checkbox"
+                    checked={filteredExplorations.length > 0 && filteredExplorations.every(r => selExplore.has(r.id))}
+                    onChange={() => {
+                      const allSelected = filteredExplorations.every(r => selExplore.has(r.id));
+                      setSelExplore(allSelected ? new Set() : new Set(filteredExplorations.map(r => r.id)));
+                    }}
+                    className="accent-[#667eea] w-3.5 h-3.5 shrink-0" />
+                  <span className="text-xs font-semibold text-[#999]">전체 선택</span>
+                </label>
+                {/* 응답 행 */}
+                {filteredExplorations.map(r => (
+                  <label key={r.id} className="flex items-center gap-3 px-5 py-2 border-b border-[#f9f9fc] cursor-pointer hover:bg-[#f8f8fc] transition-colors last:border-none">
+                    <input type="checkbox" checked={selExplore.has(r.id)}
+                      onChange={() => setSelExplore(p => { const n = new Set(p); n.has(r.id) ? n.delete(r.id) : n.add(r.id); return n; })}
+                      className="accent-[#667eea] w-3.5 h-3.5 shrink-0" />
+                    <span className="text-sm font-semibold text-[#333] shrink-0">{r.name}</span>
+                    <span className="text-xs text-[#aaa] shrink-0">{r.class_room}</span>
+                    <span className="text-[10px] text-[#ccc] ml-auto shrink-0">{r.created_at?.slice(0,10)}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
 
           </>
           )}
