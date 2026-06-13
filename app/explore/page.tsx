@@ -241,12 +241,8 @@ export default function ExplorePage() {
         {/* 2. 설명하기 */}
         <Accordion id="explanation" title="2. 탐구를 통해 알게 된 점을 설명해 보세요." done={done.explanation} summary={summary.explanation}
           isOpen={open.has('explanation')} onToggle={() => toggle('explanation')}>
-          <textarea value={explanation} onChange={e => setExplanation(e.target.value)}
-            placeholder="탐구를 통해 알게 된 내용을 바탕으로, 나의 생각을 근거와 함께 설명해 보세요."
-            className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
-            style={{ minHeight: '220px' }} />
           {/* 항상 표시 — 2×2 탐구 심화 힌트 */}
-          <div className="mt-2 px-3 py-2.5 rounded-xl" style={{background:'#fffbeb', border:'1px solid #fde68a'}}>
+          <div className="mb-2 px-3 py-2.5 rounded-xl" style={{background:'#fffbeb', border:'1px solid #fde68a'}}>
             <p className="text-[11px] font-black text-[#92400e] m-0 mb-1.5">더 깊이 탐구하려면 이렇게 생각해 보세요.</p>
             <div className="grid grid-cols-2 gap-x-3 gap-y-1">
               {['왜 그런 일이 일어날까?','이것 때문에 또 무엇이 달라질까?','다른 상황에서도 그럴까?','새롭게 궁금해진 것은 없을까?'].map((q, i) => (
@@ -254,6 +250,10 @@ export default function ExplorePage() {
               ))}
             </div>
           </div>
+          <textarea value={explanation} onChange={e => setExplanation(e.target.value)}
+            placeholder="탐구를 통해 알게 된 내용을 바탕으로, 나의 생각을 근거와 함께 설명해 보세요."
+            className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
+            style={{ minHeight: '220px' }} />
           {!showHelper && trimmed.length > 0 && (
             <div className="mt-2 flex items-start gap-2 justify-between">
               <div>
