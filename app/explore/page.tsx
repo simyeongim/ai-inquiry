@@ -35,18 +35,27 @@ export default function ExplorePage() {
 
   const [strength,     setStrength]     = useState('');
   const [hints,        setHints]        = useState<string[]>([]);
-  const [loadingHints, setLoadingHints] = useState(false);
-  const [submitting,   setSubmitting]   = useState(false);
-  const [forceHelper,  setForceHelper]  = useState(false);
+  const [loadingHints,  setLoadingHints]  = useState(false);
+  const [submitting,    setSubmitting]    = useState(false);
+  const [forceHelper,   setForceHelper]   = useState(false);
+  const [showHelper,    setShowHelper]    = useState(false);
+  const [otherMethodText, setOtherMethodText] = useState('');
 
   const trimmed        = explanation.trim();
   const meetsCondition = trimmed.length >= 100 && countSentences(trimmed) >= 3;
-  const showHelper     = meetsCondition || (forceHelper && trimmed.length > 0);
 
   useEffect(() => {
-    if (!showHelper) { setStrength(''); setHints([]); setLoadingHints(false); return; }
-    setLoadingHints(true);
+    const active = (meetsCondition || forceHelper) && trimmed.length > 0;
+    if (!active) {
+      setShowHelper(false);
+      setStrength(''); setHints([]); setLoadingHints(false);
+      return;
+    }
+    // forceHelper는 즉시, 자동 조건은 10초 대기
+    const delay = forceHelper ? 100 : 10000;
     const timer = setTimeout(async () => {
+      setShowHelper(true);
+      setLoadingHints(true);
       try {
         const res  = await fetch('/api/inquiry-hint', {
           method: 'POST',
@@ -58,9 +67,9 @@ export default function ExplorePage() {
         setHints(Array.isArray(data.hints) ? data.hints : []);
       } catch { setHints([]); }
       finally  { setLoadingHints(false); }
-    }, 1200);
+    }, delay);
     return () => clearTimeout(timer);
-  }, [explanation, showHelper]);
+  }, [explanation, meetsCondition, forceHelper]);
 
   function toggle(s: Section) {
     setOpen(prev => { const n = new Set(prev); n.has(s) ? n.delete(s) : n.add(s); return n; });
@@ -87,7 +96,9 @@ export default function ExplorePage() {
           name:        name.trim(),
           project,
           question:    question.trim(),
-          methods:     methods.join(', '),
+          methods:     methods.map(m =>
+            m === '기타' && otherMethodText.trim() ? `기타(${otherMethodText.trim()})` : m
+          ).join(', '),
           process:     process.trim(),
           explanation: explanation.trim(),
           insight:     insight.trim(),
@@ -197,6 +208,15 @@ export default function ExplorePage() {
               );
             })}
           </div>
+          {methods.includes('기타') && (
+            <input
+              type="text"
+              value={otherMethodText}
+              onChange={e => setOtherMethodText(e.target.value)}
+              placeholder="어떤 방법으로 탐구했나요?"
+              className="mt-2 w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] transition-colors"
+            />
+          )}
         </Accordion>
 
         {/* 1. 탐구 과정 */}
