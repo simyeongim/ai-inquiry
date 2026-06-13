@@ -2012,21 +2012,21 @@ export default function TeacherPage() {
                   <div className="mb-3 rounded-xl border border-[#e0e0f0] overflow-hidden">
                     {[
                       { lv: '🟡', label: '사실 나열형', color: '#f57f17', bg: '#fff8e1',
-                        desc: '탐구에서 알게 된 사실이나 정보를 단순히 열거합니다.',
-                        ex: '"A는 B다, C는 D다" 형식. 개념들 사이의 연결이나 이유 설명 없음.' },
+                        desc: '알게 된 사실을 나열하지만 개념 사이의 이유나 연결이 없습니다.',
+                        ex: '예) "자전은 하루에 한 바퀴다. 공전은 1년에 한 바퀴다." — 사실만 열거, 연결 없음.' },
                       { lv: '🔵', label: '연결 설명형', color: '#1565c0', bg: '#e3f2fd',
-                        desc: '알게 된 사실들을 서로 연결하여 설명합니다.',
-                        ex: '"A이기 때문에 B가 된다"처럼 원인-결과 또는 개념 관계를 부분적으로 설명.' },
+                        desc: '원인-결과를 1:1로 연결하여 설명합니다. 배운 내용 안에서만 관계를 서술합니다.',
+                        ex: '예) "자전 속도가 빠르면 원심력이 커져서 적도 쪽이 부풀어 오른다." — 이유 포함, 배운 범위 안에서 연결.' },
                       { lv: '🟢', label: '관계 탐구형', color: '#2e7d32', bg: '#e8f5e9',
-                        desc: '개념들 사이의 관계를 깊이 탐구하고 스스로 설명하거나 다른 상황에 적용합니다.',
-                        ex: '여러 개념을 통합하거나, 새로운 질문을 스스로 생성하거나, "만약 ~라면" 형식으로 확장.' },
+                        desc: '여러 개념을 통합하거나 배운 것을 넘어 새 질문을 스스로 만들고 다른 상황에 적용합니다.',
+                        ex: '예) "자전 속도가 달라지면 계절도 바뀔까? 그렇다면 농사 방식도 달라지지 않을까?" — 만약·그렇다면 형식으로 탐구 확장.' },
                     ].map(({ lv, label, color, bg, desc, ex }) => (
-                      <div key={lv} className="flex gap-3 px-4 py-3 border-b last:border-b-0 border-[#f0f0f8]" style={{background: bg + '66'}}>
-                        <span className="text-xl shrink-0">{lv}</span>
+                      <div key={lv} className="flex gap-3 px-4 py-3 border-b last:border-b-0 border-[#f0f0f8]" style={{background: bg + '55'}}>
+                        <span className="text-xl shrink-0 mt-0.5">{lv}</span>
                         <div>
-                          <div className="text-sm font-black mb-0.5" style={{color}}>{label}</div>
-                          <div className="text-xs text-[#555] mb-0.5">{desc}</div>
-                          <div className="text-xs text-[#888] italic">{ex}</div>
+                          <div className="text-sm font-black mb-1" style={{color}}>{label}</div>
+                          <div className="text-xs text-[#444] mb-1 leading-relaxed">{desc}</div>
+                          <div className="text-xs text-[#777] leading-relaxed">{ex}</div>
                         </div>
                       </div>
                     ))}
@@ -2075,35 +2075,51 @@ export default function TeacherPage() {
                               <span className="text-xs text-[#ccc] shrink-0">{isExpanded ? '▲' : '▼'}</span>
                             </button>
                             {isExpanded && (
-                              <div className="px-4 pb-4 pt-2 border-t border-[#f4f4fc] space-y-3">
-                                {r.question && (
-                                  <div>
-                                    <div className="text-[11px] font-black text-[#9ca3af] uppercase tracking-wide mb-1">탐구 질문</div>
-                                    <p className="text-sm text-[#374151] m-0 leading-relaxed">{r.question}</p>
+                              <div className="border-t border-[#f4f4fc]">
+                                {/* 상단: 탐구질문 + 방법 */}
+                                {(r.question || r.methods) && (
+                                  <div className="px-3 py-2 flex gap-3 items-start border-b border-[#f4f4fc]" style={{background:'#fafafa'}}>
+                                    {r.question && (
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">탐구 질문</div>
+                                        <p className="text-xs text-[#4a4a6a] m-0 leading-snug">{r.question}</p>
+                                      </div>
+                                    )}
+                                    {r.methods && (
+                                      <div className="shrink-0 max-w-[40%]">
+                                        <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5 text-right">방법</div>
+                                        <div className="flex flex-wrap gap-1 justify-end">
+                                          {r.methods.split(',').map((m, i) => (
+                                            <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
+                                              style={{background:'#ede9fe', color:'#5c35cc'}}>{m.trim()}</span>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
-                                {r.methods && (
-                                  <div>
-                                    <div className="text-[11px] font-black text-[#9ca3af] uppercase tracking-wide mb-1">탐구 방법</div>
-                                    <p className="text-sm text-[#374151] m-0">{r.methods}</p>
-                                  </div>
-                                )}
-                                {r.process && (
-                                  <div>
-                                    <div className="text-[11px] font-black text-[#9ca3af] uppercase tracking-wide mb-1">1. 탐구 과정</div>
-                                    <p className="text-sm text-[#374151] m-0 leading-relaxed whitespace-pre-wrap">{r.process}</p>
-                                  </div>
-                                )}
+                                {/* 중단: 알게 된 점 (분석 대상, 강조) */}
                                 {r.explanation && (
-                                  <div className="rounded-lg p-3" style={{background: info.bg + '88'}}>
-                                    <div className="text-[11px] font-black uppercase tracking-wide mb-1" style={{color: info.color}}>2. 알게 된 점 (분석 대상)</div>
-                                    <p className="text-sm text-[#374151] m-0 leading-relaxed whitespace-pre-wrap">{r.explanation}</p>
+                                  <div className="px-3 py-2 border-b border-[#f4f4fc]" style={{background: info.bg + '55'}}>
+                                    <div className="text-[10px] font-black mb-1" style={{color: info.color}}>2. 알게 된 점</div>
+                                    <p className="text-xs text-[#374151] m-0 leading-relaxed whitespace-pre-wrap">{r.explanation}</p>
                                   </div>
                                 )}
-                                {r.insight && (
-                                  <div>
-                                    <div className="text-[11px] font-black text-[#9ca3af] uppercase tracking-wide mb-1">3. 생각 변화</div>
-                                    <p className="text-sm text-[#374151] m-0 leading-relaxed whitespace-pre-wrap">{r.insight}</p>
+                                {/* 하단: 탐구과정 + 생각변화 2열 */}
+                                {(r.process || r.insight) && (
+                                  <div className={`px-3 py-2 grid gap-3 ${r.process && r.insight ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                                    {r.process && (
+                                      <div>
+                                        <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">1. 탐구 과정</div>
+                                        <p className="text-xs text-[#555] m-0 leading-snug whitespace-pre-wrap">{r.process}</p>
+                                      </div>
+                                    )}
+                                    {r.insight && (
+                                      <div>
+                                        <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">3. 생각 변화</div>
+                                        <p className="text-xs text-[#555] m-0 leading-snug whitespace-pre-wrap">{r.insight}</p>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>

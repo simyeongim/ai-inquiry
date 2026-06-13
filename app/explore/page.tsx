@@ -259,6 +259,26 @@ export default function ExplorePage() {
               </div>
             </div>
             <div className="px-4 py-3 border-t space-y-2" style={{ background: 'white', borderColor: '#fde68a' }}>
+              {/* 탐구 깊이 단계 안내 */}
+              <div className="flex items-center gap-1 pb-2 mb-1 border-b border-[#fde68a]">
+                <div className="flex-1 text-center">
+                  <div className="text-sm">🟡</div>
+                  <div className="text-[10px] font-black text-[#92400e]">사실 나열</div>
+                  <div className="text-[9px] text-[#a37020] leading-tight mt-0.5">알게 된 것을 나열</div>
+                </div>
+                <span className="text-[#fbbf24] text-xs shrink-0">→</span>
+                <div className="flex-1 text-center">
+                  <div className="text-sm">🔵</div>
+                  <div className="text-[10px] font-black text-[#92400e]">연결 설명</div>
+                  <div className="text-[9px] text-[#a37020] leading-tight mt-0.5">이유를 연결해서 설명</div>
+                </div>
+                <span className="text-[#fbbf24] text-xs shrink-0">→</span>
+                <div className="flex-1 text-center">
+                  <div className="text-sm">🟢</div>
+                  <div className="text-[10px] font-black text-[#92400e]">관계 탐구</div>
+                  <div className="text-[9px] text-[#a37020] leading-tight mt-0.5">새 질문 만들어 확장</div>
+                </div>
+              </div>
               {loadingHints ? (
                 <div className="flex items-center gap-2 py-1">
                   <span className="inline-block w-4 h-4 border-2 border-[#f59e0b] border-t-transparent rounded-full animate-spin" />
