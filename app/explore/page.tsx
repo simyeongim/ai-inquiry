@@ -105,7 +105,7 @@ export default function ExplorePage() {
           <textarea value={question} onChange={e => setQuestion(e.target.value)}
             placeholder="지구의 자전 방향이 바뀌면 어떤 일이 일어날까?"
             className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
-            style={{ minHeight: '80px' }} />
+            style={{ minHeight: '64px' }} />
         </Card>
 
         {/* 탐구 방법 */}
