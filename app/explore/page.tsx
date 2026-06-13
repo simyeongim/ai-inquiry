@@ -134,7 +134,7 @@ export default function ExplorePage() {
 
         {/* 탐구 과정에서 중요했던 내용 */}
         <Card>
-          <Label>탐구 과정에서 중요했던 내용</Label>
+          <Label>1. 탐구 과정에서 중요했던 내용은 무엇인가요?</Label>
           <textarea value={process} onChange={e => setProcess(e.target.value)}
             placeholder="탐구 중 알게 된 사실, 중요한 자료, 친구들과 나눈 의견을 자유롭게 기록해 보세요."
             className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
@@ -143,7 +143,7 @@ export default function ExplorePage() {
 
         {/* 탐구를 통해 설명하기 */}
         <Card>
-          <Label>탐구를 통해 설명하기</Label>
+          <Label>2. 탐구를 통해 알게 된 점을 설명해 보세요.</Label>
           <textarea value={explanation} onChange={e => setExplanation(e.target.value)}
             placeholder="탐구를 통해 알게 된 내용을 바탕으로, 나의 생각을 근거와 함께 설명해 보세요."
             className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
@@ -195,7 +195,7 @@ export default function ExplorePage() {
 
         {/* 새롭게 이해한 점 */}
         <Card>
-          <Label>새롭게 이해한 점</Label>
+          <Label>3. 탐구를 통해 어떻게 생각이 달라졌나요?</Label>
           <textarea value={insight} onChange={e => setInsight(e.target.value)}
             placeholder="탐구 전과 달라진 생각, 새롭게 이해하게 된 점을 적어 보세요."
             className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
