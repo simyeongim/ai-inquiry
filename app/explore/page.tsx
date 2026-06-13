@@ -268,11 +268,27 @@ export default function ExplorePage() {
         </Accordion>
 
         {/* 제출 버튼 */}
-        <button type="button" onClick={handleSubmit} disabled={submitting}
-          className="mt-1.5 w-full text-white font-bold text-[0.95rem] py-2.5 rounded-xl border-none cursor-pointer transition-all hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 mb-4 disabled:opacity-60 disabled:cursor-not-allowed"
-          style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)' }}>
-          {submitting ? '저장 중...' : '제출하기 →'}
-        </button>
+        {(() => {
+          const allDone = Object.values(done).every(Boolean);
+          return (
+            <>
+              <button type="button" onClick={handleSubmit} disabled={submitting || !allDone}
+                className="mt-1.5 w-full text-white font-bold text-[0.95rem] py-2.5 rounded-xl border-none transition-all mb-1 disabled:cursor-not-allowed"
+                style={{
+                  background: 'linear-gradient(135deg,#667eea,#764ba2)',
+                  opacity: allDone ? 1 : 0.4,
+                  cursor: allDone ? 'pointer' : 'not-allowed',
+                }}>
+                {submitting ? '저장 중...' : '제출하기 →'}
+              </button>
+              {!allDone && (
+                <p className="text-center text-xs text-[#bbb] mb-4">
+                  위의 모든 항목을 작성하면 제출할 수 있어요.
+                </p>
+              )}
+            </>
+          );
+        })()}
 
       </div>
     </div>
