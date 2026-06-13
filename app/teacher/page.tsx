@@ -2185,17 +2185,29 @@ export default function TeacherPage() {
                             <div className="space-y-1.5">
                               {students.map(r => {
                                 const isExpanded = expandedExploreId === r.id;
+                                const preview = r.explanation?.trim().slice(0, 72);
                                 return (
-                                  <div key={r.id} className="rounded-xl border-2 overflow-hidden"
-                                    style={{borderColor: info.color + '40', background: info.bg}}>
+                                  <div key={r.id} className="rounded-xl overflow-hidden"
+                                    style={{
+                                      background: info.bg,
+                                      border: `1px solid ${info.color}25`,
+                                      borderLeft: `3px solid ${info.color}`,
+                                    }}>
                                     <button
                                       onClick={() => setExpandedExploreId(isExpanded ? null : r.id)}
-                                      className="w-full flex items-center gap-1.5 px-2.5 py-2 cursor-pointer bg-transparent border-none text-left hover:opacity-80 transition-opacity">
-                                      <span className="text-xs font-semibold text-[#333] shrink-0">{r.class_room} {r.name}</span>
-                                      <span className="text-[10px] text-[#ccc] shrink-0 ml-auto">{isExpanded ? '▲' : '▼'}</span>
+                                      className="w-full px-2.5 pt-2 pb-1.5 cursor-pointer bg-transparent border-none text-left hover:opacity-75 transition-opacity">
+                                      <div className="flex items-center justify-between gap-1 mb-0.5">
+                                        <span className="text-xs font-bold text-[#222]">{r.class_room} {r.name}</span>
+                                        <span className="text-[9px] text-[#bbb] shrink-0">{isExpanded ? '▲' : '▼'}</span>
+                                      </div>
+                                      {preview && !isExpanded && (
+                                        <p className="text-[10px] m-0 leading-snug" style={{color: info.color + 'cc'}}>
+                                          {preview}{(r.explanation?.trim().length ?? 0) > 72 ? '…' : ''}
+                                        </p>
+                                      )}
                                     </button>
                                     {isExpanded && (
-                                      <div className="border-t" style={{borderColor: info.color + '30', background:'white'}}>
+                                      <div className="border-t" style={{borderColor: info.color + '25', background:'white'}}>
                                         {renderExploreDetail(r, info)}
                                       </div>
                                     )}
@@ -2214,7 +2226,7 @@ export default function TeacherPage() {
             // renderExploreDetail 헬퍼
             function renderExploreDetail(r: ExplorationRow, info: {label:string;color:string;bg:string}) {
               return (
-                <div className="border-t" style={{borderColor: info.color + '30'}}>
+                <div>
                   {(r.question || r.methods) && (
                     <div className="px-3 py-2 flex gap-3 items-start border-b border-[#f4f4fc]" style={{background:'#fafafa'}}>
                       {r.question && (
