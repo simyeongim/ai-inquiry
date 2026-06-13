@@ -1630,7 +1630,11 @@ export default function TeacherPage() {
                     const isOn = fConceptProject.includes(g);
                     return (
                       <button key={g}
-                        onClick={() => setFConceptProject(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g])}
+                        onClick={() => {
+                          const isOn = fConceptProject.includes(g);
+                          setFConceptProject(prev => isOn ? prev.filter(x => x !== g) : [...prev, g]);
+                          if (!isOn) setExpandedGrades(prev => { const n = new Set(prev); n.add(g); return n; });
+                        }}
                         className="text-xs font-semibold px-3 py-1 rounded-full border-2 transition-all cursor-pointer shrink-0"
                         style={isOn
                           ? { background: '#e8eaf6', color: '#667eea', borderColor: '#667eea' }
