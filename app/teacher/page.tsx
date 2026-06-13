@@ -2122,29 +2122,19 @@ export default function TeacherPage() {
                     )}
                     {/* 학생 목록 — 3열 그리드 또는 필터 뷰 */}
                     {filterExploreDepth ? (
-                      /* 필터 활성: 단일 목록 */
-                      <div className="space-y-1.5">
+                      /* 필터 활성: 이름+코멘트만 표시 */
+                      <div className="flex flex-wrap gap-2">
                         {filteredExplorations
                           .filter(r => exploreDepthMap[r.id]?.level === filterExploreDepth)
                           .map(r => {
                           const depth = exploreDepthMap[r.id];
                           const info = DEPTH_INFO[depth.level] ?? {label: depth.level, color:'#666', bg:'#f5f5f5'};
-                          const isExpanded = expandedExploreId === r.id;
                           return (
-                            <div key={r.id} className="rounded-xl border-2 overflow-hidden"
-                              style={{borderColor: info.color + '40', background: info.bg}}>
-                              <button
-                                onClick={() => setExpandedExploreId(isExpanded ? null : r.id)}
-                                className="w-full flex items-center gap-2 px-3 py-2 cursor-pointer bg-transparent border-none text-left hover:opacity-80 transition-opacity">
-                                <span className="text-sm font-black shrink-0" style={{color: info.color}}>{depth.level}</span>
-                                <span className="text-sm font-semibold text-[#333] shrink-0">{r.class_room} {r.name}</span>
-                                <span className="text-xs text-[#aaa] flex-1 truncate ml-1">{depth.comment}</span>
-                                <span className="text-xs text-[#ccc] shrink-0">{isExpanded ? '▲' : '▼'}</span>
-                              </button>
-                              {isExpanded && (
-                                <div className="border-t" style={{borderColor: info.color + '30', background:'white'}}>
-                                  {renderExploreDetail(r, info)}
-                                </div>
+                            <div key={r.id} className="rounded-xl px-3 py-2 flex items-center gap-2"
+                              style={{background: info.bg, border: `1.5px solid ${info.color}30`}}>
+                              <span className="text-sm font-semibold text-[#333]">{r.class_room} {r.name}</span>
+                              {depth.comment && (
+                                <span className="text-xs text-[#aaa]">{depth.comment}</span>
                               )}
                             </div>
                           );
