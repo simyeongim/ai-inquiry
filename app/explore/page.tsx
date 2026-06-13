@@ -276,19 +276,13 @@ export default function ExplorePage() {
               </div>
             </div>
             <div className="px-4 py-3 border-t space-y-3" style={{ background: 'white', borderColor: '#fde68a' }}>
-              {/* 탐구 심화 팁 */}
-              <div className="grid grid-cols-2 gap-1.5">
-                {([
-                  { icon: '🔍', q: '왜 그럴까?', desc: '알게 된 사실의 이유를 내 말로 설명해 보세요.' },
-                  { icon: '🔗', q: '연결하면?', desc: '배운 개념들이 서로 어떻게 이어지는지 써 보세요.' },
-                  { icon: '💭', q: '만약에?', desc: '상황이 달라진다면 결과도 달라질지 생각해 보세요.' },
-                  { icon: '❓', q: '새 질문은?', desc: '탐구하며 새로 생긴 궁금점을 질문으로 써 보세요.' },
-                ] as const).map(({ icon, q, desc }) => (
-                  <div key={q} className="rounded-xl px-2.5 py-2" style={{background:'#fffbeb', border:'1px solid #fde68a'}}>
-                    <p className="text-xs font-black text-[#92400e] m-0 mb-0.5">{icon} {q}</p>
-                    <p className="text-[10px] text-[#a37020] m-0 leading-tight">{desc}</p>
-                  </div>
-                ))}
+              {/* 탐구 심화 안내 */}
+              <div className="px-3 py-2.5 rounded-xl space-y-1" style={{background:'#fffbeb', border:'1px solid #fde68a'}}>
+                <p className="text-xs font-black text-[#92400e] m-0">지금 쓴 내용에서 한 단계 더 나아가 볼까요?</p>
+                <p className="text-xs text-[#a37020] m-0 leading-relaxed">알게 된 사실의 <span className="font-semibold">이유</span>를 내 말로 설명해 보세요.</p>
+                <p className="text-xs text-[#a37020] m-0 leading-relaxed">배운 것들이 서로 <span className="font-semibold">어떻게 연결</span>되는지 생각해 보세요.</p>
+                <p className="text-xs text-[#a37020] m-0 leading-relaxed">상황이 달라지면 결과도 <span className="font-semibold">달라질지 상상</span>해 보세요.</p>
+                <p className="text-xs text-[#a37020] m-0 leading-relaxed">탐구하며 새로 생긴 <span className="font-semibold">궁금점을 질문</span>으로 남겨 보세요.</p>
               </div>
 
               {loadingHints ? (
