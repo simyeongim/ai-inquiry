@@ -1645,53 +1645,58 @@ export default function TeacherPage() {
 
           {/* 목록 */}
           <div className="bg-white rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-              <div className="flex items-center gap-3">
-                <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">
-                  저장된 핵심 개념 <span className="text-xs font-medium text-[#9ca3af]">{concepts.length}개</span>
-                </h2>
-                {concepts.length > 0 && (
-                  <>
+            {/* 헤더: 제목 + 학년 필터 + 액션 버튼 한 줄 */}
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
+              {/* 제목 */}
+              <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0 shrink-0">
+                저장된 핵심 개념 <span className="text-xs font-medium text-[#9ca3af]">{concepts.length}개</span>
+              </h2>
+
+              {concepts.length > 0 && (
+                <>
+                  {/* 구분선 */}
+                  <div className="w-px h-4 bg-[#e0e0e0] shrink-0" />
+
+                  {/* 학년 필터 칩 */}
+                  {([...GRADE_LIST, '공통'] as string[]).map(g => {
+                    const isOn = fConceptProject.includes(g);
+                    return (
+                      <button key={g}
+                        onClick={() => setFConceptProject(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g])}
+                        className="text-xs font-semibold px-3 py-1 rounded-full border-2 transition-all cursor-pointer shrink-0"
+                        style={isOn
+                          ? { background: '#e8eaf6', color: '#667eea', borderColor: '#667eea' }
+                          : { background: 'white', color: '#777', borderColor: '#e0e0e0' }}>
+                        {g}
+                      </button>
+                    );
+                  })}
+                  {fConceptProject.length > 0 && (
+                    <button onClick={() => setFConceptProject([])}
+                      className="text-xs text-[#667eea] border-none bg-transparent cursor-pointer font-semibold hover:underline shrink-0">
+                      전체 보기
+                    </button>
+                  )}
+
+                  {/* 오른쪽 액션 버튼 */}
+                  <div className="ml-auto flex items-center gap-2 shrink-0">
                     <button
                       onClick={() => setSelConcepts(selConcepts.size === concepts.length ? new Set() : new Set(concepts.map(c => c.id)))}
-                      className="text-xs font-semibold border-none bg-transparent cursor-pointer text-[#667eea] hover:underline">
+                      className="text-xs font-semibold px-3 py-1.5 rounded-full border-2 cursor-pointer transition-all"
+                      style={selConcepts.size === concepts.length
+                        ? { background: '#e8eaf6', color: '#667eea', borderColor: '#667eea' }
+                        : { background: 'white', color: '#777', borderColor: '#e0e0e0' }}>
                       {selConcepts.size === concepts.length ? '전체 해제' : '전체 선택'}
                     </button>
                     <button onClick={deleteSelectedConcepts} disabled={deletingConcepts || selConcepts.size === 0}
-                      className="px-3 py-1.5 rounded-lg text-xs font-bold text-white border-none cursor-pointer disabled:opacity-40 transition-all"
+                      className="px-3 py-1.5 rounded-full text-xs font-bold text-white border-none cursor-pointer disabled:opacity-40 transition-all"
                       style={{ background: '#ef4444' }}>
                       {deletingConcepts ? '삭제 중…' : selConcepts.size > 0 ? `삭제 (${selConcepts.size})` : '삭제'}
                     </button>
-                  </>
-                )}
-              </div>
-              <p className="text-xs text-[#9ca3af] m-0">학생 답변에 핵심어가 포함되면 자동으로 AI 평가 기준에 반영됩니다.</p>
+                  </div>
+                </>
+              )}
             </div>
-
-            {/* 학년 필터 */}
-            {concepts.length > 0 && (
-              <div className="flex items-center gap-2 flex-wrap mb-4">
-                {([...GRADE_LIST, '공통'] as string[]).map(g => {
-                  const isOn = fConceptProject.includes(g);
-                  return (
-                    <button key={g}
-                      onClick={() => setFConceptProject(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g])}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-full border-2 transition-all cursor-pointer"
-                      style={isOn
-                        ? { background: '#e8eaf6', color: '#667eea', borderColor: '#667eea' }
-                        : { background: 'white', color: '#777', borderColor: '#e0e0e0' }}>
-                      {g}
-                    </button>
-                  );
-                })}
-                {fConceptProject.length > 0 && (
-                  <button onClick={() => setFConceptProject([])}
-                    className="text-xs text-[#667eea] border-none bg-transparent cursor-pointer font-semibold hover:underline">
-                    전체 보기
-                  </button>
-                )}
-              </div>
-            )}
 
             {loadingConcepts ? (
               <p className="text-center text-[#ccc] py-8 text-sm">불러오는 중...</p>
