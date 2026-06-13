@@ -440,6 +440,7 @@ export default function TeacherPage() {
   const [exploreDepthMap,       setExploreDepthMap]       = useState<Record<string, {level: string; comment: string}>>({});
   const [exploreInsightLoading, setExploreInsightLoading] = useState(false);
   const [expandedExploreId,     setExpandedExploreId]     = useState<string | null>(null);
+  const [collapsedExploreIds,   setCollapsedExploreIds]   = useState<Set<string>>(new Set());
   const [showExploreCriteria,   setShowExploreCriteria]   = useState(false);
   const [filterExploreDepth,    setFilterExploreDepth]    = useState<string | null>(null);
   const [selExplore,            setSelExplore]            = useState<Set<string>>(new Set());
@@ -2155,16 +2156,17 @@ export default function TeacherPage() {
 
           {/* ─ 학생 응답 목록 ─ */}
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            {/* 헤더: 제목 + 검색 + 전체선택 + 삭제 */}
+            {/* 헤더: 제목 + 개수 + 검색 + 전체선택 + 삭제 */}
             <div className="flex items-center gap-2 px-5 py-3 border-b border-[#f4f4fc]">
               <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0 shrink-0">학생 응답 목록</h2>
+              <span className="text-xs text-[#bbb] shrink-0">{filteredExplorations.length}개</span>
               <input
                 type="text"
                 value={searchExploreAuthor}
                 onChange={e => setSearchExploreAuthor(e.target.value)}
-                placeholder="이름 검색"
+                placeholder="👤 작성자 검색..."
                 className="border border-[#e8e8f0] rounded-full px-2.5 py-1 text-xs text-[#333] focus:outline-none focus:border-[#667eea] transition-colors"
-                style={{ width: '90px' }}
+                style={{ width: '120px' }}
               />
               {filterExploreDepth && (
                 <button onClick={() => setFilterExploreDepth(null)}
@@ -2207,7 +2209,7 @@ export default function TeacherPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-3">
                   {students.map(r => {
                     const isChecked = selExplore.has(r.id);
-                    const isExpanded = expandedExploreId === r.id;
+                    const isCollapsed = collapsedExploreIds.has(r.id);
                     const depth = exploreDepthMap[r.id];
                     const cardInfo = depth
                       ? (DEPTH_INFO[depth.level] ?? { label: '미분류', color: '#9ca3af', bg: '#f9fafb' })
@@ -2219,8 +2221,8 @@ export default function TeacherPage() {
                           background: isChecked ? '#ede9fe' : cardInfo.bg,
                           border: `1.5px solid ${isChecked ? '#667eea' : cardInfo.color + '50'}`,
                         }}>
-                        {/* 카드 헤더 */}
-                        <div className="flex items-center gap-2 px-3 py-2.5">
+                        {/* 카드 상단 행: checkbox + 뱃지들 + 화살표 */}
+                        <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1">
                           <input type="checkbox" checked={isChecked}
                             onChange={() => setSelExplore(p => { const n = new Set(p); n.has(r.id) ? n.delete(r.id) : n.add(r.id); return n; })}
                             className="w-3.5 h-3.5 shrink-0 cursor-pointer accent-[#667eea]" />
@@ -2230,29 +2232,64 @@ export default function TeacherPage() {
                               {proj.emoji} {proj.short}
                             </span>
                           )}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-baseline gap-1.5 min-w-0 flex-wrap">
-                              <span className="text-[11px] text-[#888] shrink-0">{r.class_room}</span>
-                              <span className="text-sm font-black text-[#1a1a2e]">{r.name}</span>
-                            </div>
-                          </div>
                           {depth && (
                             <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold shrink-0 whitespace-nowrap"
                               style={{ background: cardInfo.color + '22', color: cardInfo.color }}>
                               {depth.level} {cardInfo.label}
                             </span>
                           )}
+                          <div className="flex-1" />
                           <button
-                            onClick={() => setExpandedExploreId(isExpanded ? null : r.id)}
-                            className="text-[11px] border-none bg-transparent cursor-pointer shrink-0 px-0.5 hover:opacity-60 transition-opacity"
+                            onClick={() => setCollapsedExploreIds(p => {
+                              const n = new Set(p); n.has(r.id) ? n.delete(r.id) : n.add(r.id); return n;
+                            })}
+                            className="text-sm border-none bg-transparent cursor-pointer shrink-0 px-0.5 hover:opacity-60 transition-opacity"
                             style={{ color: cardInfo.color }}>
-                            {isExpanded ? '▲' : '▼'}
+                            {isCollapsed ? '▼' : '▲'}
                           </button>
                         </div>
-                        {/* 펼친 내용 */}
-                        {isExpanded && (
-                          <div className="border-t" style={{ borderColor: cardInfo.color + '30', background: 'white' }}>
-                            {renderExploreDetail(r, cardInfo)}
+
+                        {/* 항상 표시 내용 (접힌 경우 숨김) */}
+                        {!isCollapsed && (
+                          <div className="px-3 pb-3 space-y-1.5">
+                            {/* 학년반 + 이름 */}
+                            <div className="flex items-baseline gap-1.5">
+                              <span className="text-[11px] text-[#888]">{r.class_room}</span>
+                              <span className="text-sm font-black text-[#1a1a2e]">{r.name}</span>
+                            </div>
+                            {/* 탐구 질문 */}
+                            {r.question && (
+                              <p className="text-sm text-[#5a5a8a] m-0 leading-snug">{r.question}</p>
+                            )}
+                            {/* 1. 탐구 과정 */}
+                            {r.process && (
+                              <div>
+                                <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">1. 탐구 과정</div>
+                                <p className="text-xs text-[#bbb] m-0 leading-snug whitespace-pre-wrap">{r.process}</p>
+                              </div>
+                            )}
+                            {/* 2. 알게 된 점 */}
+                            {r.explanation && (
+                              <div>
+                                <div className="text-[10px] font-black mb-0.5" style={{color: cardInfo.color}}>2. 알게 된 점</div>
+                                <p className="text-sm text-[#1a1a2e] m-0 leading-relaxed whitespace-pre-wrap font-medium">{r.explanation}</p>
+                              </div>
+                            )}
+                            {/* 3. 생각 변화 */}
+                            {r.insight && (
+                              <div>
+                                <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">3. 생각 변화</div>
+                                <p className="text-xs text-[#bbb] m-0 leading-snug whitespace-pre-wrap">{r.insight}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* 접힌 상태: 이름만 표시 */}
+                        {isCollapsed && (
+                          <div className="px-3 pb-2 flex items-baseline gap-1.5">
+                            <span className="text-[11px] text-[#888]">{r.class_room}</span>
+                            <span className="text-sm font-black text-[#1a1a2e]">{r.name}</span>
                           </div>
                         )}
                       </div>
