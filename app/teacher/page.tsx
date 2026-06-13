@@ -383,6 +383,7 @@ export default function TeacherPage() {
   const [editConceptText,   setEditConceptText]   = useState('');
   const [fConceptProject,   setFConceptProject]   = useState<string[]>([]);
   const [newConceptProject, setNewConceptProject] = useState<string | null>(null);
+  const [expandedGrades,    setExpandedGrades]    = useState<Set<string>>(new Set());
 
   // ── 배움 탭 상태 ──
   const [learningRows,  setLearningRows]  = useState<LearningRow[]>([]);
@@ -1672,72 +1673,112 @@ export default function TeacherPage() {
             ) : groupedConcepts.length === 0 ? (
               <p className="text-center text-[#ccc] py-8 text-sm">해당 학년의 개념이 없습니다.</p>
             ) : (
-              <div className="space-y-5">
-                {groupedConcepts.map(({ key, label, items }) => (
-                  <div key={key}>
-                    {/* 학년 구분 헤더 */}
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs font-black text-white px-2.5 py-0.5 rounded-full"
-                        style={{ background: label === '공통' ? '#9ca3af' : '#667eea' }}>
-                        {label}
-                      </span>
-                      <div className="flex-1 h-px bg-[#e8e8f0]" />
-                      <span className="text-xs text-[#bbb]">{items.length}개</span>
-                    </div>
+              <div className="space-y-1">
+                {groupedConcepts.map(({ key, label, items }) => {
+                  const isOpen = expandedGrades.has(key);
+                  const gradeIds = items.map(c => c.id);
+                  const selectedCount = gradeIds.filter(id => selConcepts.has(id)).length;
+                  const allGradeSelected = gradeIds.length > 0 && selectedCount === gradeIds.length;
+                  const accentColor = label === '공통' ? '#9ca3af' : '#667eea';
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                      {items.map(c => {
-                        const checked = selConcepts.has(c.id);
-                        const isEditing = editingConceptId === c.id;
-                        return (
-                          <div key={c.id}
-                            onClick={() => { if (!isEditing) setSelConcepts(p => { const n = new Set(p); checked ? n.delete(c.id) : n.add(c.id); return n; }); }}
-                            className="rounded-xl px-3 py-2.5 transition-all"
-                            style={{ background: checked ? '#ede9fe' : '#f8f8fc', border: `1px solid ${checked ? '#667eea' : '#e8e8f0'}`, cursor: isEditing ? 'default' : 'pointer' }}>
+                  return (
+                    <div key={key} className="rounded-xl border border-[#e8e8f0] overflow-hidden">
+                      {/* 섹션 헤더 */}
+                      <div className="flex items-center gap-2 px-3 py-2.5 bg-[#f8f8fc]">
+                        {/* 펼침 화살표 */}
+                        <button
+                          onClick={() => setExpandedGrades(prev => {
+                            const next = new Set(prev);
+                            isOpen ? next.delete(key) : next.add(key);
+                            return next;
+                          })}
+                          className="flex items-center gap-2 cursor-pointer border-none bg-transparent p-0 flex-1 min-w-0 text-left">
+                          <span className="text-[10px] text-[#bbb] transition-transform"
+                            style={{ display: 'inline-block', transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                          <span className="text-xs font-black text-white px-2.5 py-0.5 rounded-full shrink-0"
+                            style={{ background: accentColor }}>
+                            {label}
+                          </span>
+                          <span className="text-xs text-[#bbb]">{items.length}개</span>
+                          {selectedCount > 0 && (
+                            <span className="text-xs font-semibold" style={{ color: accentColor }}>
+                              ({selectedCount}개 선택됨)
+                            </span>
+                          )}
+                        </button>
+                        {/* 학년별 전체 선택 */}
+                        <button
+                          onClick={() => {
+                            const next = new Set(selConcepts);
+                            if (allGradeSelected) gradeIds.forEach(id => next.delete(id));
+                            else gradeIds.forEach(id => next.add(id));
+                            setSelConcepts(next);
+                          }}
+                          className="text-xs font-semibold px-2.5 py-1 rounded-full border cursor-pointer transition-all shrink-0"
+                          style={allGradeSelected
+                            ? { background: '#e8eaf6', color: accentColor, borderColor: accentColor }
+                            : { background: 'white', color: '#999', borderColor: '#e0e0e0' }}>
+                          {allGradeSelected ? '해제' : '전체 선택'}
+                        </button>
+                      </div>
 
-                            {isEditing ? (
-                              <div onClick={e => e.stopPropagation()} className="flex flex-col gap-2">
-                                <input
-                                  autoFocus
-                                  value={editConceptText}
-                                  onChange={e => setEditConceptText(e.target.value)}
-                                  onKeyDown={e => { if (e.key === 'Enter') updateConcept(c.id); if (e.key === 'Escape') setEditingConceptId(null); }}
-                                  className="w-full border-2 border-[#667eea] rounded-lg px-2 py-1 text-xs focus:outline-none"
-                                />
-                                <div className="flex gap-2">
-                                  <button onClick={() => updateConcept(c.id)}
-                                    className="px-3 py-1 rounded-lg text-[11px] font-bold text-white border-none cursor-pointer"
-                                    style={{ background: '#667eea' }}>저장</button>
-                                  <button onClick={() => setEditingConceptId(null)}
-                                    className="px-3 py-1 rounded-lg text-[11px] font-semibold text-[#666] bg-[#f0f0f0] border-none cursor-pointer">취소</button>
-                                </div>
-                              </div>
-                            ) : (
-                              <>
-                                <div className="flex items-center gap-2 mb-1">
-                                  <input type="checkbox" checked={checked} readOnly
-                                    className="accent-[#667eea] w-3.5 h-3.5 shrink-0 cursor-pointer" />
-                                  <div className="flex items-center gap-1 flex-wrap min-w-0">
-                                    {c.keyword.split(',').map((k, i) => (
-                                      <span key={i} className="text-xs font-bold px-1.5 py-0.5 rounded text-[#667eea] bg-[#ede9fe]">
-                                        {k.trim().replace(/^["']|["']$/g, '')}
-                                      </span>
-                                    ))}
+                      {/* 카드 그리드 (펼쳐진 경우만) */}
+                      {isOpen && (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 p-3">
+                          {items.map(c => {
+                            const checked = selConcepts.has(c.id);
+                            const isEditing = editingConceptId === c.id;
+                            return (
+                              <div key={c.id}
+                                onClick={() => { if (!isEditing) setSelConcepts(p => { const n = new Set(p); checked ? n.delete(c.id) : n.add(c.id); return n; }); }}
+                                className="rounded-xl px-3 py-2.5 transition-all"
+                                style={{ background: checked ? '#ede9fe' : '#f8f8fc', border: `1px solid ${checked ? '#667eea' : '#e8e8f0'}`, cursor: isEditing ? 'default' : 'pointer' }}>
+
+                                {isEditing ? (
+                                  <div onClick={e => e.stopPropagation()} className="flex flex-col gap-2">
+                                    <input
+                                      autoFocus
+                                      value={editConceptText}
+                                      onChange={e => setEditConceptText(e.target.value)}
+                                      onKeyDown={e => { if (e.key === 'Enter') updateConcept(c.id); if (e.key === 'Escape') setEditingConceptId(null); }}
+                                      className="w-full border-2 border-[#667eea] rounded-lg px-2 py-1 text-xs focus:outline-none"
+                                    />
+                                    <div className="flex gap-2">
+                                      <button onClick={() => updateConcept(c.id)}
+                                        className="px-3 py-1 rounded-lg text-[11px] font-bold text-white border-none cursor-pointer"
+                                        style={{ background: '#667eea' }}>저장</button>
+                                      <button onClick={() => setEditingConceptId(null)}
+                                        className="px-3 py-1 rounded-lg text-[11px] font-semibold text-[#666] bg-[#f0f0f0] border-none cursor-pointer">취소</button>
+                                    </div>
                                   </div>
-                                  <button onClick={e => { e.stopPropagation(); setEditingConceptId(c.id); setEditConceptText(`${c.keyword}: ${c.key_concept}`); }}
-                                    className="ml-auto text-[11px] text-[#667eea] hover:text-[#4f46e5] border-none bg-transparent cursor-pointer font-semibold shrink-0">
-                                    수정
-                                  </button>
-                                </div>
-                                <p className="text-xs text-[#555] m-0 leading-relaxed">{c.key_concept}</p>
-                              </>
-                            )}
-                          </div>
-                        );
-                      })}
+                                ) : (
+                                  <>
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <input type="checkbox" checked={checked} readOnly
+                                        className="accent-[#667eea] w-3.5 h-3.5 shrink-0 cursor-pointer" />
+                                      <div className="flex items-center gap-1 flex-wrap min-w-0">
+                                        {c.keyword.split(',').map((k, i) => (
+                                          <span key={i} className="text-xs font-bold px-1.5 py-0.5 rounded text-[#667eea] bg-[#ede9fe]">
+                                            {k.trim().replace(/^["']|["']$/g, '')}
+                                          </span>
+                                        ))}
+                                      </div>
+                                      <button onClick={e => { e.stopPropagation(); setEditingConceptId(c.id); setEditConceptText(`${c.keyword}: ${c.key_concept}`); }}
+                                        className="ml-auto text-[11px] text-[#667eea] hover:text-[#4f46e5] border-none bg-transparent cursor-pointer font-semibold shrink-0">
+                                        수정
+                                      </button>
+                                    </div>
+                                    <p className="text-xs text-[#555] m-0 leading-relaxed">{c.key_concept}</p>
+                                  </>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
