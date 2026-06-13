@@ -174,7 +174,8 @@ interface LearningRow {
 interface ExplorationRow {
   id: string; class_room: string; name: string; project: string;
   question: string; methods: string; process: string;
-  explanation: string; insight: string; depth_level: string | null;
+  explanation: string; insight: string;
+  depth_level: string | null; depth_comment: string | null;
   created_at: string;
 }
 
@@ -433,6 +434,7 @@ export default function TeacherPage() {
   const [exploreDepthMap,       setExploreDepthMap]       = useState<Record<string, {level: string; comment: string}>>({});
   const [exploreInsightLoading, setExploreInsightLoading] = useState(false);
   const [expandedExploreId,     setExpandedExploreId]     = useState<string | null>(null);
+  const [showExploreCriteria,   setShowExploreCriteria]   = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true); setFetchErr('');
@@ -481,7 +483,14 @@ export default function TeacherPage() {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const d = await res.json();
-      setExplorationRows(Array.isArray(d) ? d : []);
+      const rows: ExplorationRow[] = Array.isArray(d) ? d : [];
+      setExplorationRows(rows);
+      // 저장된 분석 결과 복원
+      const map: Record<string, {level: string; comment: string}> = {};
+      rows.forEach(r => {
+        if (r.depth_level) map[r.id] = { level: r.depth_level, comment: r.depth_comment ?? '' };
+      });
+      if (Object.keys(map).length > 0) setExploreDepthMap(map);
     } catch { setFetchErrExplore('탐구 데이터를 불러오지 못했습니다.'); setExplorationRows([]); }
     setLoadingExplore(false);
   }, []);
@@ -692,6 +701,21 @@ export default function TeacherPage() {
         map[r.id] = { level: r.level, comment: r.comment };
       });
       setExploreDepthMap(map);
+      // Supabase에 저장
+      await Promise.allSettled(
+        Object.entries(map).map(([id, {level, comment}]) =>
+          fetch(`${SUPABASE_URL}/rest/v1/explorations?id=eq.${id}`, {
+            method: 'PATCH',
+            headers: {
+              apikey: SUPABASE_KEY,
+              Authorization: `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json',
+              Prefer: 'return=minimal',
+            },
+            body: JSON.stringify({ depth_level: level, depth_comment: comment }),
+          })
+        )
+      );
     } catch (err) { alert(`AI 분석 오류: ${err instanceof Error ? err.message : '알 수 없는 오류'}`); }
     setExploreInsightLoading(false);
   }
@@ -1968,14 +1992,46 @@ export default function TeacherPage() {
             const classified = filteredExplorations.filter(r => exploreDepthMap[r.id]);
             return (
               <div className="bg-white rounded-2xl px-5 py-4 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-2">
                   <h2 className="text-[15px] font-bold text-[#1a1a2e]">탐구 깊이 분석</h2>
-                  <button onClick={generateExploreInsight} disabled={exploreInsightLoading}
-                    className="text-sm font-bold px-4 py-1.5 rounded-full border-none cursor-pointer disabled:opacity-50 transition-all"
-                    style={{background:'linear-gradient(135deg,#667eea,#764ba2)', color:'white'}}>
-                    {exploreInsightLoading ? '분석 중...' : 'AI 분석하기'}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setShowExploreCriteria(p => !p)}
+                      className="text-xs text-[#667eea] border border-[#667eea]/30 bg-[#667eea]/5 px-3 py-1 rounded-full cursor-pointer hover:bg-[#667eea]/10 transition-colors">
+                      {showExploreCriteria ? '기준 닫기' : '분류 기준 보기'}
+                    </button>
+                    <button onClick={generateExploreInsight} disabled={exploreInsightLoading}
+                      className="text-sm font-bold px-4 py-1.5 rounded-full border-none cursor-pointer disabled:opacity-50 transition-all"
+                      style={{background:'linear-gradient(135deg,#667eea,#764ba2)', color:'white'}}>
+                      {exploreInsightLoading ? '분석 중...' : 'AI 분석하기'}
+                    </button>
+                  </div>
                 </div>
+
+                {/* 분류 기준 설명 */}
+                {showExploreCriteria && (
+                  <div className="mb-3 rounded-xl border border-[#e0e0f0] overflow-hidden">
+                    {[
+                      { lv: '🟡', label: '사실 나열형', color: '#f57f17', bg: '#fff8e1',
+                        desc: '탐구에서 알게 된 사실이나 정보를 단순히 열거합니다.',
+                        ex: '"A는 B다, C는 D다" 형식. 개념들 사이의 연결이나 이유 설명 없음.' },
+                      { lv: '🔵', label: '연결 설명형', color: '#1565c0', bg: '#e3f2fd',
+                        desc: '알게 된 사실들을 서로 연결하여 설명합니다.',
+                        ex: '"A이기 때문에 B가 된다"처럼 원인-결과 또는 개념 관계를 부분적으로 설명.' },
+                      { lv: '🟢', label: '관계 탐구형', color: '#2e7d32', bg: '#e8f5e9',
+                        desc: '개념들 사이의 관계를 깊이 탐구하고 스스로 설명하거나 다른 상황에 적용합니다.',
+                        ex: '여러 개념을 통합하거나, 새로운 질문을 스스로 생성하거나, "만약 ~라면" 형식으로 확장.' },
+                    ].map(({ lv, label, color, bg, desc, ex }) => (
+                      <div key={lv} className="flex gap-3 px-4 py-3 border-b last:border-b-0 border-[#f0f0f8]" style={{background: bg + '66'}}>
+                        <span className="text-xl shrink-0">{lv}</span>
+                        <div>
+                          <div className="text-sm font-black mb-0.5" style={{color}}>{label}</div>
+                          <div className="text-xs text-[#555] mb-0.5">{desc}</div>
+                          <div className="text-xs text-[#888] italic">{ex}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {classified.length === 0 ? (
                   <p className="text-sm text-[#aaa] py-4 text-center m-0">
@@ -2018,9 +2074,38 @@ export default function TeacherPage() {
                               <span className="text-xs text-[#aaa] flex-1 truncate ml-1">{depth.comment}</span>
                               <span className="text-xs text-[#ccc] shrink-0">{isExpanded ? '▲' : '▼'}</span>
                             </button>
-                            {isExpanded && r.explanation && (
-                              <div className="px-4 pb-3 pt-1 border-t border-[#f4f4fc] text-sm text-[#555] leading-relaxed whitespace-pre-wrap">
-                                {r.explanation}
+                            {isExpanded && (
+                              <div className="px-4 pb-4 pt-2 border-t border-[#f4f4fc] space-y-3">
+                                {r.question && (
+                                  <div>
+                                    <div className="text-[11px] font-black text-[#9ca3af] uppercase tracking-wide mb-1">탐구 질문</div>
+                                    <p className="text-sm text-[#374151] m-0 leading-relaxed">{r.question}</p>
+                                  </div>
+                                )}
+                                {r.methods && (
+                                  <div>
+                                    <div className="text-[11px] font-black text-[#9ca3af] uppercase tracking-wide mb-1">탐구 방법</div>
+                                    <p className="text-sm text-[#374151] m-0">{r.methods}</p>
+                                  </div>
+                                )}
+                                {r.process && (
+                                  <div>
+                                    <div className="text-[11px] font-black text-[#9ca3af] uppercase tracking-wide mb-1">1. 탐구 과정</div>
+                                    <p className="text-sm text-[#374151] m-0 leading-relaxed whitespace-pre-wrap">{r.process}</p>
+                                  </div>
+                                )}
+                                {r.explanation && (
+                                  <div className="rounded-lg p-3" style={{background: info.bg + '88'}}>
+                                    <div className="text-[11px] font-black uppercase tracking-wide mb-1" style={{color: info.color}}>2. 알게 된 점 (분석 대상)</div>
+                                    <p className="text-sm text-[#374151] m-0 leading-relaxed whitespace-pre-wrap">{r.explanation}</p>
+                                  </div>
+                                )}
+                                {r.insight && (
+                                  <div>
+                                    <div className="text-[11px] font-black text-[#9ca3af] uppercase tracking-wide mb-1">3. 생각 변화</div>
+                                    <p className="text-sm text-[#374151] m-0 leading-relaxed whitespace-pre-wrap">{r.insight}</p>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
