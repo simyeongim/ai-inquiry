@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 const CLASS_LIST   = ['3학년 1반','3학년 4반','4학년 4반','6학년 1반','6학년 2반','6학년 3반','6학년 3반 과학','6학년 4반','6학년 5반','6학년 6반'] as const;
 const PROJECT_LIST = ['세계는 어떻게 움직이는가','지구와 어떻게 함께 살아갈 것인가','우리는 어떻게 자신을 조직하는가'] as const;
-const METHODS      = ['자료 조사','생성형 AI 활용','친구와 토론','영상 시청','관찰·실험','사례 분석','기타'] as const;
+const METHODS      = ['자료 조사','생성형 AI 활용','토론','관찰·실험','사례 분석','기타'] as const;
 
 function countSentences(text: string): number {
   return text.split(/[.!?。]+/).filter(s => s.trim().length > 5).length;
@@ -17,6 +17,7 @@ export default function ExplorePage() {
   const [project,     setProject]     = useState('');
   const [question,    setQuestion]    = useState('');
   const [methods,     setMethods]     = useState<string[]>([]);
+  const [methodEtc,   setMethodEtc]   = useState('');
   const [process,     setProcess]     = useState('');
   const [explanation, setExplanation] = useState('');
   const [insight,     setInsight]     = useState('');
@@ -147,6 +148,11 @@ export default function ExplorePage() {
               );
             })}
           </div>
+          {methods.includes('기타') && (
+            <input type="text" value={methodEtc} onChange={e => setMethodEtc(e.target.value)}
+              placeholder="탐구 방법을 직접 입력해주세요"
+              className="mt-2 w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] transition-colors" />
+          )}
         </Card>
 
         {/* 탐구 과정에서 중요했던 내용 */}
