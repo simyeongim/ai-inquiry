@@ -12,16 +12,16 @@ function countSentences(text: string): number {
 }
 
 export default function ExplorePage() {
-  const [classRoom,   setClassRoom]   = useState('');
-  const [name,        setName]        = useState('');
-  const [project,     setProject]     = useState('');
-  const [projectOpen, setProjectOpen] = useState(false);
-  const [question,    setQuestion]    = useState('');
-  const [methods,     setMethods]     = useState<string[]>([]);
-  const [methodEtc,   setMethodEtc]   = useState('');
-  const [process,     setProcess]     = useState('');
-  const [explanation, setExplanation] = useState('');
-  const [insight,     setInsight]     = useState('');
+  const [classRoom,    setClassRoom]    = useState('');
+  const [name,         setName]         = useState('');
+  const [project,      setProject]      = useState('');
+  const [question,     setQuestion]     = useState('');
+  const [methods,      setMethods]      = useState<string[]>([]);
+  const [methodsOpen,  setMethodsOpen]  = useState(false);
+  const [methodEtc,    setMethodEtc]    = useState('');
+  const [process,      setProcess]      = useState('');
+  const [explanation,  setExplanation]  = useState('');
+  const [insight,      setInsight]      = useState('');
 
   const [strength,     setStrength]     = useState('');
   const [hints,        setHints]        = useState<string[]>([]);
@@ -62,11 +62,17 @@ export default function ExplorePage() {
   }
 
   function handleSubmit() {
-    if (!classRoom) { alert('학년/반을 선택해주세요!'); return; }
-    if (!project)   { alert('프로젝트를 선택해주세요!'); return; }
+    if (!classRoom)   { alert('학년/반을 선택해주세요!'); return; }
+    if (!project)     { alert('프로젝트를 선택해주세요!'); return; }
     if (!name.trim()) { alert('이름을 입력해주세요!'); return; }
     alert('탐구 기록이 작성되었습니다. 다음 단계에서 저장 기능을 연결합니다.');
   }
+
+  const methodLabel = methods.length === 0
+    ? '선택해주세요'
+    : methods.length === 1
+      ? methods[0]
+      : `${methods[0]} 외 ${methods.length - 1}개`;
 
   return (
     <div className="min-h-screen px-4 pt-2 pb-8"
@@ -104,74 +110,70 @@ export default function ExplorePage() {
           </div>
         </Card>
 
-        {/* 프로젝트 토글 */}
+        {/* 프로젝트 — Select (learn·question 페이지와 동일) */}
         <Card>
-          <button type="button" onClick={() => setProjectOpen(o => !o)}
-            className="w-full flex items-center justify-between cursor-pointer"
-            style={{ background: 'none', border: 'none', padding: 0 }}>
-            <span className="font-bold text-[#4a4a6a] text-[0.9rem]">프로젝트</span>
-            <span className="flex items-center gap-2 text-sm font-semibold"
-              style={{ color: project ? '#5c35cc' : '#aaa' }}>
-              {project || '선택해주세요'}
-              <span className="text-[#aaa] text-xs transition-transform"
-                style={{ display: 'inline-block', transform: projectOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
-            </span>
-          </button>
-          {projectOpen && (
-            <div className="flex flex-col gap-1.5 mt-2.5">
-              {PROJECT_LIST.map(p => (
-                <button key={p} type="button"
-                  onClick={() => { setProject(p); setProjectOpen(false); }}
-                  className="w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold border-2 cursor-pointer transition-all"
-                  style={project === p
-                    ? { background: '#ede9fe', borderColor: '#667eea', color: '#5c35cc' }
-                    : { background: '#f8f8fc', borderColor: '#e0e0f0', color: '#555' }}>
-                  {p}
-                </button>
-              ))}
-            </div>
-          )}
+          <Label>프로젝트</Label>
+          <Select value={project} onChange={e => setProject(e.target.value)}>
+            <option value="">프로젝트를 선택하세요</option>
+            {PROJECT_LIST.map(v => <option key={v}>{v}</option>)}
+          </Select>
         </Card>
 
-        {/* 탐구 질문(좌) + 탐구 방법(우) 통합 카드 */}
+        {/* 탐구 질문(좌) + 탐구 방법 토글(우) */}
         <Card>
           <div className="grid grid-cols-2 gap-3 items-start">
+
             {/* 좌: 탐구 질문 */}
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col">
               <Label>탐구 질문</Label>
               <textarea value={question} onChange={e => setQuestion(e.target.value)}
                 placeholder="지구의 자전 방향이 바뀌면 어떤 일이 일어날까?"
-                className="flex-1 w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-none leading-relaxed transition-colors"
-                style={{ minHeight: '180px' }} />
+                className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-none leading-relaxed transition-colors"
+                style={{ minHeight: '90px' }} />
             </div>
 
-            {/* 우: 탐구 방법 */}
+            {/* 우: 탐구 방법 토글 */}
             <div>
-              <Label>탐구 방법 <span className="text-[10px] font-normal text-[#bbb]">복수 선택</span></Label>
-              <div className="flex flex-col gap-1.5">
-                {METHODS.map(m => {
-                  const checked = methods.includes(m);
-                  return (
-                    <button key={m} type="button" onClick={() => toggleMethod(m)}
-                      className="flex items-center gap-2 px-2.5 py-2 rounded-xl border-2 text-sm font-semibold text-left cursor-pointer transition-all"
-                      style={checked
-                        ? { background: '#ede9fe', borderColor: '#667eea', color: '#5c35cc' }
-                        : { background: '#f8f8fc', borderColor: '#e0e0f0', color: '#666' }}>
-                      <span className="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors"
-                        style={checked ? { borderColor: '#667eea', background: '#667eea' } : { borderColor: '#ccc', background: 'white' }}>
-                        {checked && <span className="text-white text-[9px] font-black leading-none">✓</span>}
-                      </span>
-                      {m}
-                    </button>
-                  );
-                })}
-              </div>
-              {methods.includes('기타') && (
-                <input type="text" value={methodEtc} onChange={e => setMethodEtc(e.target.value)}
-                  placeholder="직접 입력"
-                  className="mt-1.5 w-full border-2 border-[#c5c9f0] rounded-xl p-2 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] transition-colors" />
+              <Label>탐구 방법</Label>
+              {/* 토글 헤더 */}
+              <button type="button" onClick={() => setMethodsOpen(o => !o)}
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border-2 text-sm cursor-pointer transition-all"
+                style={methods.length > 0
+                  ? { background: '#ede9fe', borderColor: '#667eea', color: '#5c35cc' }
+                  : { background: '#f8f8fc', borderColor: '#e0e0f0', color: '#aaa' }}>
+                <span className="font-semibold truncate">{methodLabel}</span>
+                <span className="text-xs ml-1 shrink-0 transition-transform"
+                  style={{ display: 'inline-block', transform: methodsOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+              </button>
+
+              {/* 펼쳐진 목록 */}
+              {methodsOpen && (
+                <div className="flex flex-col gap-1.5 mt-1.5">
+                  {METHODS.map(m => {
+                    const checked = methods.includes(m);
+                    return (
+                      <button key={m} type="button" onClick={() => toggleMethod(m)}
+                        className="flex items-center gap-2 px-2.5 py-2 rounded-xl border-2 text-sm font-semibold text-left cursor-pointer transition-all"
+                        style={checked
+                          ? { background: '#ede9fe', borderColor: '#667eea', color: '#5c35cc' }
+                          : { background: '#f8f8fc', borderColor: '#e0e0f0', color: '#666' }}>
+                        <span className="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0"
+                          style={checked ? { borderColor: '#667eea', background: '#667eea' } : { borderColor: '#ccc', background: 'white' }}>
+                          {checked && <span className="text-white text-[9px] font-black leading-none">✓</span>}
+                        </span>
+                        {m}
+                      </button>
+                    );
+                  })}
+                  {methods.includes('기타') && (
+                    <input type="text" value={methodEtc} onChange={e => setMethodEtc(e.target.value)}
+                      placeholder="직접 입력"
+                      className="w-full border-2 border-[#c5c9f0] rounded-xl p-2 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] transition-colors" />
+                  )}
+                </div>
               )}
             </div>
+
           </div>
         </Card>
 
