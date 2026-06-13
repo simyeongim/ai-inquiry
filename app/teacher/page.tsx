@@ -435,6 +435,7 @@ export default function TeacherPage() {
   const [exploreInsightLoading, setExploreInsightLoading] = useState(false);
   const [expandedExploreId,     setExpandedExploreId]     = useState<string | null>(null);
   const [showExploreCriteria,   setShowExploreCriteria]   = useState(false);
+  const [filterExploreDepth,    setFilterExploreDepth]    = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setFetchErr('');
@@ -1990,6 +1991,53 @@ export default function TeacherPage() {
               '🟢': { label: '관계 탐구형', color: '#2e7d32', bg: '#e8f5e9' },
             };
             const classified = filteredExplorations.filter(r => exploreDepthMap[r.id]);
+            const renderDetail = (r: ExplorationRow, info: {label:string;color:string;bg:string}) => (
+              <>
+                {(r.question || r.methods) && (
+                  <div className="px-3 py-2 flex gap-3 items-start border-b border-[#f4f4fc]" style={{background:'#fafafa'}}>
+                    {r.question && (
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">탐구 질문</div>
+                        <p className="text-xs text-[#4a4a6a] m-0 leading-snug">{r.question}</p>
+                      </div>
+                    )}
+                    {r.methods && (
+                      <div className="shrink-0 max-w-[40%]">
+                        <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5 text-right">방법</div>
+                        <div className="flex flex-wrap gap-1 justify-end">
+                          {r.methods.split(',').map((m: string, i: number) => (
+                            <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
+                              style={{background:'#ede9fe', color:'#5c35cc'}}>{m.trim()}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {r.explanation && (
+                  <div className="px-3 py-2 border-b border-[#f4f4fc]" style={{background: info.bg + '88'}}>
+                    <div className="text-[10px] font-black mb-1" style={{color: info.color}}>2. 알게 된 점</div>
+                    <p className="text-xs text-[#374151] m-0 leading-relaxed whitespace-pre-wrap">{r.explanation}</p>
+                  </div>
+                )}
+                {(r.process || r.insight) && (
+                  <div className={`px-3 py-2 grid gap-3 ${r.process && r.insight ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    {r.process && (
+                      <div>
+                        <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">1. 탐구 과정</div>
+                        <p className="text-xs text-[#555] m-0 leading-snug whitespace-pre-wrap">{r.process}</p>
+                      </div>
+                    )}
+                    {r.insight && (
+                      <div>
+                        <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">3. 생각 변화</div>
+                        <p className="text-xs text-[#555] m-0 leading-snug whitespace-pre-wrap">{r.insight}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            );
             return (
               <div className="bg-white rounded-2xl px-5 py-4 shadow-sm">
                 <div className="flex items-center justify-between mb-2">
@@ -2009,25 +2057,23 @@ export default function TeacherPage() {
 
                 {/* 분류 기준 설명 */}
                 {showExploreCriteria && (
-                  <div className="mb-3 rounded-xl border border-[#e0e0f0] overflow-hidden">
+                  <div className="grid grid-cols-3 gap-2 mb-3">
                     {[
                       { lv: '🟡', label: '사실 나열형', color: '#f57f17', bg: '#fff8e1',
                         desc: '알게 된 사실을 나열하지만 개념 사이의 이유나 연결이 없습니다.',
-                        ex: '예) "자전은 하루에 한 바퀴다. 공전은 1년에 한 바퀴다." — 사실만 열거, 연결 없음.' },
+                        ex: '"자전은 하루에 한 바퀴다. 공전은 1년에 한 바퀴다." — 사실만 열거, 연결 없음.' },
                       { lv: '🔵', label: '연결 설명형', color: '#1565c0', bg: '#e3f2fd',
                         desc: '원인-결과를 1:1로 연결하여 설명합니다. 배운 내용 안에서만 관계를 서술합니다.',
-                        ex: '예) "자전 속도가 빠르면 원심력이 커져서 적도 쪽이 부풀어 오른다." — 이유 포함, 배운 범위 안에서 연결.' },
+                        ex: '"자전 속도가 빠르면 원심력이 커져서 적도 쪽이 부풀어 오른다." — 이유 포함, 배운 범위 안에서 연결.' },
                       { lv: '🟢', label: '관계 탐구형', color: '#2e7d32', bg: '#e8f5e9',
                         desc: '여러 개념을 통합하거나 배운 것을 넘어 새 질문을 스스로 만들고 다른 상황에 적용합니다.',
-                        ex: '예) "자전 속도가 달라지면 계절도 바뀔까? 그렇다면 농사 방식도 달라지지 않을까?" — 만약·그렇다면 형식으로 탐구 확장.' },
+                        ex: '"자전 속도가 달라지면 계절도 바뀔까? 그렇다면 농사 방식도 달라지지 않을까?" — 만약·그렇다면 형식으로 탐구 확장.' },
                     ].map(({ lv, label, color, bg, desc, ex }) => (
-                      <div key={lv} className="flex gap-3 px-4 py-3 border-b last:border-b-0 border-[#f0f0f8]" style={{background: bg + '55'}}>
-                        <span className="text-xl shrink-0 mt-0.5">{lv}</span>
-                        <div>
-                          <div className="text-sm font-black mb-1" style={{color}}>{label}</div>
-                          <div className="text-xs text-[#444] mb-1 leading-relaxed">{desc}</div>
-                          <div className="text-xs text-[#777] leading-relaxed">{ex}</div>
-                        </div>
+                      <div key={lv} className="rounded-xl p-3" style={{background: bg, border: `1.5px solid ${color}30`}}>
+                        <div className="text-base mb-1">{lv}</div>
+                        <div className="text-xs font-black mb-1.5" style={{color}}>{label}</div>
+                        <div className="text-xs text-[#444] mb-1.5 leading-relaxed">{desc}</div>
+                        <div className="text-[10px] text-[#777] leading-relaxed italic">{ex}</div>
                       </div>
                     ))}
                   </div>
@@ -2039,13 +2085,21 @@ export default function TeacherPage() {
                   </p>
                 ) : (
                   <>
-                    {/* 분포 요약 */}
+                    {/* 분포 요약 — 클릭으로 필터 */}
                     <div className="grid grid-cols-3 gap-3 mb-4">
                       {(['🟡','🔵','🟢'] as const).map(lv => {
                         const cnt = classified.filter(r => exploreDepthMap[r.id]?.level === lv).length;
                         const info = DEPTH_INFO[lv];
+                        const active = filterExploreDepth === lv;
                         return (
-                          <div key={lv} className="rounded-xl py-3 px-3 text-center" style={{background: info.bg}}>
+                          <button key={lv}
+                            onClick={() => setFilterExploreDepth(active ? null : lv)}
+                            className="rounded-xl py-3 px-3 text-center cursor-pointer transition-all border-2 bg-transparent"
+                            style={{
+                              background: info.bg,
+                              borderColor: active ? info.color : 'transparent',
+                              boxShadow: active ? `0 0 0 2px ${info.color}40` : 'none',
+                            }}>
                             <div className="text-sm font-black mb-1" style={{color: info.color}}>{lv} {info.label}</div>
                             <div className="text-2xl font-black" style={{color: info.color}}>
                               {cnt}<span className="text-xs font-normal ml-0.5" style={{color:'#9ca3af'}}>명</span>
@@ -2053,85 +2107,142 @@ export default function TeacherPage() {
                             <div className="text-xs mt-0.5" style={{color:'#9ca3af'}}>
                               {Math.round(cnt / classified.length * 100)}%
                             </div>
-                          </div>
+                          </button>
                         );
                       })}
                     </div>
-                    {/* 학생 목록 */}
-                    <div className="space-y-1.5">
-                      {filteredExplorations.filter(r => exploreDepthMap[r.id]).map(r => {
-                        const depth = exploreDepthMap[r.id];
-                        const info = DEPTH_INFO[depth.level] ?? {label: depth.level, color:'#666', bg:'#f5f5f5'};
-                        const isExpanded = expandedExploreId === r.id;
-                        return (
-                          <div key={r.id} className="rounded-xl border overflow-hidden" style={{borderColor:'#f0f0f8'}}>
-                            <button
-                              onClick={() => setExpandedExploreId(isExpanded ? null : r.id)}
-                              className="w-full flex items-center gap-2 px-3 py-2 cursor-pointer bg-transparent border-none text-left hover:bg-[#fafafa] transition-colors">
-                              <span className="text-xs px-2 py-0.5 rounded-full font-black shrink-0"
-                                style={{background: info.bg, color: info.color}}>{depth.level}</span>
-                              <span className="text-sm font-semibold text-[#333] shrink-0">{r.class_room} {r.name}</span>
-                              <span className="text-xs text-[#aaa] flex-1 truncate ml-1">{depth.comment}</span>
-                              <span className="text-xs text-[#ccc] shrink-0">{isExpanded ? '▲' : '▼'}</span>
-                            </button>
-                            {isExpanded && (
-                              <div className="border-t border-[#f4f4fc]">
-                                {/* 상단: 탐구질문 + 방법 */}
-                                {(r.question || r.methods) && (
-                                  <div className="px-3 py-2 flex gap-3 items-start border-b border-[#f4f4fc]" style={{background:'#fafafa'}}>
-                                    {r.question && (
-                                      <div className="flex-1 min-w-0">
-                                        <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">탐구 질문</div>
-                                        <p className="text-xs text-[#4a4a6a] m-0 leading-snug">{r.question}</p>
-                                      </div>
-                                    )}
-                                    {r.methods && (
-                                      <div className="shrink-0 max-w-[40%]">
-                                        <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5 text-right">방법</div>
-                                        <div className="flex flex-wrap gap-1 justify-end">
-                                          {r.methods.split(',').map((m, i) => (
-                                            <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
-                                              style={{background:'#ede9fe', color:'#5c35cc'}}>{m.trim()}</span>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                                {/* 중단: 알게 된 점 (분석 대상, 강조) */}
-                                {r.explanation && (
-                                  <div className="px-3 py-2 border-b border-[#f4f4fc]" style={{background: info.bg + '55'}}>
-                                    <div className="text-[10px] font-black mb-1" style={{color: info.color}}>2. 알게 된 점</div>
-                                    <p className="text-xs text-[#374151] m-0 leading-relaxed whitespace-pre-wrap">{r.explanation}</p>
-                                  </div>
-                                )}
-                                {/* 하단: 탐구과정 + 생각변화 2열 */}
-                                {(r.process || r.insight) && (
-                                  <div className={`px-3 py-2 grid gap-3 ${r.process && r.insight ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                                    {r.process && (
-                                      <div>
-                                        <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">1. 탐구 과정</div>
-                                        <p className="text-xs text-[#555] m-0 leading-snug whitespace-pre-wrap">{r.process}</p>
-                                      </div>
-                                    )}
-                                    {r.insight && (
-                                      <div>
-                                        <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">3. 생각 변화</div>
-                                        <p className="text-xs text-[#555] m-0 leading-snug whitespace-pre-wrap">{r.insight}</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
+                    {filterExploreDepth && (
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs text-[#667eea] font-semibold">
+                          {DEPTH_INFO[filterExploreDepth]?.label} 학생만 표시 중
+                        </span>
+                        <button onClick={() => setFilterExploreDepth(null)}
+                          className="text-xs text-[#aaa] border-none bg-transparent cursor-pointer hover:underline">전체 보기</button>
+                      </div>
+                    )}
+                    {/* 학생 목록 — 3열 그리드 또는 필터 뷰 */}
+                    {filterExploreDepth ? (
+                      /* 필터 활성: 단일 목록 */
+                      <div className="space-y-1.5">
+                        {filteredExplorations
+                          .filter(r => exploreDepthMap[r.id]?.level === filterExploreDepth)
+                          .map(r => {
+                          const depth = exploreDepthMap[r.id];
+                          const info = DEPTH_INFO[depth.level] ?? {label: depth.level, color:'#666', bg:'#f5f5f5'};
+                          const isExpanded = expandedExploreId === r.id;
+                          return (
+                            <div key={r.id} className="rounded-xl border-2 overflow-hidden"
+                              style={{borderColor: info.color + '40', background: info.bg}}>
+                              <button
+                                onClick={() => setExpandedExploreId(isExpanded ? null : r.id)}
+                                className="w-full flex items-center gap-2 px-3 py-2 cursor-pointer bg-transparent border-none text-left hover:opacity-80 transition-opacity">
+                                <span className="text-sm font-black shrink-0" style={{color: info.color}}>{depth.level}</span>
+                                <span className="text-sm font-semibold text-[#333] shrink-0">{r.class_room} {r.name}</span>
+                                <span className="text-xs text-[#aaa] flex-1 truncate ml-1">{depth.comment}</span>
+                                <span className="text-xs text-[#ccc] shrink-0">{isExpanded ? '▲' : '▼'}</span>
+                              </button>
+                              {isExpanded && (
+                                <div className="border-t" style={{borderColor: info.color + '30', background:'white'}}>
+                                  {renderExploreDetail(r, info)}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      /* 필터 없음: 3열 그리드 */
+                      <div className="grid grid-cols-3 gap-3">
+                        {(['🟡','🔵','🟢'] as const).map(lv => {
+                          const info = DEPTH_INFO[lv];
+                          const students = filteredExplorations.filter(r => exploreDepthMap[r.id]?.level === lv);
+                          return (
+                            <div key={lv}>
+                              <div className="text-xs font-black mb-2" style={{color: info.color}}>
+                                {lv} {info.label} ({students.length}명)
                               </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+                              <div className="space-y-1.5">
+                                {students.map(r => {
+                                  const depth = exploreDepthMap[r.id];
+                                  const isExpanded = expandedExploreId === r.id;
+                                  return (
+                                    <div key={r.id} className="rounded-xl border-2 overflow-hidden"
+                                      style={{borderColor: info.color + '40', background: info.bg}}>
+                                      <button
+                                        onClick={() => setExpandedExploreId(isExpanded ? null : r.id)}
+                                        className="w-full flex items-center gap-1.5 px-2.5 py-2 cursor-pointer bg-transparent border-none text-left hover:opacity-80 transition-opacity">
+                                        <span className="text-xs font-semibold text-[#333] shrink-0">{r.class_room} {r.name}</span>
+                                        <span className="text-[10px] text-[#aaa] flex-1 truncate">{depth.comment}</span>
+                                        <span className="text-[10px] text-[#ccc] shrink-0">{isExpanded ? '▲' : '▼'}</span>
+                                      </button>
+                                      {isExpanded && (
+                                        <div className="border-t" style={{borderColor: info.color + '30', background:'white'}}>
+                                          {renderExploreDetail(r, info)}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </>
                 )}
               </div>
             );
+            // renderExploreDetail 헬퍼
+            function renderExploreDetail(r: ExplorationRow, info: {label:string;color:string;bg:string}) {
+              return (
+                <div className="border-t" style={{borderColor: info.color + '30'}}>
+                  {(r.question || r.methods) && (
+                    <div className="px-3 py-2 flex gap-3 items-start border-b border-[#f4f4fc]" style={{background:'#fafafa'}}>
+                      {r.question && (
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">탐구 질문</div>
+                          <p className="text-xs text-[#4a4a6a] m-0 leading-snug">{r.question}</p>
+                        </div>
+                      )}
+                      {r.methods && (
+                        <div className="shrink-0 max-w-[40%]">
+                          <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5 text-right">방법</div>
+                          <div className="flex flex-wrap gap-1 justify-end">
+                            {r.methods.split(',').map((m: string, i: number) => (
+                              <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
+                                style={{background:'#ede9fe', color:'#5c35cc'}}>{m.trim()}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {r.explanation && (
+                    <div className="px-3 py-2 border-b border-[#f4f4fc]" style={{background: info.bg + '55'}}>
+                      <div className="text-[10px] font-black mb-1" style={{color: info.color}}>2. 알게 된 점</div>
+                      <p className="text-xs text-[#374151] m-0 leading-relaxed whitespace-pre-wrap">{r.explanation}</p>
+                    </div>
+                  )}
+                  {(r.process || r.insight) && (
+                    <div className={`px-3 py-2 grid gap-3 ${r.process && r.insight ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                      {r.process && (
+                        <div>
+                          <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">1. 탐구 과정</div>
+                          <p className="text-xs text-[#555] m-0 leading-snug whitespace-pre-wrap">{r.process}</p>
+                        </div>
+                      )}
+                      {r.insight && (
+                        <div>
+                          <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">3. 생각 변화</div>
+                          <p className="text-xs text-[#555] m-0 leading-snug whitespace-pre-wrap">{r.insight}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            }
           })()}
 
           {/* ─ 우수 탐구 사례 ─ */}

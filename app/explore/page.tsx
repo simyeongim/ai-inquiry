@@ -40,6 +40,8 @@ export default function ExplorePage() {
   const [forceHelper,   setForceHelper]   = useState(false);
   const [showHelper,    setShowHelper]    = useState(false);
   const [otherMethodText, setOtherMethodText] = useState('');
+  const [analysedOnce,     setAnalysedOnce]     = useState(false);
+  const [analysedTrimmedLen, setAnalysedTrimmedLen] = useState(0);
 
   const trimmed        = explanation.trim();
   const meetsCondition = trimmed.length >= 100 && countSentences(trimmed) >= 3;
@@ -49,9 +51,12 @@ export default function ExplorePage() {
     if (!active) {
       setShowHelper(false);
       setStrength(''); setHints([]); setLoadingHints(false);
+      setAnalysedOnce(false);
+      setAnalysedTrimmedLen(0);
       return;
     }
-    // forceHelper는 즉시, 자동 조건은 10초 대기
+    // 이미 분석됐고 수동 요청이 아니면 자동 재분석 안 함
+    if (analysedOnce && !forceHelper) return;
     const delay = forceHelper ? 100 : 10000;
     const timer = setTimeout(async () => {
       setShowHelper(true);
@@ -66,10 +71,15 @@ export default function ExplorePage() {
         setStrength(typeof data.strength === 'string' ? data.strength : '');
         setHints(Array.isArray(data.hints) ? data.hints : []);
       } catch { setHints([]); }
-      finally  { setLoadingHints(false); }
+      finally {
+        setLoadingHints(false);
+        setAnalysedOnce(true);
+        setAnalysedTrimmedLen(trimmed.length);
+        setForceHelper(false);
+      }
     }, delay);
     return () => clearTimeout(timer);
-  }, [explanation, meetsCondition, forceHelper]);
+  }, [explanation, meetsCondition, forceHelper, analysedOnce]);
 
   function toggle(s: Section) {
     setOpen(prev => { const n = new Set(prev); n.has(s) ? n.delete(s) : n.add(s); return n; });
@@ -236,12 +246,19 @@ export default function ExplorePage() {
             className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
             style={{ minHeight: '220px' }} />
           {!showHelper && trimmed.length > 0 && (
-            <div className="mt-2 flex items-center gap-2 justify-between">
-              <p className="text-[11px] text-[#bbb] m-0 leading-relaxed">
-                조금 더 자세히 쓰면 깊이 있는 탐구 도움을 받을 수 있어요.
-              </p>
+            <div className="mt-2 flex items-start gap-2 justify-between">
+              <div>
+                <p className="text-[11px] text-[#bbb] m-0">
+                  조금 더 자세히 쓰면 깊이 있는 탐구 도움을 받을 수 있어요.
+                </p>
+                <p className="text-[11px] m-0 mt-0.5" style={{color: meetsCondition ? '#f59e0b' : '#ddd'}}>
+                  {meetsCondition
+                    ? '✦ 10초 후 자동으로 분석이 시작됩니다.'
+                    : '3문장, 100자 이상을 완성하면 10초 뒤 자동으로 나타납니다.'}
+                </p>
+              </div>
               <button type="button" onClick={() => setForceHelper(true)}
-                className="text-[11px] text-[#667eea] border border-[#667eea]/30 bg-[#667eea]/5 px-2.5 py-1 rounded-full cursor-pointer hover:bg-[#667eea]/10 transition-colors shrink-0 whitespace-nowrap"
+                className="text-[11px] text-[#667eea] border border-[#667eea]/30 bg-[#667eea]/5 px-2.5 py-1 rounded-full cursor-pointer hover:bg-[#667eea]/10 transition-colors shrink-0 whitespace-nowrap mt-0.5"
                 style={{ fontWeight: 500 }}>
                 그래도 도움받기
               </button>
@@ -258,27 +275,22 @@ export default function ExplorePage() {
                 <span className="text-sm font-black text-[#92400e]">깊이 있는 탐구</span>
               </div>
             </div>
-            <div className="px-4 py-3 border-t space-y-2" style={{ background: 'white', borderColor: '#fde68a' }}>
-              {/* 탐구 깊이 단계 안내 */}
-              <div className="flex items-center gap-1 pb-2 mb-1 border-b border-[#fde68a]">
-                <div className="flex-1 text-center">
-                  <div className="text-sm">🟡</div>
-                  <div className="text-[10px] font-black text-[#92400e]">사실 나열</div>
-                  <div className="text-[9px] text-[#a37020] leading-tight mt-0.5">알게 된 것을 나열</div>
-                </div>
-                <span className="text-[#fbbf24] text-xs shrink-0">→</span>
-                <div className="flex-1 text-center">
-                  <div className="text-sm">🔵</div>
-                  <div className="text-[10px] font-black text-[#92400e]">연결 설명</div>
-                  <div className="text-[9px] text-[#a37020] leading-tight mt-0.5">이유를 연결해서 설명</div>
-                </div>
-                <span className="text-[#fbbf24] text-xs shrink-0">→</span>
-                <div className="flex-1 text-center">
-                  <div className="text-sm">🟢</div>
-                  <div className="text-[10px] font-black text-[#92400e]">관계 탐구</div>
-                  <div className="text-[9px] text-[#a37020] leading-tight mt-0.5">새 질문 만들어 확장</div>
-                </div>
+            <div className="px-4 py-3 border-t space-y-3" style={{ background: 'white', borderColor: '#fde68a' }}>
+              {/* 탐구 심화 팁 */}
+              <div className="grid grid-cols-2 gap-1.5">
+                {([
+                  { icon: '🔍', q: '왜 그럴까?', desc: '알게 된 사실의 이유를 내 말로 설명해 보세요.' },
+                  { icon: '🔗', q: '연결하면?', desc: '배운 개념들이 서로 어떻게 이어지는지 써 보세요.' },
+                  { icon: '💭', q: '만약에?', desc: '상황이 달라진다면 결과도 달라질지 생각해 보세요.' },
+                  { icon: '❓', q: '새 질문은?', desc: '탐구하며 새로 생긴 궁금점을 질문으로 써 보세요.' },
+                ] as const).map(({ icon, q, desc }) => (
+                  <div key={q} className="rounded-xl px-2.5 py-2" style={{background:'#fffbeb', border:'1px solid #fde68a'}}>
+                    <p className="text-xs font-black text-[#92400e] m-0 mb-0.5">{icon} {q}</p>
+                    <p className="text-[10px] text-[#a37020] m-0 leading-tight">{desc}</p>
+                  </div>
+                ))}
               </div>
+
               {loadingHints ? (
                 <div className="flex items-center gap-2 py-1">
                   <span className="inline-block w-4 h-4 border-2 border-[#f59e0b] border-t-transparent rounded-full animate-spin" />
@@ -302,6 +314,17 @@ export default function ExplorePage() {
                 </>
               ) : (
                 <p className="text-xs text-[#ccc] m-0 py-1">분석 중 문제가 생겼어요. 계속 작성해보세요.</p>
+              )}
+
+              {/* 한 번 더 도움받기 — 분석 후 텍스트가 달라진 경우 */}
+              {analysedOnce && !loadingHints && trimmed.length !== analysedTrimmedLen && trimmed.length > 0 && (
+                <div className="flex justify-end pt-1">
+                  <button type="button" onClick={() => setForceHelper(true)}
+                    className="text-[11px] text-[#f59e0b] border border-[#f59e0b]/40 bg-[#fffbeb] px-3 py-1.5 rounded-full cursor-pointer hover:bg-[#fef3c7] transition-colors"
+                    style={{ fontWeight: 600 }}>
+                    한 번 더 도움받기
+                  </button>
+                </div>
               )}
             </div>
           </div>
