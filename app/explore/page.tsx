@@ -117,9 +117,9 @@ export default function ExplorePage() {
     info:        classRoom && name.trim() ? `${classRoom} · ${name}` : '',
     project:     project,
     qmethod:     question.trim() ? snippet(question) : methods.length ? methods.join(', ') : '',
-    process:     snippet(process),
-    explanation: snippet(explanation),
-    insight:     snippet(insight),
+    process:     '',
+    explanation: '',
+    insight:     '',
   };
 
   return (
