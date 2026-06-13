@@ -440,7 +440,7 @@ export default function TeacherPage() {
   const [exploreDepthMap,       setExploreDepthMap]       = useState<Record<string, {level: string; comment: string}>>({});
   const [exploreInsightLoading, setExploreInsightLoading] = useState(false);
   const [expandedExploreId,     setExpandedExploreId]     = useState<string | null>(null);
-  const [collapsedExploreIds,   setCollapsedExploreIds]   = useState<Set<string>>(new Set());
+  const [expandedExploreIds,    setExpandedExploreIds]    = useState<Set<string>>(new Set());
   const [showExploreCriteria,   setShowExploreCriteria]   = useState(false);
   const [filterExploreDepth,    setFilterExploreDepth]    = useState<string | null>(null);
   const [selExplore,            setSelExplore]            = useState<Set<string>>(new Set());
@@ -2209,20 +2209,21 @@ export default function TeacherPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-3">
                   {students.map(r => {
                     const isChecked = selExplore.has(r.id);
-                    const isCollapsed = collapsedExploreIds.has(r.id);
+                    const isExpanded = expandedExploreIds.has(r.id);
                     const depth = exploreDepthMap[r.id];
                     const cardInfo = depth
                       ? (DEPTH_INFO[depth.level] ?? { label: '미분류', color: '#9ca3af', bg: '#f9fafb' })
                       : { label: '미분류', color: '#9ca3af', bg: '#f9fafb' };
                     const proj = r.project ? PROJECT_SHORT[r.project] : null;
+                    const methodList = r.methods ? r.methods.split(',').map((m: string) => m.trim()).filter(Boolean) : [];
                     return (
                       <div key={r.id} className="rounded-xl overflow-hidden transition-all"
                         style={{
                           background: isChecked ? '#ede9fe' : '#f8f8fc',
                           border: `1px solid ${isChecked ? '#667eea' : '#e8e8f0'}`,
                         }}>
-                        {/* 카드 상단 행: checkbox + 뱃지들 + 화살표 */}
-                        <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1">
+                        {/* 최상단 행: checkbox + 프로젝트뱃지 + 학년반 + 이름 + [유형뱃지 우측] + 화살표 */}
+                        <div className="flex items-center gap-1.5 px-3 py-2.5">
                           <input type="checkbox" checked={isChecked}
                             onChange={() => setSelExplore(p => { const n = new Set(p); n.has(r.id) ? n.delete(r.id) : n.add(r.id); return n; })}
                             className="w-3.5 h-3.5 shrink-0 cursor-pointer accent-[#667eea]" />
@@ -2232,58 +2233,63 @@ export default function TeacherPage() {
                               {proj.emoji} {proj.short}
                             </span>
                           )}
+                          <span className="text-[11px] text-[#888] shrink-0">{r.class_room}</span>
+                          <span className="text-sm font-black text-[#1a1a2e] shrink-0">{r.name}</span>
+                          <div className="flex-1" />
                           {depth && (
                             <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold shrink-0 whitespace-nowrap"
                               style={{ background: cardInfo.color + '22', color: cardInfo.color }}>
                               {depth.level} {cardInfo.label}
                             </span>
                           )}
-                          <div className="flex-1" />
                           <button
-                            onClick={() => setCollapsedExploreIds(p => {
+                            onClick={() => setExpandedExploreIds(p => {
                               const n = new Set(p); n.has(r.id) ? n.delete(r.id) : n.add(r.id); return n;
                             })}
                             className="text-sm border-none bg-transparent cursor-pointer shrink-0 px-0.5 hover:opacity-50 transition-opacity text-[#bbb]">
-                            {isCollapsed ? '▼' : '▲'}
+                            {isExpanded ? '▲' : '▼'}
                           </button>
                         </div>
 
-                        {/* 펼침 내용 */}
-                        {!isCollapsed && (
-                          <div className="px-3 pb-3 space-y-1.5">
-                            <div className="flex items-baseline gap-1.5">
-                              <span className="text-[11px] text-[#888]">{r.class_room}</span>
-                              <span className="text-sm font-black text-[#1a1a2e]">{r.name}</span>
-                            </div>
-                            {r.question && (
-                              <p className="text-sm text-[#5a5a8a] m-0 leading-snug">{r.question}</p>
+                        {/* 탐구질문: 접힘/펼침 모두 표시 */}
+                        {r.question && (
+                          <div className="px-3 pb-2">
+                            <p className="text-sm text-[#5a5a8a] m-0 leading-snug">{r.question}</p>
+                          </div>
+                        )}
+
+                        {/* 펼침 시 추가 내용 */}
+                        {isExpanded && (
+                          <div className="px-3 pb-3 space-y-2 border-t border-[#e8e8f0] pt-2">
+                            {methodList.length > 0 && (
+                              <div>
+                                <div className="text-[10px] font-black text-[#c0c0d0] mb-1">탐구 방법</div>
+                                <div className="flex flex-wrap gap-1">
+                                  {methodList.map((m, i) => (
+                                    <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
+                                      style={{ background: '#ede9fe', color: '#667eea' }}>{m}</span>
+                                  ))}
+                                </div>
+                              </div>
                             )}
                             {r.process && (
                               <div>
-                                <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">1. 탐구 과정</div>
-                                <p className="text-xs text-[#bbb] m-0 leading-snug whitespace-pre-wrap">{r.process}</p>
+                                <div className="text-[10px] font-black text-[#9ca3af] mb-0.5">1. 탐구 과정</div>
+                                <p className="text-sm text-[#374151] m-0 leading-snug whitespace-pre-wrap">{r.process}</p>
                               </div>
                             )}
                             {r.explanation && (
                               <div>
                                 <div className="text-[10px] font-black text-[#667eea] mb-0.5">2. 알게 된 점</div>
-                                <p className="text-sm text-[#1a1a2e] m-0 leading-relaxed whitespace-pre-wrap font-medium">{r.explanation}</p>
+                                <p className="text-sm text-[#1a1a2e] m-0 leading-relaxed whitespace-pre-wrap font-bold">{r.explanation}</p>
                               </div>
                             )}
                             {r.insight && (
                               <div>
-                                <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">3. 생각 변화</div>
-                                <p className="text-xs text-[#bbb] m-0 leading-snug whitespace-pre-wrap">{r.insight}</p>
+                                <div className="text-[10px] font-black text-[#9ca3af] mb-0.5">3. 생각 변화</div>
+                                <p className="text-sm text-[#374151] m-0 leading-snug whitespace-pre-wrap">{r.insight}</p>
                               </div>
                             )}
-                          </div>
-                        )}
-
-                        {/* 접힘 상태: 이름만 */}
-                        {isCollapsed && (
-                          <div className="px-3 pb-2 flex items-baseline gap-1.5">
-                            <span className="text-[11px] text-[#888]">{r.class_room}</span>
-                            <span className="text-sm font-black text-[#1a1a2e]">{r.name}</span>
                           </div>
                         )}
                       </div>
