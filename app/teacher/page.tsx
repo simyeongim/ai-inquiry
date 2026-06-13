@@ -2216,37 +2216,40 @@ export default function TeacherPage() {
                       : { label: '미분류', color: '#9ca3af', bg: '#f9fafb' };
                     const proj = r.project ? PROJECT_SHORT[r.project] : null;
                     const methodList = r.methods ? r.methods.split(',').map((m: string) => m.trim()).filter(Boolean) : [];
+                    const toggleSelect = () => setSelExplore(p => { const n = new Set(p); n.has(r.id) ? n.delete(r.id) : n.add(r.id); return n; });
                     return (
-                      <div key={r.id} className="rounded-xl overflow-hidden transition-all"
+                      <div key={r.id}
+                        onClick={toggleSelect}
+                        className="rounded-xl overflow-hidden transition-all cursor-pointer"
                         style={{
-                          background: isChecked ? '#ede9fe' : '#f8f8fc',
-                          border: `1px solid ${isChecked ? '#667eea' : '#e8e8f0'}`,
+                          background: isChecked ? cardInfo.color + '55' : cardInfo.bg,
+                          border: `1.5px solid ${isChecked ? cardInfo.color : cardInfo.color + '40'}`,
                         }}>
                         {/* 최상단 행: checkbox + 프로젝트뱃지 + 학년반 + 이름 + [유형뱃지 우측] + 화살표 */}
                         <div className="flex items-center gap-1.5 px-3 py-2.5">
                           <input type="checkbox" checked={isChecked}
-                            onChange={() => setSelExplore(p => { const n = new Set(p); n.has(r.id) ? n.delete(r.id) : n.add(r.id); return n; })}
+                            onChange={toggleSelect}
+                            onClick={e => e.stopPropagation()}
                             className="w-3.5 h-3.5 shrink-0 cursor-pointer accent-[#667eea]" />
                           {proj && (
                             <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold shrink-0 whitespace-nowrap"
-                              style={{ background: '#ede9fe', color: '#667eea' }}>
+                              style={{ background: cardInfo.color + '33', color: cardInfo.color }}>
                               {proj.emoji} {proj.short}
                             </span>
                           )}
-                          <span className="text-[11px] text-[#888] shrink-0">{r.class_room}</span>
+                          <span className="text-[11px] shrink-0" style={{color: cardInfo.color + 'cc'}}>{r.class_room}</span>
                           <span className="text-sm font-black text-[#1a1a2e] shrink-0">{r.name}</span>
                           <div className="flex-1" />
                           {depth && (
                             <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold shrink-0 whitespace-nowrap"
-                              style={{ background: cardInfo.color + '22', color: cardInfo.color }}>
+                              style={{ background: cardInfo.color + '33', color: cardInfo.color }}>
                               {depth.level} {cardInfo.label}
                             </span>
                           )}
                           <button
-                            onClick={() => setExpandedExploreIds(p => {
-                              const n = new Set(p); n.has(r.id) ? n.delete(r.id) : n.add(r.id); return n;
-                            })}
-                            className="text-sm border-none bg-transparent cursor-pointer shrink-0 px-0.5 hover:opacity-50 transition-opacity text-[#bbb]">
+                            onClick={e => { e.stopPropagation(); setExpandedExploreIds(p => { const n = new Set(p); n.has(r.id) ? n.delete(r.id) : n.add(r.id); return n; }); }}
+                            className="text-sm border-none bg-transparent cursor-pointer shrink-0 px-0.5 hover:opacity-50 transition-opacity"
+                            style={{ color: cardInfo.color }}>
                             {isExpanded ? '▲' : '▼'}
                           </button>
                         </div>
@@ -2254,39 +2257,36 @@ export default function TeacherPage() {
                         {/* 탐구질문: 접힘/펼침 모두 표시 */}
                         {r.question && (
                           <div className="px-3 pb-2">
-                            <p className="text-sm text-[#5a5a8a] m-0 leading-snug">{r.question}</p>
+                            <p className="text-sm m-0 leading-snug" style={{color: cardInfo.color + 'dd'}}>{r.question}</p>
                           </div>
                         )}
 
                         {/* 펼침 시 추가 내용 */}
                         {isExpanded && (
-                          <div className="px-3 pb-3 space-y-2 border-t border-[#e8e8f0] pt-2">
+                          <div className="px-3 pb-3 space-y-2 pt-2" style={{borderTop: `1px solid ${cardInfo.color}30`, background: 'rgba(255,255,255,0.6)'}}>
                             {methodList.length > 0 && (
-                              <div>
-                                <div className="text-[10px] font-black text-[#c0c0d0] mb-1">탐구 방법</div>
-                                <div className="flex flex-wrap gap-1">
-                                  {methodList.map((m, i) => (
-                                    <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
-                                      style={{ background: '#ede9fe', color: '#667eea' }}>{m}</span>
-                                  ))}
-                                </div>
+                              <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                                {methodList.map((m, i) => (
+                                  <span key={i} className="text-xs px-2 py-0.5 rounded-full font-bold"
+                                    style={{ background: cardInfo.color + '22', color: cardInfo.color }}>{m}</span>
+                                ))}
                               </div>
                             )}
                             {r.process && (
                               <div>
-                                <div className="text-[10px] font-black text-[#9ca3af] mb-0.5">1. 탐구 과정</div>
+                                <div className="text-[10px] font-black mb-0.5" style={{color: cardInfo.color + '99'}}>1. 탐구 과정</div>
                                 <p className="text-sm text-[#374151] m-0 leading-snug whitespace-pre-wrap">{r.process}</p>
                               </div>
                             )}
                             {r.explanation && (
                               <div>
-                                <div className="text-[10px] font-black text-[#667eea] mb-0.5">2. 알게 된 점</div>
+                                <div className="text-[10px] font-black mb-0.5" style={{color: cardInfo.color}}>2. 알게 된 점</div>
                                 <p className="text-sm text-[#1a1a2e] m-0 leading-relaxed whitespace-pre-wrap font-bold">{r.explanation}</p>
                               </div>
                             )}
                             {r.insight && (
                               <div>
-                                <div className="text-[10px] font-black text-[#9ca3af] mb-0.5">3. 생각 변화</div>
+                                <div className="text-[10px] font-black mb-0.5" style={{color: cardInfo.color + '99'}}>3. 생각 변화</div>
                                 <p className="text-sm text-[#374151] m-0 leading-snug whitespace-pre-wrap">{r.insight}</p>
                               </div>
                             )}
