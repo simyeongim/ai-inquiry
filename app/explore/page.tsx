@@ -19,6 +19,7 @@ export default function ExplorePage() {
   const [explanation, setExplanation] = useState('');
   const [insight,     setInsight]     = useState('');
 
+  const [strength,     setStrength]     = useState('');
   const [hints,        setHints]        = useState<string[]>([]);
   const [loadingHints, setLoadingHints] = useState(false);
 
@@ -28,6 +29,7 @@ export default function ExplorePage() {
   // 탐구 도우미: 입력 멈춘 뒤 1.2초 후 AI 질문 생성
   useEffect(() => {
     if (!showHelper) {
+      setStrength('');
       setHints([]);
       setLoadingHints(false);
       return;
@@ -42,6 +44,7 @@ export default function ExplorePage() {
           body: JSON.stringify({ explanation: trimmed }),
         });
         const data = await res.json();
+        setStrength(typeof data.strength === 'string' ? data.strength : '');
         setHints(Array.isArray(data.hints) ? data.hints : []);
       } catch {
         setHints([]);
@@ -157,27 +160,34 @@ export default function ExplorePage() {
           )}
         </Card>
 
-        {/* 💡 탐구 도우미 */}
+        {/* 깊이 있는 탐구 */}
         {showHelper && (
           <div className="mb-1.5 rounded-2xl overflow-hidden" style={{ border: '1.5px solid #fde68a' }}>
+            {/* 헤더 */}
             <div className="px-4 py-3" style={{ background: '#fffbeb' }}>
               <div className="flex items-center gap-1.5">
-                <span className="text-base">💡</span>
-                <span className="text-sm font-black text-[#92400e]">탐구 도우미</span>
+                <span className="text-base">🔍</span>
+                <span className="text-sm font-black text-[#92400e]">깊이 있는 탐구</span>
               </div>
-              <p className="text-xs text-[#a37020] mt-0.5 m-0">
-                지금 쓴 내용에서 한 단계 더 생각해볼 수 있는 질문이에요.
-              </p>
             </div>
 
-            <div className="px-4 py-3 border-t" style={{ background: 'white', borderColor: '#fde68a' }}>
+            <div className="px-4 py-3 border-t space-y-2" style={{ background: 'white', borderColor: '#fde68a' }}>
               {loadingHints ? (
                 <div className="flex items-center gap-2 py-1">
                   <span className="inline-block w-4 h-4 border-2 border-[#f59e0b] border-t-transparent rounded-full animate-spin" />
-                  <span className="text-sm text-[#a37020]">질문 생성 중...</span>
+                  <span className="text-sm text-[#a37020]">분석 중...</span>
                 </div>
-              ) : hints.length > 0 ? (
-                <div className="space-y-2">
+              ) : (strength || hints.length > 0) ? (
+                <>
+                  {/* 강점 한 문장 */}
+                  {strength && (
+                    <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl"
+                      style={{ background: '#f0fdf4' }}>
+                      <span className="text-[#16a34a] font-black text-sm shrink-0 mt-0.5">✓</span>
+                      <p className="text-sm text-[#166534] m-0 leading-relaxed">{strength}</p>
+                    </div>
+                  )}
+                  {/* 심화 질문 */}
                   {hints.map((q, i) => (
                     <div key={i} className="flex items-start gap-2 px-3 py-2.5 rounded-xl border"
                       style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
@@ -185,9 +195,9 @@ export default function ExplorePage() {
                       <p className="text-sm font-semibold text-[#78350f] m-0 leading-relaxed">{q}</p>
                     </div>
                   ))}
-                </div>
+                </>
               ) : (
-                <p className="text-xs text-[#ccc] m-0 py-1">질문을 불러오는 중 문제가 생겼어요. 계속 작성해보세요.</p>
+                <p className="text-xs text-[#ccc] m-0 py-1">분석 중 문제가 생겼어요. 계속 작성해보세요.</p>
               )}
             </div>
           </div>
