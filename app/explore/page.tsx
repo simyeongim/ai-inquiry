@@ -28,7 +28,7 @@ export default function ExplorePage() {
   const [explanation,  setExplanation]  = useState('');
   const [insight,      setInsight]      = useState('');
 
-  const [open, setOpen] = useState<Set<Section>>(new Set(ALL_SECTIONS));
+  const [open, setOpen] = useState<Set<Section>>(new Set());
 
   const [strength,     setStrength]     = useState('');
   const [hints,        setHints]        = useState<string[]>([]);
