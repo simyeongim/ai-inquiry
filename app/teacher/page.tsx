@@ -8,6 +8,7 @@ const SUPABASE_KEY = 'sb_publishable_z7LexdeBdGJqEy5Z8IAyNA_LEGAxPf_';
 const TEACHER_PIN  = '1234teacher';
 
 const CLASS_LIST    = ['3학년 1반','3학년 4반','4학년 4반','6학년 1반','6학년 2반','6학년 3반','6학년 3반 과학','6학년 4반','6학년 5반','6학년 6반'] as const;
+const GRADE_LIST    = ['3학년', '4학년', '6학년'] as const;
 const PROJECT_LIST  = ['세계는 어떻게 움직이는가','지구와 어떻게 함께 살아갈 것인가','우리는 어떻게 자신을 조직하는가'] as const;
 const LEVEL_OPTS    = [1, 2, 3, 4] as const;
 type  Level         = 1 | 2 | 3 | 4;
@@ -380,6 +381,8 @@ export default function TeacherPage() {
   const [deletingConcepts,  setDeletingConcepts]  = useState(false);
   const [editingConceptId,  setEditingConceptId]  = useState<string | null>(null);
   const [editConceptText,   setEditConceptText]   = useState('');
+  const [fConceptProject,   setFConceptProject]   = useState<string[]>([]);
+  const [newConceptProject, setNewConceptProject] = useState<string | null>(null);
 
   // ── 배움 탭 상태 ──
   const [learningRows,  setLearningRows]  = useState<LearningRow[]>([]);
@@ -468,7 +471,7 @@ export default function TeacherPage() {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/concepts`, {
         method: 'POST',
         headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
-        body: JSON.stringify({ keyword: parsed.keyword, key_concept: parsed.key_concept, project: null, lesson: null }),
+        body: JSON.stringify({ keyword: parsed.keyword, key_concept: parsed.key_concept, project: newConceptProject, lesson: null }),
       });
       if (!res.ok) throw new Error();
       const [saved] = await res.json();
@@ -498,7 +501,7 @@ export default function TeacherPage() {
       const lines = text.split(/\r?\n/).filter(l => l.trim());
       const items = lines.map(parseConceptLine).filter((x): x is { keyword: string; key_concept: string } => x !== null);
       if (items.length === 0) { alert('유효한 항목이 없습니다.\n형식: 핵심어: 내용'); return; }
-      const payload = items.map(i => ({ keyword: i.keyword, key_concept: i.key_concept, project: null, lesson: null }));
+      const payload = items.map(i => ({ keyword: i.keyword, key_concept: i.key_concept, project: newConceptProject, lesson: null }));
       const res = await fetch(`${SUPABASE_URL}/rest/v1/concepts`, {
         method: 'POST',
         headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
@@ -561,6 +564,22 @@ export default function TeacherPage() {
   useEffect(() => { if (authed && tab === 'learnings') loadLearnings(); }, [authed, tab, loadLearnings]);
   useEffect(() => { if (authed && tab === 'concepts')  loadConcepts();  }, [authed, tab, loadConcepts]);
   useEffect(() => { setLearnInsight(null); }, [fLearnClass, fLearnLesson, fLearnStatus]);
+
+  const filteredConcepts = useMemo(() => {
+    if (!fConceptProject.length) return concepts;
+    return concepts.filter(c => fConceptProject.includes(c.project ?? '공통'));
+  }, [concepts, fConceptProject]);
+
+  const groupedConcepts = useMemo(() => {
+    const result: { key: string; label: string; items: ConceptRow[] }[] = [];
+    for (const g of GRADE_LIST) {
+      const items = filteredConcepts.filter(c => c.project === g);
+      if (items.length > 0) result.push({ key: g, label: g, items });
+    }
+    const common = filteredConcepts.filter(c => !c.project || !(GRADE_LIST as readonly string[]).includes(c.project));
+    if (common.length > 0) result.push({ key: '공통', label: '공통', items: common });
+    return result;
+  }, [filteredConcepts]);
 
   async function generateAiReport() {
     if (!filtered.length || !stats) return;
@@ -1563,8 +1582,27 @@ export default function TeacherPage() {
               </button>
             </div>
 
+            {/* 학년 지정 */}
+            <div className="flex items-center gap-2 pt-3 mt-1 border-t border-[#f0f0f8]">
+              <span className="text-xs font-bold text-[#666] shrink-0">학년</span>
+              {([null, ...GRADE_LIST] as (string | null)[]).map(g => {
+                const label = g ?? '공통';
+                const isSelected = newConceptProject === g;
+                return (
+                  <button key={label} onClick={() => setNewConceptProject(g)}
+                    className="text-xs font-semibold px-3 py-1 rounded-full border-2 cursor-pointer transition-all"
+                    style={isSelected
+                      ? { background: '#e8eaf6', color: '#667eea', borderColor: '#667eea' }
+                      : { background: 'white', color: '#999', borderColor: '#e0e0e0' }}>
+                    {label}
+                  </button>
+                );
+              })}
+              <span className="text-[11px] text-[#bbb] ml-1">추가 및 CSV 업로드에 공통 적용</span>
+            </div>
+
             {/* CSV 업로드 */}
-            <div className="flex items-center gap-3 pt-4 border-t border-[#f0f0f8]">
+            <div className="flex items-center gap-3 pt-3 border-t border-[#f0f0f8]">
               <span className="text-xs font-bold text-[#666]">일괄 업로드</span>
               <label className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold cursor-pointer border-2 border-[#667eea] text-[#667eea] hover:bg-[#667eea] hover:text-white transition-all">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -1599,67 +1637,107 @@ export default function TeacherPage() {
                   </>
                 )}
               </div>
-              <div className="flex items-center gap-3">
-                <p className="text-xs text-[#9ca3af] m-0">학생 답변에 핵심어가 포함되면 자동으로 AI 평가 기준에 반영됩니다.</p>
-              </div>
+              <p className="text-xs text-[#9ca3af] m-0">학생 답변에 핵심어가 포함되면 자동으로 AI 평가 기준에 반영됩니다.</p>
             </div>
+
+            {/* 학년 필터 */}
+            {concepts.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap mb-4">
+                {([...GRADE_LIST, '공통'] as string[]).map(g => {
+                  const isOn = fConceptProject.includes(g);
+                  return (
+                    <button key={g}
+                      onClick={() => setFConceptProject(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g])}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-full border-2 transition-all cursor-pointer"
+                      style={isOn
+                        ? { background: '#e8eaf6', color: '#667eea', borderColor: '#667eea' }
+                        : { background: 'white', color: '#777', borderColor: '#e0e0e0' }}>
+                      {g}
+                    </button>
+                  );
+                })}
+                {fConceptProject.length > 0 && (
+                  <button onClick={() => setFConceptProject([])}
+                    className="text-xs text-[#667eea] border-none bg-transparent cursor-pointer font-semibold hover:underline">
+                    전체 보기
+                  </button>
+                )}
+              </div>
+            )}
+
             {loadingConcepts ? (
               <p className="text-center text-[#ccc] py-8 text-sm">불러오는 중...</p>
             ) : concepts.length === 0 ? (
               <p className="text-center text-[#ccc] py-8 text-sm">저장된 핵심 개념이 없습니다.</p>
+            ) : groupedConcepts.length === 0 ? (
+              <p className="text-center text-[#ccc] py-8 text-sm">해당 학년의 개념이 없습니다.</p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                {concepts.map(c => {
-                  const checked = selConcepts.has(c.id);
-                  const isEditing = editingConceptId === c.id;
-                  return (
-                    <div key={c.id}
-                      onClick={() => { if (!isEditing) setSelConcepts(p => { const n = new Set(p); checked ? n.delete(c.id) : n.add(c.id); return n; }); }}
-                      className="rounded-xl px-3 py-2.5 transition-all"
-                      style={{ background: checked ? '#ede9fe' : '#f8f8fc', border: `1px solid ${checked ? '#667eea' : '#e8e8f0'}`, cursor: isEditing ? 'default' : 'pointer' }}>
-
-                      {isEditing ? (
-                        /* 수정 모드 */
-                        <div onClick={e => e.stopPropagation()} className="flex flex-col gap-2">
-                          <input
-                            autoFocus
-                            value={editConceptText}
-                            onChange={e => setEditConceptText(e.target.value)}
-                            onKeyDown={e => { if (e.key === 'Enter') updateConcept(c.id); if (e.key === 'Escape') setEditingConceptId(null); }}
-                            className="w-full border-2 border-[#667eea] rounded-lg px-2 py-1 text-xs focus:outline-none"
-                          />
-                          <div className="flex gap-2">
-                            <button onClick={() => updateConcept(c.id)}
-                              className="px-3 py-1 rounded-lg text-[11px] font-bold text-white border-none cursor-pointer"
-                              style={{ background: '#667eea' }}>저장</button>
-                            <button onClick={() => setEditingConceptId(null)}
-                              className="px-3 py-1 rounded-lg text-[11px] font-semibold text-[#666] bg-[#f0f0f0] border-none cursor-pointer">취소</button>
-                          </div>
-                        </div>
-                      ) : (
-                        /* 일반 모드 */
-                        <>
-                          <div className="flex items-center gap-2 mb-1">
-                            <input type="checkbox" checked={checked} readOnly
-                              className="accent-[#667eea] w-3.5 h-3.5 shrink-0 cursor-pointer" />
-                            <div className="flex items-center gap-1 flex-wrap min-w-0">
-                              {c.keyword.split(',').map((k, i) => (
-                                <span key={i} className="text-xs font-bold px-1.5 py-0.5 rounded text-[#667eea] bg-[#ede9fe]">
-                                  {k.trim().replace(/^["']|["']$/g, '')}
-                                </span>
-                              ))}
-                            </div>
-                            <button onClick={e => { e.stopPropagation(); setEditingConceptId(c.id); setEditConceptText(`${c.keyword}: ${c.key_concept}`); }}
-                              className="ml-auto text-[11px] text-[#667eea] hover:text-[#4f46e5] border-none bg-transparent cursor-pointer font-semibold shrink-0">
-                              수정
-                            </button>
-                          </div>
-                          <p className="text-xs text-[#555] m-0 leading-relaxed">{c.key_concept}</p>
-                        </>
-                      )}
+              <div className="space-y-5">
+                {groupedConcepts.map(({ key, label, items }) => (
+                  <div key={key}>
+                    {/* 학년 구분 헤더 */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs font-black text-white px-2.5 py-0.5 rounded-full"
+                        style={{ background: label === '공통' ? '#9ca3af' : '#667eea' }}>
+                        {label}
+                      </span>
+                      <div className="flex-1 h-px bg-[#e8e8f0]" />
+                      <span className="text-xs text-[#bbb]">{items.length}개</span>
                     </div>
-                  );
-                })}
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                      {items.map(c => {
+                        const checked = selConcepts.has(c.id);
+                        const isEditing = editingConceptId === c.id;
+                        return (
+                          <div key={c.id}
+                            onClick={() => { if (!isEditing) setSelConcepts(p => { const n = new Set(p); checked ? n.delete(c.id) : n.add(c.id); return n; }); }}
+                            className="rounded-xl px-3 py-2.5 transition-all"
+                            style={{ background: checked ? '#ede9fe' : '#f8f8fc', border: `1px solid ${checked ? '#667eea' : '#e8e8f0'}`, cursor: isEditing ? 'default' : 'pointer' }}>
+
+                            {isEditing ? (
+                              <div onClick={e => e.stopPropagation()} className="flex flex-col gap-2">
+                                <input
+                                  autoFocus
+                                  value={editConceptText}
+                                  onChange={e => setEditConceptText(e.target.value)}
+                                  onKeyDown={e => { if (e.key === 'Enter') updateConcept(c.id); if (e.key === 'Escape') setEditingConceptId(null); }}
+                                  className="w-full border-2 border-[#667eea] rounded-lg px-2 py-1 text-xs focus:outline-none"
+                                />
+                                <div className="flex gap-2">
+                                  <button onClick={() => updateConcept(c.id)}
+                                    className="px-3 py-1 rounded-lg text-[11px] font-bold text-white border-none cursor-pointer"
+                                    style={{ background: '#667eea' }}>저장</button>
+                                  <button onClick={() => setEditingConceptId(null)}
+                                    className="px-3 py-1 rounded-lg text-[11px] font-semibold text-[#666] bg-[#f0f0f0] border-none cursor-pointer">취소</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <input type="checkbox" checked={checked} readOnly
+                                    className="accent-[#667eea] w-3.5 h-3.5 shrink-0 cursor-pointer" />
+                                  <div className="flex items-center gap-1 flex-wrap min-w-0">
+                                    {c.keyword.split(',').map((k, i) => (
+                                      <span key={i} className="text-xs font-bold px-1.5 py-0.5 rounded text-[#667eea] bg-[#ede9fe]">
+                                        {k.trim().replace(/^["']|["']$/g, '')}
+                                      </span>
+                                    ))}
+                                  </div>
+                                  <button onClick={e => { e.stopPropagation(); setEditingConceptId(c.id); setEditConceptText(`${c.keyword}: ${c.key_concept}`); }}
+                                    className="ml-auto text-[11px] text-[#667eea] hover:text-[#4f46e5] border-none bg-transparent cursor-pointer font-semibold shrink-0">
+                                    수정
+                                  </button>
+                                </div>
+                                <p className="text-xs text-[#555] m-0 leading-relaxed">{c.key_concept}</p>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
