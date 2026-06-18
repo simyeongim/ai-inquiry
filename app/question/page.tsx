@@ -53,6 +53,9 @@ function analyzeQuestionLocally(question: string) {
 // ─── 유효성 검사 ────────────────────────────────────
 const BLOCKED_WORDS = ['씨발','시발','씨팔','시팔','개새끼','개새','새끼','지랄','병신','니애미','느금마','엠창','창녀','섹스','야동','야설','성관계','강간','자위','음란','죽어라','자살해','살인해','폭발물'];
 
+// 탐구 대상 없이 질문 형태만 있는 힌트 문구 (주제 없는 템플릿)
+const TEMPLATE_PHRASES = ['무엇일까', '무엇이 더 중요할까', '어떤 특징이 있을까'];
+
 function validateQuestion(q: string) {
   if (!q || q.trim().length === 0) return '질문을 입력해주세요.';
   if (q.trim().length < 5) return '탐구할 수 있는 의미 있는 질문을 입력해 주세요.';
@@ -60,6 +63,9 @@ function validateQuestion(q: string) {
   if (/^[ㄱ-ㅎㅏ-ㅣ\s]+$/.test(q)) return '탐구할 수 있는 의미 있는 질문을 입력해 주세요.';
   if (/(.)\1{3,}/.test(q)) return '탐구할 수 있는 의미 있는 질문을 입력해 주세요.';
   if (BLOCKED_WORDS.some(w => q.includes(w))) return '탐구할 수 있는 의미 있는 질문을 입력해 주세요.';
+  if (q.includes('~')) return '탐구할 수 있는 의미 있는 질문을 입력해 주세요.';
+  const normalized = q.trim().replace(/[?？\s]+$/, '').trim();
+  if (TEMPLATE_PHRASES.some(t => normalized === t)) return '탐구하고 싶은 주제나 내용을 구체적으로 질문에 담아주세요.';
   return '';
 }
 
