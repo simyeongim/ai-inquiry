@@ -185,6 +185,16 @@ interface ExplorationRow {
   created_at: string;
 }
 
+interface ProgressPost {
+  id: string; grade: string; class_name: string; student_name: string;
+  project: string; content: string; created_at: string;
+}
+
+interface ProgressQuestion {
+  id: string; grade: string; class_name: string; student_name: string;
+  project: string; question: string; created_at: string;
+}
+
 function parseFeedback(f: LearningRow['feedback']): { praise: string; understood: string; nextStep: string } | null {
   if (!f) return null;
   if (typeof f === 'string') { try { return JSON.parse(f); } catch { return null; } }
@@ -384,7 +394,7 @@ function FilterDropdown({ label, opts, sel, onToggle, getLabel, getStyle }: {
 // ─── 메인 대시보드 ────────────────────────────────────
 export default function TeacherPage() {
   const [authed,   setAuthed]   = useState(false);
-  const [tab,      setTab]      = useState<'questions' | 'learnings' | 'concepts' | 'explorations'>('questions');
+  const [tab,      setTab]      = useState<'questions' | 'learnings' | 'concepts' | 'explorations' | 'progress'>('questions');
 
   // ── 개념DB 탭 상태 ──
   const [concepts,          setConcepts]          = useState<ConceptRow[]>([]);
@@ -449,6 +459,14 @@ export default function TeacherPage() {
   const [expandedDepthGroups,   setExpandedDepthGroups]   = useState<Set<string>>(new Set());
   const [searchExploreAuthor,   setSearchExploreAuthor]   = useState('');
 
+  // ── 확장공유 탭 상태 ──
+  const [progressPosts,     setProgressPosts]     = useState<ProgressPost[]>([]);
+  const [progressQuestions, setProgressQuestions] = useState<ProgressQuestion[]>([]);
+  const [loadingProgress,   setLoadingProgress]   = useState(false);
+  const [fetchErrProgress,  setFetchErrProgress]  = useState('');
+  const [deletingProgress,  setDeletingProgress]  = useState(false);
+  const [deleteMsg,         setDeleteMsg]         = useState('');
+
   const load = useCallback(async () => {
     setLoading(true); setFetchErr('');
     try {
@@ -486,6 +504,29 @@ export default function TeacherPage() {
       setConcepts(Array.isArray(d) ? d : []);
     } catch { setConcepts([]); }
     setLoadingConcepts(false);
+  }, []);
+
+  const loadProgress = useCallback(async () => {
+    setLoadingProgress(true);
+    setFetchErrProgress('');
+    try {
+      const [postsRes, questionsRes] = await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/progress_posts?order=created_at.desc&limit=1000`, {
+          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+        }),
+        fetch(`${SUPABASE_URL}/rest/v1/progress_questions?order=created_at.desc&limit=1000`, {
+          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+        }),
+      ]);
+      if (!postsRes.ok || !questionsRes.ok) throw new Error('데이터를 불러오지 못했습니다.');
+      const [posts, questions] = await Promise.all([postsRes.json(), questionsRes.json()]);
+      setProgressPosts(Array.isArray(posts) ? posts : []);
+      setProgressQuestions(Array.isArray(questions) ? questions : []);
+    } catch (err) {
+      setFetchErrProgress(err instanceof Error ? err.message : '데이터를 불러오지 못했습니다.');
+    } finally {
+      setLoadingProgress(false);
+    }
   }, []);
 
   const loadExplorations = useCallback(async () => {
@@ -618,6 +659,7 @@ export default function TeacherPage() {
   useEffect(() => { if (authed && tab === 'learnings') loadLearnings(); }, [authed, tab, loadLearnings]);
   useEffect(() => { if (authed && tab === 'concepts')      loadConcepts();      }, [authed, tab, loadConcepts]);
   useEffect(() => { if (authed && tab === 'explorations') loadExplorations(); }, [authed, tab, loadExplorations]);
+  useEffect(() => { if (authed && tab === 'progress')    loadProgress();    }, [authed, tab, loadProgress]);
   useEffect(() => { setLearnInsight(null); }, [fLearnClass, fLearnLesson, fLearnStatus]);
 
   const filteredConcepts = useMemo(() => {
@@ -756,6 +798,46 @@ export default function TeacherPage() {
     } catch (err) { alert(`삭제에 실패했습니다.\n${err instanceof Error ? err.message : ''}`); }
     setDeletingLearn(false);
     setShowDeleteLearn(false);
+  }
+
+  async function deleteProgressPost(id: string) {
+    if (!confirm('정말 삭제하시겠습니까? 삭제한 내용은 되돌릴 수 없습니다.')) return;
+    setDeletingProgress(true);
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/progress_likes?post_id=eq.${id}`, {
+        method: 'DELETE',
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Prefer: 'return=minimal' },
+      });
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/progress_posts?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Prefer: 'return=minimal' },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setProgressPosts(p => p.filter(r => r.id !== id));
+      setDeleteMsg('삭제되었습니다.');
+      setTimeout(() => setDeleteMsg(''), 2500);
+    } catch (err) {
+      alert(`삭제에 실패했습니다.\n${err instanceof Error ? err.message : ''}`);
+    }
+    setDeletingProgress(false);
+  }
+
+  async function deleteProgressQuestion(id: string) {
+    if (!confirm('정말 삭제하시겠습니까? 삭제한 내용은 되돌릴 수 없습니다.')) return;
+    setDeletingProgress(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/progress_questions?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Prefer: 'return=minimal' },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setProgressQuestions(p => p.filter(r => r.id !== id));
+      setDeleteMsg('삭제되었습니다.');
+      setTimeout(() => setDeleteMsg(''), 2500);
+    } catch (err) {
+      alert(`삭제에 실패했습니다.\n${err instanceof Error ? err.message : ''}`);
+    }
+    setDeletingProgress(false);
   }
 
   async function deleteExplorations(ids: string[]) {
@@ -1046,21 +1128,21 @@ export default function TeacherPage() {
           <Link href="/" className="text-white/80 text-base font-semibold bg-white/10 border border-white/30 px-4 py-2 rounded-full hover:bg-white/20 no-underline transition-colors shrink-0">← 홈</Link>
           <h1 className="text-xl font-bold m-0 flex-1 text-center">📊 교사용 분석</h1>
           <button
-            onClick={tab === 'questions' ? load : tab === 'learnings' ? loadLearnings : tab === 'explorations' ? loadExplorations : loadConcepts}
-            disabled={tab === 'questions' ? loading : tab === 'learnings' ? loadingLearn : tab === 'explorations' ? loadingExplore : loadingConcepts}
+            onClick={tab === 'questions' ? load : tab === 'learnings' ? loadLearnings : tab === 'explorations' ? loadExplorations : tab === 'progress' ? loadProgress : loadConcepts}
+            disabled={tab === 'questions' ? loading : tab === 'learnings' ? loadingLearn : tab === 'explorations' ? loadingExplore : tab === 'progress' ? loadingProgress : loadingConcepts}
             className="text-base font-semibold bg-white/20 border border-white/30 text-white px-4 py-2 rounded-full cursor-pointer hover:bg-white/30 disabled:opacity-50 transition-colors shrink-0">
-            {(tab === 'questions' ? loading : tab === 'learnings' ? loadingLearn : tab === 'explorations' ? loadingExplore : loadingConcepts) ? '로딩...' : '새로고침'}
+            {(tab === 'questions' ? loading : tab === 'learnings' ? loadingLearn : tab === 'explorations' ? loadingExplore : tab === 'progress' ? loadingProgress : loadingConcepts) ? '로딩...' : '새로고침'}
           </button>
         </div>
         {/* 탭 바 */}
         <div className="max-w-[1200px] mx-auto px-4 flex border-t border-white/20">
-          {(['questions', 'learnings', 'explorations', 'concepts'] as const).map(t => (
+          {(['questions', 'learnings', 'explorations', 'progress', 'concepts'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className="text-xl font-bold px-10 py-5 border-b-[4px] transition-all cursor-pointer bg-transparent border-x-0 border-t-0"
               style={tab === t
                 ? { color: 'white', borderBottomColor: 'white' }
                 : { color: 'rgba(255,255,255,0.55)', borderBottomColor: 'transparent' }}>
-              {t === 'questions' ? '📝 질문발견' : t === 'learnings' ? '🌱 핵심개념' : t === 'explorations' ? '🔭 탐구결과' : '📚 개념DB'}
+              {t === 'questions' ? '📝 질문발견' : t === 'learnings' ? '🌱 핵심개념' : t === 'explorations' ? '🔭 탐구결과' : t === 'progress' ? '🌟 확장공유' : '📚 개념DB'}
             </button>
           ))}
         </div>
@@ -2334,6 +2416,143 @@ export default function TeacherPage() {
               })}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ══ 확장공유 탭 ══ */}
+      {tab === 'progress' && (
+        <div className="max-w-[1200px] mx-auto px-4 pt-5 space-y-5">
+
+          {deleteMsg && (
+            <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[#2e7d32] text-white text-sm font-bold px-5 py-2.5 rounded-full shadow-lg">
+              ✓ {deleteMsg}
+            </div>
+          )}
+
+          {fetchErrProgress && (
+            <div className="bg-[#ffebee] border-l-4 border-[#e53935] px-4 py-3 rounded-xl text-sm text-[#c62828]">
+              ⚠️ {fetchErrProgress}
+            </div>
+          )}
+
+          {/* ── 아이디어 목록 ── */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm">
+            <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-4 m-0">
+              학생 아이디어
+              <span className="ml-2 text-xs font-medium text-[#9ca3af]">{progressPosts.length}개</span>
+            </h2>
+
+            {loadingProgress ? (
+              <p className="text-center text-[#ccc] py-10 text-sm">불러오는 중...</p>
+            ) : progressPosts.length === 0 ? (
+              <p className="text-center text-[#ccc] py-10 text-sm">등록된 아이디어가 없습니다.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr style={{ background: '#f0f2f8' }}>
+                      <th className="text-left px-3 py-2.5 text-xs font-bold text-[#6b7280] whitespace-nowrap">학년</th>
+                      <th className="text-left px-3 py-2.5 text-xs font-bold text-[#6b7280] whitespace-nowrap">반</th>
+                      <th className="text-left px-3 py-2.5 text-xs font-bold text-[#6b7280] whitespace-nowrap">이름</th>
+                      <th className="text-left px-3 py-2.5 text-xs font-bold text-[#6b7280] whitespace-nowrap">프로젝트</th>
+                      <th className="text-left px-3 py-2.5 text-xs font-bold text-[#6b7280]">아이디어 내용</th>
+                      <th className="text-left px-3 py-2.5 text-xs font-bold text-[#6b7280] whitespace-nowrap">작성 시간</th>
+                      <th className="px-3 py-2.5"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {progressPosts.map((post, i) => (
+                      <tr key={post.id}
+                        style={{ background: i % 2 === 0 ? '#fafafa' : 'white', borderBottom: '1px solid #f0f0f8' }}>
+                        <td className="px-3 py-2.5 text-[#4a4a6a] whitespace-nowrap">{post.grade}</td>
+                        <td className="px-3 py-2.5 text-[#4a4a6a] whitespace-nowrap">{post.class_name}</td>
+                        <td className="px-3 py-2.5 font-semibold text-[#1a1a2e] whitespace-nowrap">{post.student_name}</td>
+                        <td className="px-3 py-2.5">
+                          <span className="text-[0.72rem] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+                            style={{ background: '#f0f0f8', color: '#667eea' }}>
+                            {post.project}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5 text-[#374151] max-w-xs">
+                          <p className="m-0 leading-relaxed" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{post.content}</p>
+                        </td>
+                        <td className="px-3 py-2.5 text-[#9ca3af] text-xs whitespace-nowrap">
+                          {new Date(post.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <button onClick={() => deleteProgressPost(post.id)} disabled={deletingProgress}
+                            className="text-xs font-bold px-3 py-1.5 rounded-lg border-none cursor-pointer transition-all disabled:opacity-50 whitespace-nowrap"
+                            style={{ background: '#ffebee', color: '#c62828' }}>
+                            삭제
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* ── 탐구 질문 목록 ── */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm">
+            <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-4 m-0">
+              새로운 탐구 질문
+              <span className="ml-2 text-xs font-medium text-[#9ca3af]">{progressQuestions.length}개</span>
+            </h2>
+
+            {loadingProgress ? (
+              <p className="text-center text-[#ccc] py-10 text-sm">불러오는 중...</p>
+            ) : progressQuestions.length === 0 ? (
+              <p className="text-center text-[#ccc] py-10 text-sm">등록된 탐구 질문이 없습니다.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr style={{ background: '#f0f2f8' }}>
+                      <th className="text-left px-3 py-2.5 text-xs font-bold text-[#6b7280] whitespace-nowrap">학년</th>
+                      <th className="text-left px-3 py-2.5 text-xs font-bold text-[#6b7280] whitespace-nowrap">반</th>
+                      <th className="text-left px-3 py-2.5 text-xs font-bold text-[#6b7280] whitespace-nowrap">이름</th>
+                      <th className="text-left px-3 py-2.5 text-xs font-bold text-[#6b7280] whitespace-nowrap">프로젝트</th>
+                      <th className="text-left px-3 py-2.5 text-xs font-bold text-[#6b7280]">질문 내용</th>
+                      <th className="text-left px-3 py-2.5 text-xs font-bold text-[#6b7280] whitespace-nowrap">작성 시간</th>
+                      <th className="px-3 py-2.5"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {progressQuestions.map((q, i) => (
+                      <tr key={q.id}
+                        style={{ background: i % 2 === 0 ? '#fafafa' : 'white', borderBottom: '1px solid #f0f0f8' }}>
+                        <td className="px-3 py-2.5 text-[#4a4a6a] whitespace-nowrap">{q.grade}</td>
+                        <td className="px-3 py-2.5 text-[#4a4a6a] whitespace-nowrap">{q.class_name}</td>
+                        <td className="px-3 py-2.5 font-semibold text-[#1a1a2e] whitespace-nowrap">{q.student_name}</td>
+                        <td className="px-3 py-2.5">
+                          <span className="text-[0.72rem] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+                            style={{ background: '#f0f0f8', color: '#667eea' }}>
+                            {q.project}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5 text-[#374151] max-w-xs">
+                          <p className="m-0 leading-relaxed" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{q.question}</p>
+                        </td>
+                        <td className="px-3 py-2.5 text-[#9ca3af] text-xs whitespace-nowrap">
+                          {new Date(q.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <button onClick={() => deleteProgressQuestion(q.id)} disabled={deletingProgress}
+                            className="text-xs font-bold px-3 py-1.5 rounded-lg border-none cursor-pointer transition-all disabled:opacity-50 whitespace-nowrap"
+                            style={{ background: '#ffebee', color: '#c62828' }}>
+                            삭제
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
         </div>
       )}
 
