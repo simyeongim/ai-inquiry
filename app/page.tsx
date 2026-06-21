@@ -22,7 +22,7 @@ const MENU_AREAS = [
   },
   {
     label: "확장공유",
-    href: null,
+    href: "/progress",
     pos: { left: "75%", top: "71%", width: "25%", height: "29%" },
   },
 ] as const;
