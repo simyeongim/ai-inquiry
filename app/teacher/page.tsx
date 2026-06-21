@@ -194,6 +194,13 @@ interface ProgressQuestion {
   id: string; grade: string; class_name: string; student_name: string;
   project: string; question: string; created_at: string;
 }
+interface ProgressLike {
+  id: string; post_id: string; grade: string; class_name: string; student_name: string;
+}
+interface ProgressComment {
+  id: string; post_id: string; grade: string; class_name: string; student_name: string;
+  comment_type: string; comment: string; created_at: string;
+}
 
 function parseFeedback(f: LearningRow['feedback']): { praise: string; understood: string; nextStep: string } | null {
   if (!f) return null;
@@ -462,10 +469,15 @@ export default function TeacherPage() {
   // ── 확장공유 탭 상태 ──
   const [progressPosts,     setProgressPosts]     = useState<ProgressPost[]>([]);
   const [progressQuestions, setProgressQuestions] = useState<ProgressQuestion[]>([]);
+  const [progressLikes,     setProgressLikes]     = useState<ProgressLike[]>([]);
+  const [progressComments,  setProgressComments]  = useState<ProgressComment[]>([]);
   const [loadingProgress,   setLoadingProgress]   = useState(false);
   const [fetchErrProgress,  setFetchErrProgress]  = useState('');
   const [deletingProgress,  setDeletingProgress]  = useState(false);
   const [deleteMsg,         setDeleteMsg]         = useState('');
+  const [fPrProject, setFPrProject] = useState('');
+  const [fPrGrade,   setFPrGrade]   = useState('');
+  const [fPrClass,   setFPrClass]   = useState('');
 
   const load = useCallback(async () => {
     setLoading(true); setFetchErr('');
@@ -510,18 +522,23 @@ export default function TeacherPage() {
     setLoadingProgress(true);
     setFetchErrProgress('');
     try {
-      const [postsRes, questionsRes] = await Promise.all([
-        fetch(`${SUPABASE_URL}/rest/v1/progress_posts?order=created_at.desc&limit=1000`, {
-          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
-        }),
-        fetch(`${SUPABASE_URL}/rest/v1/progress_questions?order=created_at.desc&limit=1000`, {
-          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
-        }),
+      const H = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` };
+      const [postsRes, questionsRes, likesRes, commentsRes] = await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/progress_posts?order=created_at.desc&limit=1000`,     { headers: H }),
+        fetch(`${SUPABASE_URL}/rest/v1/progress_questions?order=created_at.desc&limit=1000`, { headers: H }),
+        fetch(`${SUPABASE_URL}/rest/v1/progress_likes?limit=5000`,                           { headers: H }),
+        fetch(`${SUPABASE_URL}/rest/v1/progress_comments?order=created_at.asc&limit=5000`,   { headers: H }),
       ]);
       if (!postsRes.ok || !questionsRes.ok) throw new Error('데이터를 불러오지 못했습니다.');
-      const [posts, questions] = await Promise.all([postsRes.json(), questionsRes.json()]);
+      const [posts, questions, likes, comments] = await Promise.all([
+        postsRes.json(), questionsRes.json(),
+        likesRes.ok ? likesRes.json() : Promise.resolve([]),
+        commentsRes.ok ? commentsRes.json() : Promise.resolve([]),
+      ]);
       setProgressPosts(Array.isArray(posts) ? posts : []);
       setProgressQuestions(Array.isArray(questions) ? questions : []);
+      setProgressLikes(Array.isArray(likes) ? likes : []);
+      setProgressComments(Array.isArray(comments) ? comments : []);
     } catch (err) {
       setFetchErrProgress(err instanceof Error ? err.message : '데이터를 불러오지 못했습니다.');
     } finally {
@@ -950,6 +967,71 @@ export default function TeacherPage() {
     if (searchLearnName.trim()) list = list.filter(r => r.student_name?.includes(searchLearnName.trim()));
     return list;
   }, [filteredLearnings, fGrowthType, searchLearnName]);
+
+  // ── 확장공유 필터 & 분석 ──
+  const filteredProgressPosts = useMemo(() => progressPosts.filter(p => {
+    if (fPrProject && p.project !== fPrProject) return false;
+    if (fPrGrade   && p.grade !== fPrGrade)     return false;
+    if (fPrClass   && p.class_name !== fPrClass) return false;
+    return true;
+  }), [progressPosts, fPrProject, fPrGrade, fPrClass]);
+
+  const filteredProgressQuestions = useMemo(() => progressQuestions.filter(q => {
+    if (fPrProject && q.project !== fPrProject)  return false;
+    if (fPrGrade   && q.grade !== fPrGrade)       return false;
+    if (fPrClass   && q.class_name !== fPrClass)  return false;
+    return true;
+  }), [progressQuestions, fPrProject, fPrGrade, fPrClass]);
+
+  const progressStats = useMemo(() => {
+    const postIdSet  = new Set(filteredProgressPosts.map(p => p.id));
+    const filtLikes  = progressLikes.filter(l => postIdSet.has(l.post_id));
+    const filtCmts   = progressComments.filter(c => postIdSet.has(c.post_id));
+
+    const likesPerPost:   Record<string, number> = {};
+    const cmtsPerPost:    Record<string, number> = {};
+    filtLikes.forEach(l => { likesPerPost[l.post_id]  = (likesPerPost[l.post_id]  ?? 0) + 1; });
+    filtCmts.forEach(c  => { cmtsPerPost[c.post_id]   = (cmtsPerPost[c.post_id]   ?? 0) + 1; });
+
+    const topLiked = [...filteredProgressPosts]
+      .sort((a, b) => (likesPerPost[b.id] ?? 0) - (likesPerPost[a.id] ?? 0))
+      .slice(0, 3)
+      .filter(p => (likesPerPost[p.id] ?? 0) > 0);
+
+    const topCommented = [...filteredProgressPosts]
+      .sort((a, b) => (cmtsPerPost[b.id] ?? 0) - (cmtsPerPost[a.id] ?? 0))
+      .slice(0, 3)
+      .filter(p => (cmtsPerPost[p.id] ?? 0) > 0);
+
+    const qByProject: Record<string, number> = {};
+    filteredProgressQuestions.forEach(q => {
+      qByProject[q.project] = (qByProject[q.project] ?? 0) + 1;
+    });
+
+    return {
+      postCount:    filteredProgressPosts.length,
+      likeCount:    filtLikes.length,
+      commentCount: filtCmts.length,
+      topLiked, topCommented, likesPerPost, cmtsPerPost,
+      questionCount:    filteredProgressQuestions.length,
+      qByProject,
+      recentQuestions:  filteredProgressQuestions.slice(0, 5),
+    };
+  }, [filteredProgressPosts, filteredProgressQuestions, progressLikes, progressComments]);
+
+  const prGradeList = useMemo(() => {
+    const s = new Set(progressPosts.map(p => p.grade));
+    return Array.from(s).sort();
+  }, [progressPosts]);
+
+  const prClassList = useMemo(() => {
+    const s = new Set(
+      progressPosts
+        .filter(p => !fPrGrade || p.grade === fPrGrade)
+        .map(p => p.class_name)
+    );
+    return Array.from(s).sort();
+  }, [progressPosts, fPrGrade]);
 
   const filteredExplorations = useMemo(() => {
     return explorationRows.filter(r => {
@@ -2435,16 +2517,193 @@ export default function TeacherPage() {
             </div>
           )}
 
+          {/* ── 필터 바 ── */}
+          <div className="bg-white rounded-2xl px-4 py-3 shadow-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-[#6b7280] whitespace-nowrap">필터</span>
+              <select value={fPrProject} onChange={e => setFPrProject(e.target.value)}
+                className="border border-[#e0e0f0] rounded-lg px-2.5 py-1.5 text-xs text-[#4a4a6a] bg-white cursor-pointer focus:outline-none focus:border-[#667eea]">
+                <option value="">전체 프로젝트</option>
+                {PROJECT_LIST.map(p => <option key={p}>{p}</option>)}
+              </select>
+              <select value={fPrGrade} onChange={e => { setFPrGrade(e.target.value); setFPrClass(''); }}
+                className="border border-[#e0e0f0] rounded-lg px-2.5 py-1.5 text-xs text-[#4a4a6a] bg-white cursor-pointer focus:outline-none focus:border-[#667eea]">
+                <option value="">전체 학년</option>
+                {prGradeList.map(g => <option key={g}>{g}</option>)}
+              </select>
+              <select value={fPrClass} onChange={e => setFPrClass(e.target.value)}
+                className="border border-[#e0e0f0] rounded-lg px-2.5 py-1.5 text-xs text-[#4a4a6a] bg-white cursor-pointer focus:outline-none focus:border-[#667eea]">
+                <option value="">전체 반</option>
+                {prClassList.map(c => <option key={c}>{c}</option>)}
+              </select>
+              {(fPrProject || fPrGrade || fPrClass) && (
+                <button onClick={() => { setFPrProject(''); setFPrGrade(''); setFPrClass(''); }}
+                  className="text-xs font-semibold text-[#667eea] border border-[#667eea]/30 bg-[#667eea]/5 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-[#667eea]/10 transition-colors">
+                  초기화
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* ── 분석 카드 영역 ── */}
+          {!loadingProgress && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              {/* 카드 1: 아이디어 확산도 */}
+              <div className="bg-white rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">💡</span>
+                  <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">아이디어 확산도</h2>
+                </div>
+                <p className="text-[0.73rem] text-[#9ca3af] mb-4 m-0 leading-snug">
+                  학생들이 어떤 아이디어에 공감하고 의견을 나누었는지 보여줍니다.
+                </p>
+
+                {/* 수치 요약 */}
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  {[
+                    { label: '아이디어', value: progressStats.postCount, color: '#667eea', bg: '#f0f0ff' },
+                    { label: '공감',     value: progressStats.likeCount,    color: '#ef4444', bg: '#fff5f5' },
+                    { label: '의견',     value: progressStats.commentCount, color: '#f59e0b', bg: '#fffbeb' },
+                  ].map(({ label, value, color, bg }) => (
+                    <div key={label} className="rounded-xl py-3 px-2 text-center" style={{ background: bg }}>
+                      <p className="text-2xl font-black m-0" style={{ color }}>{value}</p>
+                      <p className="text-[0.7rem] font-semibold text-[#6b7280] m-0 mt-0.5">{label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 공감 TOP 3 */}
+                <div className="mb-3">
+                  <p className="text-[0.72rem] font-bold text-[#6b7280] mb-1.5 m-0">❤️ 공감 많은 아이디어 TOP 3</p>
+                  {progressStats.topLiked.length === 0 ? (
+                    <p className="text-[0.72rem] text-[#ccc] m-0">공감 데이터가 없습니다.</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {progressStats.topLiked.map((p, i) => (
+                        <div key={p.id} className="flex items-start gap-2 bg-[#fff5f5] rounded-lg px-2.5 py-2">
+                          <span className="text-xs font-black shrink-0 w-5 text-center" style={{ color: ['#ef4444','#f87171','#fca5a5'][i] }}>
+                            {i + 1}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[0.72rem] text-[#374151] m-0 leading-snug"
+                              style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                              {p.content}
+                            </p>
+                            <p className="text-[0.67rem] text-[#9ca3af] m-0 mt-0.5">{p.student_name} · {p.grade} {p.class_name}</p>
+                          </div>
+                          <span className="text-[0.72rem] font-bold text-[#ef4444] shrink-0">❤️ {progressStats.likesPerPost[p.id] ?? 0}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 의견 TOP 3 */}
+                <div>
+                  <p className="text-[0.72rem] font-bold text-[#6b7280] mb-1.5 m-0">💬 의견 많은 아이디어 TOP 3</p>
+                  {progressStats.topCommented.length === 0 ? (
+                    <p className="text-[0.72rem] text-[#ccc] m-0">의견 데이터가 없습니다.</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {progressStats.topCommented.map((p, i) => (
+                        <div key={p.id} className="flex items-start gap-2 bg-[#fffbeb] rounded-lg px-2.5 py-2">
+                          <span className="text-xs font-black shrink-0 w-5 text-center" style={{ color: ['#f59e0b','#fbbf24','#fcd34d'][i] }}>
+                            {i + 1}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[0.72rem] text-[#374151] m-0 leading-snug"
+                              style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                              {p.content}
+                            </p>
+                            <p className="text-[0.67rem] text-[#9ca3af] m-0 mt-0.5">{p.student_name} · {p.grade} {p.class_name}</p>
+                          </div>
+                          <span className="text-[0.72rem] font-bold text-[#f59e0b] shrink-0">💬 {progressStats.cmtsPerPost[p.id] ?? 0}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 카드 2: 새로운 탐구 질문 현황 */}
+              <div className="bg-white rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">🔍</span>
+                  <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">새로운 탐구 질문</h2>
+                </div>
+                <p className="text-[0.73rem] text-[#9ca3af] mb-4 m-0 leading-snug">
+                  확장 공유 이후 학생들이 새롭게 궁금해한 질문을 보여줍니다.
+                </p>
+
+                {/* 총 질문 수 */}
+                <div className="rounded-xl py-3 px-4 mb-4 text-center" style={{ background: '#f0f4ff' }}>
+                  <p className="text-3xl font-black m-0" style={{ color: '#667eea' }}>{progressStats.questionCount}</p>
+                  <p className="text-[0.7rem] font-semibold text-[#6b7280] m-0 mt-0.5">전체 새로운 탐구 질문</p>
+                </div>
+
+                {/* 프로젝트별 질문 수 */}
+                {Object.keys(progressStats.qByProject).length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-[0.72rem] font-bold text-[#6b7280] mb-2 m-0">프로젝트별 탐구 질문</p>
+                    <div className="space-y-2">
+                      {(Object.entries(progressStats.qByProject) as [string, number][])
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([proj, cnt]) => {
+                          const info = PROJECT_SHORT[proj] ?? { emoji: '📌', short: proj };
+                          const pct  = progressStats.questionCount > 0 ? Math.round((cnt / progressStats.questionCount) * 100) : 0;
+                          return (
+                            <div key={proj}>
+                              <div className="flex items-center justify-between mb-0.5">
+                                <span className="text-[0.72rem] text-[#4a4a6a] font-semibold">
+                                  {info.emoji} {info.short}
+                                </span>
+                                <span className="text-[0.72rem] font-bold" style={{ color: '#667eea' }}>{cnt}개</span>
+                              </div>
+                              <div className="w-full h-1.5 bg-[#e0e0f0] rounded-full overflow-hidden">
+                                <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #667eea, #764ba2)' }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+
+                {/* 최근 질문 5개 */}
+                <div>
+                  <p className="text-[0.72rem] font-bold text-[#6b7280] mb-1.5 m-0">최근 탐구 질문</p>
+                  {progressStats.recentQuestions.length === 0 ? (
+                    <p className="text-[0.72rem] text-[#ccc] m-0">질문 데이터가 없습니다.</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {progressStats.recentQuestions.map(q => (
+                        <div key={q.id} className="bg-[#f8f8ff] border-l-[3px] border-[#667eea] pl-2.5 pr-2 py-1.5 rounded-r-lg">
+                          <p className="text-[0.72rem] text-[#374151] m-0 leading-snug"
+                            style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            {q.question}
+                          </p>
+                          <p className="text-[0.67rem] text-[#9ca3af] m-0 mt-0.5">{q.student_name} · {q.grade} {q.class_name}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+            </div>
+          )}
+
           {/* ── 아이디어 목록 ── */}
           <div className="bg-white rounded-2xl p-5 shadow-sm">
             <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-4 m-0">
               학생 아이디어
-              <span className="ml-2 text-xs font-medium text-[#9ca3af]">{progressPosts.length}개</span>
+              <span className="ml-2 text-xs font-medium text-[#9ca3af]">{filteredProgressPosts.length}개</span>
             </h2>
 
             {loadingProgress ? (
               <p className="text-center text-[#ccc] py-10 text-sm">불러오는 중...</p>
-            ) : progressPosts.length === 0 ? (
+            ) : filteredProgressPosts.length === 0 ? (
               <p className="text-center text-[#ccc] py-10 text-sm">등록된 아이디어가 없습니다.</p>
             ) : (
               <div className="overflow-x-auto">
@@ -2461,7 +2720,7 @@ export default function TeacherPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {progressPosts.map((post, i) => (
+                    {filteredProgressPosts.map((post, i) => (
                       <tr key={post.id}
                         style={{ background: i % 2 === 0 ? '#fafafa' : 'white', borderBottom: '1px solid #f0f0f8' }}>
                         <td className="px-3 py-2.5 text-[#4a4a6a] whitespace-nowrap">{post.grade}</td>
@@ -2498,12 +2757,12 @@ export default function TeacherPage() {
           <div className="bg-white rounded-2xl p-5 shadow-sm">
             <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-4 m-0">
               새로운 탐구 질문
-              <span className="ml-2 text-xs font-medium text-[#9ca3af]">{progressQuestions.length}개</span>
+              <span className="ml-2 text-xs font-medium text-[#9ca3af]">{filteredProgressQuestions.length}개</span>
             </h2>
 
             {loadingProgress ? (
               <p className="text-center text-[#ccc] py-10 text-sm">불러오는 중...</p>
-            ) : progressQuestions.length === 0 ? (
+            ) : filteredProgressQuestions.length === 0 ? (
               <p className="text-center text-[#ccc] py-10 text-sm">등록된 탐구 질문이 없습니다.</p>
             ) : (
               <div className="overflow-x-auto">
@@ -2520,7 +2779,7 @@ export default function TeacherPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {progressQuestions.map((q, i) => (
+                    {filteredProgressQuestions.map((q, i) => (
                       <tr key={q.id}
                         style={{ background: i % 2 === 0 ? '#fafafa' : 'white', borderBottom: '1px solid #f0f0f8' }}>
                         <td className="px-3 py-2.5 text-[#4a4a6a] whitespace-nowrap">{q.grade}</td>

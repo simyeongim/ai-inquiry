@@ -11,34 +11,35 @@ const PROJECT_LIST = ['세계는 어떻게 움직이는가','지구와 어떻게
 
 const IDEA_PLACEHOLDER = '학교에 나무를 더 심고 학급별로 돌보면 좋겠습니다.\n운동장에 해시계를 설치하면 좋겠습니다.';
 
+const COMMENT_TYPES = ['좋은 점', '더 궁금한 점'] as const;
+type CommentType = typeof COMMENT_TYPES[number];
+
+const COMMENT_PLACEHOLDER: Record<CommentType, string> = {
+  '좋은 점':     '친구 아이디어의 좋은 점을 한 줄로 적어 보세요.',
+  '더 궁금한 점': '친구 아이디어를 보고 더 궁금해진 점을 한 줄로 적어 보세요.',
+};
+
+const COMMENT_TYPE_STYLE: Record<CommentType, { bg: string; color: string; border: string }> = {
+  '좋은 점':     { bg: '#e8f5e9', color: '#2e7d32', border: '#a5d6a7' },
+  '더 궁금한 점': { bg: '#e3f2fd', color: '#1565c0', border: '#90caf9' },
+};
+
 // ── 타입 ────────────────────────────────────────────────
 
 interface IdeaPost {
-  id: string;
-  grade: string;
-  class_name: string;
-  student_name: string;
-  project: string;
-  content: string;
-  created_at: string;
+  id: string; grade: string; class_name: string; student_name: string;
+  project: string; content: string; created_at: string;
 }
-
 interface Like {
-  id: string;
-  post_id: string;
-  grade: string;
-  class_name: string;
-  student_name: string;
+  id: string; post_id: string; grade: string; class_name: string; student_name: string;
 }
-
+interface Comment {
+  id: string; post_id: string; grade: string; class_name: string; student_name: string;
+  comment_type: string; comment: string; created_at: string;
+}
 interface InquiryQuestion {
-  id: string;
-  grade: string;
-  class_name: string;
-  student_name: string;
-  project: string;
-  question: string;
-  created_at: string;
+  id: string; grade: string; class_name: string; student_name: string;
+  project: string; question: string; created_at: string;
 }
 
 // ── 유틸 ────────────────────────────────────────────────
@@ -75,6 +76,16 @@ async function fetchLikes(postIds: string[]): Promise<Like[]> {
   return res.json();
 }
 
+async function fetchComments(postIds: string[]): Promise<Comment[]> {
+  if (postIds.length === 0) return [];
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/progress_comments?post_id=in.(${postIds.join(',')})&order=created_at.asc`,
+    { headers: BASE_HEADERS },
+  );
+  if (!res.ok) return [];
+  return res.json();
+}
+
 async function fetchQuestions(): Promise<InquiryQuestion[]> {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/progress_questions?order=created_at.desc`, { headers: BASE_HEADERS });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -88,6 +99,21 @@ async function savePost(payload: Omit<IdeaPost, 'id' | 'created_at'>): Promise<{
     });
     if (!res.ok) { const body = await res.text(); return { ok: false, error: `HTTP ${res.status}: ${body}` }; }
     return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+async function saveComment(payload: Omit<Comment, 'id' | 'created_at'>): Promise<{ ok: boolean; data?: Comment; error?: string }> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/progress_comments`, {
+      method: 'POST',
+      headers: { ...BASE_HEADERS, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) { const body = await res.text(); return { ok: false, error: `HTTP ${res.status}: ${body}` }; }
+    const [saved]: Comment[] = await res.json();
+    return { ok: true, data: saved };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
@@ -108,32 +134,29 @@ async function saveQuestion(payload: Omit<InquiryQuestion, 'id' | 'created_at'>)
 // ── 메인 컴포넌트 ────────────────────────────────────────
 
 export default function ProgressPage() {
-  // 공통 입력
   const [classRoom,  setClassRoom]  = useState('');
   const [name,       setName]       = useState('');
   const [project,    setProject]    = useState('');
 
-  // 아이디어 작성
   const [idea,       setIdea]       = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted,  setSubmitted]  = useState(false);
   const [saveError,  setSaveError]  = useState('');
 
-  // 게시글 & 공감
   const [posts,      setPosts]      = useState<IdeaPost[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [fetchError, setFetchError] = useState('');
   const [newId,      setNewId]      = useState<string | null>(null);
   const [allLikes,   setAllLikes]   = useState<Like[]>([]);
   const [likingId,   setLikingId]   = useState<string | null>(null);
+  const [allComments, setAllComments] = useState<Comment[]>([]);
 
-  // 탐구 질문
-  const [questionText,    setQuestionText]    = useState('');
-  const [qSubmitting,     setQSubmitting]     = useState(false);
-  const [qSubmitted,      setQSubmitted]      = useState(false);
-  const [qSaveError,      setQSaveError]      = useState('');
-  const [questions,       setQuestions]       = useState<InquiryQuestion[]>([]);
-  const [qLoading,        setQLoading]        = useState(true);
+  const [questionText, setQuestionText] = useState('');
+  const [qSubmitting,  setQSubmitting]  = useState(false);
+  const [qSubmitted,   setQSubmitted]   = useState(false);
+  const [qSaveError,   setQSaveError]   = useState('');
+  const [questions,    setQuestions]    = useState<InquiryQuestion[]>([]);
+  const [qLoading,     setQLoading]     = useState(true);
 
   useEffect(() => { loadAll(); }, []);
 
@@ -145,8 +168,10 @@ export default function ProgressPage() {
       const [postsData, questionsData] = await Promise.all([fetchPosts(), fetchQuestions()]);
       setPosts(postsData);
       setQuestions(questionsData);
-      const likes = await fetchLikes(postsData.map(p => p.id));
+      const ids = postsData.map(p => p.id);
+      const [likes, comments] = await Promise.all([fetchLikes(ids), fetchComments(ids)]);
       setAllLikes(likes);
+      setAllComments(comments);
     } catch (err) {
       setFetchError(err instanceof Error ? err.message : '데이터를 불러오지 못했어요.');
     } finally {
@@ -176,8 +201,10 @@ export default function ProgressPage() {
     try {
       const fresh = await fetchPosts();
       setPosts(fresh);
-      const likes = await fetchLikes(fresh.map(p => p.id));
+      const ids = fresh.map(p => p.id);
+      const [likes, comments] = await Promise.all([fetchLikes(ids), fetchComments(ids)]);
       setAllLikes(likes);
+      setAllComments(comments);
       if (fresh.length > 0) setNewId(fresh[0].id);
     } catch { /* 새로고침 실패 시 기존 목록 유지 */ }
 
@@ -195,7 +222,6 @@ export default function ProgressPage() {
     const alreadyLiked = allLikes.some(
       l => l.post_id === postId && l.grade === grade && l.class_name === class_name && l.student_name === studentName,
     );
-
     setLikingId(postId);
 
     if (alreadyLiked) {
@@ -230,15 +256,36 @@ export default function ProgressPage() {
         setAllLikes(prev => prev.filter(l => l.id !== tempLike.id));
       }
     }
-
     setLikingId(null);
   }
 
+  async function handleCommentSubmit(postId: string, commentType: string, commentText: string): Promise<boolean> {
+    if (!classRoom || !name.trim()) {
+      alert('먼저 학년/반과 이름을 입력해주세요.');
+      return false;
+    }
+    const { grade, class_name } = splitClassRoom(classRoom);
+    const result = await saveComment({
+      post_id: postId, grade, class_name,
+      student_name: name.trim(),
+      comment_type: commentType,
+      comment: commentText,
+    });
+    if (!result.ok) {
+      alert(`의견 저장에 실패했어요.\n${result.error ?? ''}`);
+      return false;
+    }
+    if (result.data) {
+      setAllComments(prev => [...prev, result.data!]);
+    }
+    return true;
+  }
+
   async function handleQuestionSubmit() {
-    if (!classRoom)                   { alert('학년/반을 선택해주세요!'); return; }
-    if (!name.trim())                 { alert('이름을 입력해주세요!'); return; }
-    if (!project)                     { alert('프로젝트를 선택해주세요!'); return; }
-    if (!questionText.trim())         { alert('질문을 입력해주세요!'); return; }
+    if (!classRoom)                     { alert('학년/반을 선택해주세요!'); return; }
+    if (!name.trim())                   { alert('이름을 입력해주세요!'); return; }
+    if (!project)                       { alert('프로젝트를 선택해주세요!'); return; }
+    if (!questionText.trim())           { alert('질문을 입력해주세요!'); return; }
     if (questionText.trim().length < 5) { alert('질문을 조금 더 자세히 적어주세요.'); return; }
 
     setQSubmitting(true);
@@ -281,7 +328,6 @@ export default function ProgressPage() {
       style={{ background: '#ffffff', fontFamily: "'Noto Sans KR', '맑은 고딕', sans-serif" }}>
       <div className="max-w-[600px] mx-auto">
 
-        {/* 네비게이션 */}
         <div className="flex justify-between items-center mb-2">
           <Link href="/"
             className="text-[#667eea] text-[0.96rem] font-semibold border border-[#667eea]/30 bg-[#667eea]/5 px-[1.1rem] py-[0.41rem] rounded-full hover:bg-[#667eea]/10 transition-colors no-underline">
@@ -289,8 +335,8 @@ export default function ProgressPage() {
           </Link>
         </div>
 
-        {/* 헤더 배너 */}
-        <div className="rounded-2xl mb-2 px-5 py-7 text-center"
+        {/* ── 헤더 배너 ── */}
+        <div className="rounded-2xl mb-3 px-5 py-7 text-center"
           style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
           <p className="text-white/70 text-[0.7rem] font-bold tracking-widest uppercase mb-1.5">DEEP · P</p>
           <h1 className="text-white text-[1.6rem] font-black mb-2 leading-tight">확장 공유</h1>
@@ -299,7 +345,28 @@ export default function ProgressPage() {
           </p>
         </div>
 
-        {/* ── 나의 아이디어 작성 영역 ── */}
+        {/* ── 단계 흐름 표시 ── */}
+        <div className="flex items-center justify-center gap-0 mb-4">
+          {[
+            { num: '①', label: '아이디어 공유', icon: '✨' },
+            { num: '②', label: '친구 생각 보기', icon: '💡' },
+            { num: '③', label: '새로운 질문 만들기', icon: '🔍' },
+          ].map((step, i) => (
+            <div key={step.num} className="flex items-center">
+              <div className="flex flex-col items-center px-2">
+                <span className="text-[0.65rem] font-black mb-0.5" style={{ color: '#667eea' }}>{step.icon}</span>
+                <span className="text-[0.62rem] font-bold text-center leading-tight" style={{ color: '#667eea', maxWidth: '60px' }}>
+                  {step.label}
+                </span>
+              </div>
+              {i < 2 && (
+                <span className="text-[#c5c9f0] text-[0.8rem] font-bold px-0.5">→</span>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* ── ① 학년/반 · 이름 ── */}
         <Card>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -325,9 +392,16 @@ export default function ProgressPage() {
           </Select>
         </Card>
 
+        {/* ① 아이디어 작성 */}
+        <div className="flex items-center gap-2 mb-1.5 mt-2">
+          <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white shrink-0"
+            style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>①</span>
+          <span className="text-[0.9rem] font-black text-[#4a4a6a]">아이디어 공유</span>
+        </div>
+
         {!submitted ? (
           <Card>
-            <Label>탐구를 바탕으로 어떤 아이디어를 나누고 싶나요?</Label>
+            <Label>탐구를 통해 알게 된 내용을 바탕으로 우리가 해 볼 수 있는 일은 무엇일까요?</Label>
             <textarea
               value={idea}
               onChange={e => setIdea(e.target.value.slice(0, 300))}
@@ -370,16 +444,28 @@ export default function ProgressPage() {
           </div>
         )}
 
-        {/* ── 친구들의 아이디어 영역 ── */}
-        <div id="friends-section" className="mt-4 mb-2">
+        {/* ── 단계 구분선 ① → ② ── */}
+        <div className="flex flex-col items-center my-4 select-none">
+          <div className="w-px h-4" style={{ background: 'linear-gradient(to bottom, #c5c9f0, #667eea)' }} />
+          <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white"
+            style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>↓</div>
+          <div className="w-px h-4" style={{ background: 'linear-gradient(to bottom, #667eea, #c5c9f0)' }} />
+        </div>
+
+        {/* ── ② 우리 반 아이디어 ── */}
+        <div id="friends-section" className="mb-2">
           <div className="flex items-center justify-between mb-0.5">
-            <h2 className="text-[1.05rem] font-black text-[#4a4a6a] m-0">친구들의 아이디어</h2>
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white shrink-0"
+                style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>②</span>
+              <h2 className="text-[1.05rem] font-black text-[#4a4a6a] m-0">💡 우리 반 아이디어</h2>
+            </div>
             <button onClick={loadAll} disabled={loading}
               className="text-[0.75rem] text-[#667eea] border border-[#667eea]/30 bg-[#667eea]/5 px-3 py-1 rounded-full cursor-pointer hover:bg-[#667eea]/10 transition-colors disabled:opacity-40">
               새로고침
             </button>
           </div>
-          <p className="text-[#999] text-[0.82rem] mb-3">다른 친구들은 어떤 생각을 했는지 살펴보세요.</p>
+          <p className="text-[#999] text-[0.82rem] mb-3 ml-8">친구들은 어떤 생각을 했는지 살펴보세요.</p>
 
           {loading ? (
             <div className="text-center text-[#667eea] text-sm py-8 animate-pulse">불러오는 중...</div>
@@ -388,14 +474,16 @@ export default function ProgressPage() {
               ⚠️ {fetchError}
             </div>
           ) : posts.length === 0 ? (
-            <div className="text-center text-[#bbb] text-sm py-10">
-              아직 공유된 아이디어가 없어요.<br />첫 번째로 아이디어를 나눠보세요!
+            <div className="text-center py-10">
+              <p className="text-[#bbb] text-sm m-0">아직 공유된 아이디어가 없습니다.</p>
+              <p className="text-[#ccc] text-xs mt-1 m-0">첫 번째 아이디어를 남겨 보세요.</p>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
               {posts.map(post => {
-                const postLikes = allLikes.filter(l => l.post_id === post.id);
-                const userLiked = curName && classRoom
+                const postLikes    = allLikes.filter(l => l.post_id === post.id);
+                const postComments = allComments.filter(c => c.post_id === post.id);
+                const userLiked    = curName && classRoom
                   ? postLikes.some(l => l.grade === curGrade && l.class_name === curClass && l.student_name === curName)
                   : false;
                 return (
@@ -406,7 +494,9 @@ export default function ProgressPage() {
                     likeCount={postLikes.length}
                     userLiked={userLiked}
                     isLiking={likingId === post.id}
+                    comments={postComments}
                     onLike={() => handleLike(post.id)}
+                    onCommentSubmit={handleCommentSubmit}
                   />
                 );
               })}
@@ -414,14 +504,33 @@ export default function ProgressPage() {
           )}
         </div>
 
-        {/* ── 새롭게 궁금해진 점 ── */}
-        <div className="mt-6">
-          <h2 className="text-[1.05rem] font-black text-[#4a4a6a] mb-0.5">새롭게 궁금해진 점</h2>
-          <p className="text-[#999] text-[0.82rem] mb-3">친구들의 아이디어를 보고 새롭게 궁금해진 점을 한 가지 적어 보세요.</p>
+        {/* ── 단계 구분선 ② → ③ (브리지 메시지 포함) ── */}
+        <div className="flex flex-col items-center my-5 select-none">
+          <div className="w-px h-4" style={{ background: 'linear-gradient(to bottom, #c5c9f0, #667eea)' }} />
+          <div className="rounded-2xl px-5 py-3 text-center my-1 w-full"
+            style={{ background: 'linear-gradient(135deg, #f0f0ff 0%, #e8e6ff 100%)', border: '1.5px dashed #c5c9f0' }}>
+            <p className="text-[#667eea] text-[0.82rem] font-semibold m-0">
+              친구들의 생각을 보며 새로운 질문을 만들어 보세요. 🌱
+            </p>
+          </div>
+          <div className="w-px h-4" style={{ background: 'linear-gradient(to bottom, #667eea, #c5c9f0)' }} />
+          <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white"
+            style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>↓</div>
+          <div className="w-px h-4" style={{ background: 'linear-gradient(to bottom, #667eea, #c5c9f0)' }} />
+        </div>
+
+        {/* ── ③ 새롭게 궁금해진 점 ── */}
+        <div>
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white shrink-0"
+              style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>③</span>
+            <h2 className="text-[1.05rem] font-black text-[#4a4a6a] m-0">🔍 새롭게 궁금해진 점</h2>
+          </div>
+          <p className="text-[#999] text-[0.82rem] mb-3 ml-8">친구들의 아이디어를 보고 새롭게 궁금해진 점을 적어 보세요.</p>
 
           {!qSubmitted ? (
             <Card>
-              <Label>새롭게 탐구해 보고 싶은 질문은 무엇인가요?</Label>
+              <Label>더 탐구해 보고 싶은 질문은 무엇인가요?</Label>
               <textarea
                 value={questionText}
                 onChange={e => setQuestionText(e.target.value.slice(0, 200))}
@@ -464,14 +573,14 @@ export default function ProgressPage() {
             </div>
           )}
 
-          {/* 질문 목록 */}
           <div className="mt-3">
             <h3 className="text-[0.9rem] font-black text-[#4a4a6a] mb-2">친구들이 남긴 새로운 탐구 질문</h3>
             {qLoading ? (
               <div className="text-center text-[#667eea] text-sm py-6 animate-pulse">불러오는 중...</div>
             ) : questions.length === 0 ? (
-              <div className="text-center text-[#bbb] text-sm py-8">
-                아직 남겨진 질문이 없어요.<br />첫 번째 탐구 질문을 남겨보세요!
+              <div className="text-center py-8">
+                <p className="text-[#bbb] text-sm m-0">아직 생성된 탐구 질문이 없습니다.</p>
+                <p className="text-[#ccc] text-xs mt-1 m-0">친구들의 생각을 보고 새로운 질문을 만들어 보세요.</p>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
@@ -494,15 +603,43 @@ interface IdeaCardProps {
   likeCount: number;
   userLiked: boolean;
   isLiking: boolean;
+  comments: Comment[];
   onLike: () => void;
+  onCommentSubmit: (postId: string, type: string, text: string) => Promise<boolean>;
 }
 
-function IdeaCard({ post, isNew, likeCount, userLiked, isLiking, onLike }: IdeaCardProps) {
+function IdeaCard({ post, isNew, likeCount, userLiked, isLiking, comments, onLike, onCommentSubmit }: IdeaCardProps) {
   const displayClass = [post.grade, post.class_name].filter(Boolean).join(' ');
+
+  const [commentOpen,       setCommentOpen]       = useState(false);
+  const [commentType,       setCommentType]       = useState<CommentType | ''>('');
+  const [commentText,       setCommentText]       = useState('');
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [commentError,      setCommentError]      = useState('');
+
+  async function handleSubmit() {
+    if (!commentType)          { setCommentError('의견 유형을 선택해주세요.'); return; }
+    if (!commentText.trim())   { setCommentError('의견을 입력해주세요.'); return; }
+    if (commentText.trim().length < 2) { setCommentError('의견을 조금 더 자세히 적어주세요.'); return; }
+
+    setCommentSubmitting(true);
+    setCommentError('');
+    const ok = await onCommentSubmit(post.id, commentType, commentText.trim());
+    setCommentSubmitting(false);
+    if (ok) {
+      setCommentText('');
+      setCommentType('');
+      setCommentOpen(false);
+    }
+  }
+
+  const placeholder = commentType ? COMMENT_PLACEHOLDER[commentType] : '의견 유형을 먼저 선택해 주세요.';
 
   return (
     <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgba(80,60,160,0.10)] overflow-hidden"
       style={isNew ? { border: '2px solid #667eea' } : { border: '2px solid transparent' }}>
+
+      {/* 카드 본문 */}
       <div className="px-4 pt-4 pb-2">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
@@ -532,11 +669,9 @@ function IdeaCard({ post, isNew, likeCount, userLiked, isLiking, onLike }: IdeaC
         <p className="text-[#333] text-sm leading-relaxed m-0">{post.content}</p>
       </div>
 
+      {/* 공감 / 의견 버튼 */}
       <div className="flex gap-2 px-4 py-3 border-t border-[#f4f4fc]">
-        <button
-          type="button"
-          onClick={onLike}
-          disabled={isLiking}
+        <button type="button" onClick={onLike} disabled={isLiking}
           className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold border-2 transition-all cursor-pointer disabled:opacity-50"
           style={userLiked
             ? { borderColor: '#ef4444', color: '#fff', background: '#ef4444' }
@@ -545,11 +680,91 @@ function IdeaCard({ post, isNew, likeCount, userLiked, isLiking, onLike }: IdeaC
           ❤️ {userLiked ? '공감했어요' : '공감'}{likeCount > 0 && ` ${likeCount}`}
         </button>
         <button type="button"
+          onClick={() => { setCommentOpen(p => !p); setCommentError(''); }}
           className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold border-2 transition-all cursor-pointer"
-          style={{ borderColor: '#c5c9f0', color: '#667eea', background: '#f8f8ff' }}>
-          💬 의견
+          style={commentOpen
+            ? { borderColor: '#667eea', color: '#fff', background: '#667eea' }
+            : { borderColor: '#c5c9f0', color: '#667eea', background: '#f8f8ff' }
+          }>
+          💬 의견 남기기{comments.length > 0 && ` ${comments.length}`}
         </button>
       </div>
+
+      {/* 의견 입력 영역 */}
+      {commentOpen && (
+        <div className="px-4 pb-4 border-t border-[#f4f4fc]">
+          <div className="mt-3">
+            {/* 유형 선택 */}
+            <div className="flex gap-2 mb-2">
+              {COMMENT_TYPES.map(type => {
+                const s = COMMENT_TYPE_STYLE[type];
+                const active = commentType === type;
+                return (
+                  <button key={type} type="button"
+                    onClick={() => { setCommentType(type); setCommentError(''); }}
+                    className="flex-1 py-1.5 rounded-xl text-sm font-bold border-2 cursor-pointer transition-all"
+                    style={active
+                      ? { background: s.bg, color: s.color, borderColor: s.border }
+                      : { background: '#f8f8ff', color: '#aaa', borderColor: '#e0e0f0' }
+                    }>
+                    {type === '좋은 점' ? '👍 좋은 점' : '🔍 더 궁금한 점'}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 텍스트 입력 */}
+            <textarea
+              value={commentText}
+              onChange={e => { setCommentText(e.target.value.slice(0, 150)); setCommentError(''); }}
+              placeholder={placeholder}
+              disabled={!commentType}
+              rows={2}
+              maxLength={150}
+              className="w-full border-2 border-[#c5c9f0] rounded-xl p-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#667eea] resize-none leading-relaxed transition-colors disabled:bg-[#f8f8f8] disabled:cursor-not-allowed"
+              style={{ minHeight: '72px' }}
+            />
+            <div className="flex items-center justify-between mt-1 mb-2">
+              <span className={`text-xs ${commentText.length > 130 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
+                {commentText.length} / 150
+              </span>
+              {commentError && <span className="text-red-500 text-xs">{commentError}</span>}
+            </div>
+            <button type="button" onClick={handleSubmit} disabled={commentSubmitting}
+              className="w-full text-white font-bold text-[0.9rem] py-2 rounded-xl border-none cursor-pointer bg-gradient-to-br from-[#667eea] to-[#764ba2] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+              {commentSubmitting ? '저장 중...' : '의견 남기기'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 기존 의견 목록 */}
+      {comments.length > 0 && (
+        <div className="px-4 pb-4 border-t border-[#f4f4fc] space-y-2 pt-3">
+          {comments.map(c => {
+            const s = COMMENT_TYPE_STYLE[c.comment_type as CommentType] ?? { bg: '#f0f0f8', color: '#667eea', border: '#c5c9f0' };
+            return (
+              <div key={c.id} className="flex gap-2 items-start">
+                <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0 mt-0.5"
+                  style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
+                  {c.student_name[0]}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                    <span className="text-xs font-bold text-[#4a4a6a]">{c.student_name}</span>
+                    <span className="text-[0.68rem] font-bold px-1.5 py-0.5 rounded-full"
+                      style={{ background: s.bg, color: s.color }}>
+                      {c.comment_type}
+                    </span>
+                    <span className="text-[0.68rem] text-[#ccc]">{formatDate(c.created_at)}</span>
+                  </div>
+                  <p className="text-[#444] text-sm leading-relaxed m-0">{c.comment}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
