@@ -2705,8 +2705,12 @@ export default function TeacherPage() {
                 const total      = goodCnt + curioCnt;
                 const goodPct    = total > 0 ? Math.round((goodCnt  / total) * 100) : 0;
                 const curioPct   = total > 0 ? Math.round((curioCnt / total) * 100) : 0;
-                const sampleGood  = goodCmts[Math.floor(Math.random() * goodCmts.length)];
-                const sampleCurio = curioCmts[Math.floor(Math.random() * curioCmts.length)];
+                // 공감 TOP 아이디어에 달린 의견 우선, 없으면 첫 번째 의견
+                const topPost     = progressStats.topLiked[0];
+                const topPostCmts = topPost ? filtCmts.filter(c => c.post_id === topPost.id) : [];
+                const sampleGood  = topPostCmts.find(c => c.comment_type === '좋은 점')       ?? goodCmts[0];
+                const sampleCurio = topPostCmts.find(c => c.comment_type === '더 궁금한 점')  ?? curioCmts[0];
+                const fromTopPost = (c: typeof sampleGood) => !!c && topPost?.id === c.post_id;
                 return (
                   <div className="bg-white rounded-2xl p-5 shadow-sm">
                     <div className="flex items-center gap-2 mb-1">
@@ -2736,18 +2740,24 @@ export default function TeacherPage() {
                             <span className="text-xs text-[#374151]">🔍 더 궁금한 점 <strong>{curioCnt}개</strong></span>
                           </div>
                         </div>
-                        {/* 대표 의견 */}
+                        {/* 대표 의견 — 공감 TOP 아이디어 기준 */}
                         <div className="flex flex-col gap-2">
                           {sampleGood && (
                             <div className="rounded-xl px-3 py-2.5" style={{ background: '#f1f8f1', border: '1.5px solid #c8e6c9' }}>
-                              <p className="text-[0.65rem] font-bold m-0 mb-1" style={{ color: '#2e7d32' }}>👍 좋은 점 대표 의견</p>
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <p className="text-[0.65rem] font-bold m-0" style={{ color: '#2e7d32' }}>👍 좋은 점 대표 의견</p>
+                                {fromTopPost(sampleGood) && <span className="text-[0.6rem] px-1.5 py-0.5 rounded-full font-bold" style={{ background: '#fff5f5', color: '#ef4444' }}>❤️ 공감 TOP</span>}
+                              </div>
                               <p className="text-[0.82rem] text-[#374151] m-0 leading-snug">"{sampleGood.comment}"</p>
                               <p className="text-[0.7rem] text-[#9ca3af] m-0 mt-1">{sampleGood.student_name} · {sampleGood.grade} {sampleGood.class_name}</p>
                             </div>
                           )}
                           {sampleCurio && (
                             <div className="rounded-xl px-3 py-2.5" style={{ background: '#e8f4fd', border: '1.5px solid #bbdefb' }}>
-                              <p className="text-[0.65rem] font-bold m-0 mb-1" style={{ color: '#1565c0' }}>🔍 더 궁금한 점 대표 의견</p>
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <p className="text-[0.65rem] font-bold m-0" style={{ color: '#1565c0' }}>🔍 더 궁금한 점 대표 의견</p>
+                                {fromTopPost(sampleCurio) && <span className="text-[0.6rem] px-1.5 py-0.5 rounded-full font-bold" style={{ background: '#fff5f5', color: '#ef4444' }}>❤️ 공감 TOP</span>}
+                              </div>
                               <p className="text-[0.82rem] text-[#374151] m-0 leading-snug">"{sampleCurio.comment}"</p>
                               <p className="text-[0.7rem] text-[#9ca3af] m-0 mt-1">{sampleCurio.student_name} · {sampleCurio.grade} {sampleCurio.class_name}</p>
                             </div>
@@ -2803,20 +2813,21 @@ export default function TeacherPage() {
                   </div>
                 )}
 
-                {/* 최근 질문 5개 */}
+                {/* 최근 질문 — 2열 카드 */}
                 <div>
                   <p className="text-xs font-bold text-[#6b7280] mb-2 m-0">최근 탐구 질문</p>
                   {progressStats.recentQuestions.length === 0 ? (
                     <p className="text-xs text-[#ccc] m-0">질문 데이터가 없습니다.</p>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
                       {progressStats.recentQuestions.map(q => (
-                        <div key={q.id} className="bg-[#f8f8ff] border-l-[3px] border-[#667eea] pl-3 pr-2 py-2 rounded-r-lg">
-                          <p className="text-[0.82rem] text-[#374151] m-0 leading-snug"
-                            style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        <div key={q.id} className="rounded-xl p-3 flex flex-col gap-1.5"
+                          style={{ background: '#f8f8ff', border: '1.5px solid #e0e0f8' }}>
+                          <p className="text-[0.82rem] text-[#374151] m-0 leading-snug flex-1"
+                            style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                             {q.question}
                           </p>
-                          <p className="text-[0.72rem] text-[#9ca3af] m-0 mt-0.5">{q.student_name} · {q.grade} {q.class_name}</p>
+                          <p className="text-[0.7rem] text-[#9ca3af] m-0">{q.student_name} · {q.grade} {q.class_name}</p>
                         </div>
                       ))}
                     </div>
