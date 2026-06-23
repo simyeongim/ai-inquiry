@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 
 const SUPABASE_URL = 'https://fsrrtopndcrdnqwnspnp.supabase.co';
@@ -130,18 +130,14 @@ export default function ProgressPage() {
   const [saveError,    setSaveError]    = useState('');
 
   const [posts,       setPosts]       = useState<IdeaPost[]>([]);
-  const [loading,     setLoading]     = useState(true);
+  const [loading,     setLoading]     = useState(false);
   const [fetchError,  setFetchError]  = useState('');
   const [newId,       setNewId]       = useState<string | null>(null);
   const [allLikes,    setAllLikes]    = useState<Like[]>([]);
   const [likingId,    setLikingId]    = useState<string | null>(null);
   const [allComments, setAllComments] = useState<Comment[]>([]);
 
-  // ② 필터 / 페이지
-  const [activeProject, setActiveProject] = useState<string>('all');
-  const [currentPage,   setCurrentPage]   = useState(1);
-
-  useEffect(() => { loadAll(); }, []);
+  const [currentPage, setCurrentPage] = useState(1);
 
   async function loadAll() {
     setLoading(true); setFetchError('');
@@ -155,8 +151,6 @@ export default function ProgressPage() {
       setFetchError(err instanceof Error ? err.message : '데이터를 불러오지 못했어요.');
     } finally { setLoading(false); }
   }
-
-  function switchProject(p: string) { setActiveProject(p); setCurrentPage(1); }
 
   async function handleSubmit() {
     if (!classRoom)             { alert('학년/반을 선택해주세요!'); return; }
@@ -245,10 +239,12 @@ export default function ProgressPage() {
   const { grade: curGrade, class_name: curClass } = splitClassRoom(classRoom);
   const curName = name.trim();
 
-  const filteredPosts = posts.filter(p => activeProject === 'all' || p.project === activeProject);
-  const totalPages    = Math.ceil(filteredPosts.length / ITEMS_PER_PAGE);
-  const pageStart     = (currentPage - 1) * ITEMS_PER_PAGE;
-  const pagedPosts    = filteredPosts.slice(pageStart, pageStart + ITEMS_PER_PAGE);
+  const friendPosts = posts.filter(p =>
+    p.grade === curGrade && p.class_name === curClass && p.project === project
+  );
+  const totalPages  = Math.ceil(friendPosts.length / ITEMS_PER_PAGE);
+  const pageStart   = (currentPage - 1) * ITEMS_PER_PAGE;
+  const pagedPosts  = friendPosts.slice(pageStart, pageStart + ITEMS_PER_PAGE);
 
   return (
     <div className="min-h-screen px-4 pt-2 pb-8"
@@ -293,9 +289,8 @@ export default function ProgressPage() {
           </Select>
         </Card>
 
-        {/* ① 통합 공유 카드 */}
+        {/* 공유 카드 */}
         <div className="flex items-center gap-2 mb-1.5 mt-2">
-          <StepBadge>①</StepBadge>
           <span className="text-[0.9rem] font-black text-[#4a4a6a]">아이디어 및 새롭게 궁금해진 점 공유</span>
         </div>
 
@@ -360,66 +355,48 @@ export default function ProgressPage() {
           </SuccessBox>
         )}
 
-        {/* 구분선 ① → ② */}
-        <StepDivider />
-
-        {/* ② 친구들의 생각 */}
-        <div id="friends-section" className="mb-2">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <StepBadge>②</StepBadge>
+        {/* 친구들의 생각 — 공유 후에만 표시 */}
+        {submitted && (
+          <div id="friends-section" className="mb-2 mt-4">
+            <StepDivider />
+            <div className="flex items-center justify-between mb-3">
               <h2 className="text-[1.05rem] font-black text-[#4a4a6a] m-0">친구들의 생각</h2>
-            </div>
-            <button onClick={loadAll} disabled={loading}
-              className="text-[0.75rem] text-[#667eea] border border-[#667eea]/30 bg-[#667eea]/5 px-3 py-1 rounded-full cursor-pointer hover:bg-[#667eea]/10 transition-colors disabled:opacity-40">
-              새로고침
-            </button>
-          </div>
-
-          {/* 프로젝트 필터 */}
-          <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1 scrollbar-none">
-            {(['all', ...PROJECT_LIST] as const).map(p => (
-              <button key={p} onClick={() => switchProject(p)}
-                className="shrink-0 px-3 py-1.5 rounded-full text-[0.78rem] font-bold border-2 cursor-pointer transition-all whitespace-nowrap"
-                style={activeProject === p
-                  ? { background: '#667eea', color: '#fff', borderColor: '#667eea' }
-                  : { background: '#f8f8ff', color: '#888', borderColor: '#e0e0f0' }
-                }>
-                {p === 'all' ? '전체' : PROJECT_SHORT[p]}
+              <button onClick={loadAll} disabled={loading}
+                className="text-[0.75rem] text-[#667eea] border border-[#667eea]/30 bg-[#667eea]/5 px-3 py-1 rounded-full cursor-pointer hover:bg-[#667eea]/10 transition-colors disabled:opacity-40">
+                새로고침
               </button>
-            ))}
-          </div>
-
-          {/* 카드 목록 */}
-          {loading ? (
-            <div className="text-center text-[#667eea] text-sm py-8 animate-pulse">불러오는 중...</div>
-          ) : fetchError ? (
-            <ErrorBox>{fetchError}</ErrorBox>
-          ) : filteredPosts.length === 0 ? (
-            <div className="text-center py-10">
-              <p className="text-[#bbb] text-sm m-0">아직 공유된 아이디어가 없습니다.</p>
             </div>
-          ) : (
-            <>
-              <div className="flex flex-col gap-2">
-                {pagedPosts.map(post => {
-                  const postLikes    = allLikes.filter(l => l.post_id === post.id);
-                  const postComments = allComments.filter(c => c.post_id === post.id);
-                  const userLiked    = curName && classRoom
-                    ? postLikes.some(l => l.grade === curGrade && l.class_name === curClass && l.student_name === curName)
-                    : false;
-                  return (
-                    <IdeaCard key={post.id} post={post} isNew={post.id === newId}
-                      likeCount={postLikes.length} userLiked={userLiked}
-                      isLiking={likingId === post.id} comments={postComments}
-                      onLike={() => handleLike(post.id)} onCommentSubmit={handleCommentSubmit} />
-                  );
-                })}
+
+            {loading ? (
+              <div className="text-center text-[#667eea] text-sm py-8 animate-pulse">불러오는 중...</div>
+            ) : fetchError ? (
+              <ErrorBox>{fetchError}</ErrorBox>
+            ) : friendPosts.length === 0 ? (
+              <div className="text-center py-10">
+                <p className="text-[#bbb] text-sm m-0">아직 우리 반 친구들의 아이디어가 없습니다.</p>
               </div>
-              <Pagination current={currentPage} total={totalPages} onChange={setCurrentPage} />
-            </>
-          )}
-        </div>
+            ) : (
+              <>
+                <div className="flex flex-col gap-2">
+                  {pagedPosts.map(post => {
+                    const postLikes    = allLikes.filter(l => l.post_id === post.id);
+                    const postComments = allComments.filter(c => c.post_id === post.id);
+                    const userLiked    = curName && classRoom
+                      ? postLikes.some(l => l.grade === curGrade && l.class_name === curClass && l.student_name === curName)
+                      : false;
+                    return (
+                      <IdeaCard key={post.id} post={post} isNew={post.id === newId}
+                        likeCount={postLikes.length} userLiked={userLiked}
+                        isLiking={likingId === post.id} comments={postComments}
+                        onLike={() => handleLike(post.id)} onCommentSubmit={handleCommentSubmit} />
+                    );
+                  })}
+                </div>
+                <Pagination current={currentPage} total={totalPages} onChange={setCurrentPage} />
+              </>
+            )}
+          </div>
+        )}
 
       </div>
     </div>
