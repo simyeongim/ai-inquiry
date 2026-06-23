@@ -461,83 +461,82 @@ function IdeaCard({ post, isNew, likeCount, userLiked, isLiking, comments, quest
         ? { border: '2px solid #667eea', boxShadow: '0 2px 16px rgba(102,126,234,0.18)' }
         : { border: '1.5px solid #f0f0f8', boxShadow: '0 2px 8px rgba(80,60,160,0.06)' }}>
 
-      {/* 항상 표시: 이름·학년반·아이디어·공감 */}
-      <div className="p-2.5 flex flex-col gap-1.5">
-        {/* 이름 + 학년반 */}
-        <div className="flex items-center gap-1.5">
-          <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0"
+      {/* 항상 표시 */}
+      <div className="p-3 flex flex-col gap-2">
+        {/* 이름 + 학년반 + 공감버튼 */}
+        <div className="flex items-center gap-2">
+          <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white shrink-0"
             style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
             {post.student_name[0]}
           </span>
-          <div className="min-w-0">
-            <p className="font-bold text-[#4a4a6a] text-[0.78rem] m-0 leading-none truncate">{post.student_name}</p>
-            <p className="text-[#bbb] text-[0.65rem] m-0 mt-0.5 truncate">{displayClass}</p>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-[#4a4a6a] text-sm m-0 leading-none truncate">{post.student_name}</p>
+            <p className="text-[#bbb] text-[0.72rem] m-0 mt-0.5 truncate">{displayClass}</p>
           </div>
           {isNew && (
-            <span className="ml-auto text-[0.6rem] font-bold px-1.5 py-0.5 rounded-full shrink-0"
+            <span className="text-[0.65rem] font-bold px-1.5 py-0.5 rounded-full shrink-0"
               style={{ background: '#ede9fe', color: '#667eea' }}>방금</span>
           )}
-        </div>
-
-        {/* 아이디어 본문 */}
-        <p className="text-[#333] text-[0.75rem] leading-relaxed m-0 line-clamp-3">
-          {post.content}
-        </p>
-
-        {/* 하단: 공감 + 펼치기 */}
-        <div className="flex items-center justify-between mt-0.5">
+          {/* 공감 버튼 — 이름 줄 오른쪽 */}
           <button type="button" onClick={onLike} disabled={isLiking}
-            className="flex items-center gap-0.5 px-2 py-1 rounded-full text-[0.7rem] font-semibold border-2 transition-all cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-0.5 px-2 py-1 rounded-full text-xs font-semibold border-2 transition-all cursor-pointer disabled:opacity-50 shrink-0"
             style={userLiked
               ? { borderColor: '#ef4444', color: '#fff', background: '#ef4444' }
               : { borderColor: '#fca5a5', color: '#ef4444', background: '#fff5f5' }
             }>
             ❤️{likeCount > 0 ? ` ${likeCount}` : ''}
           </button>
-          <button type="button" onClick={() => setExpanded(p => !p)}
-            className="text-[0.68rem] font-semibold cursor-pointer bg-transparent border-none px-1"
-            style={{ color: '#667eea' }}>
-            {expanded ? '접기 ▲' : '더보기 ▼'}
-          </button>
         </div>
+
+        {/* 아이디어 본문 */}
+        <p className="text-[#333] text-[0.82rem] leading-relaxed m-0 line-clamp-3">
+          {post.content}
+        </p>
+
+        {/* 펼치기 토글 */}
+        <button type="button" onClick={() => setExpanded(p => !p)}
+          className="self-end text-[0.75rem] font-semibold cursor-pointer bg-transparent border-none p-0"
+          style={{ color: '#667eea' }}>
+          {expanded ? '접기 ▲' : '더보기 ▼'}
+        </button>
       </div>
 
       {/* 펼침: 새롭게 궁금해진 점 + 의견 남기기 */}
       {expanded && (
-        <div className="border-t border-[#f4f4fc] p-2.5 flex flex-col gap-3">
+        <div className="border-t border-[#f4f4fc] p-3 flex flex-col gap-3">
 
           {/* 새롭게 궁금해진 점 */}
           {question ? (
             <div>
-              <p className="text-[0.65rem] font-bold m-0 mb-1" style={{ color: '#764ba2' }}>🔍 새롭게 궁금해진 점</p>
-              <p className="text-[#555] text-[0.73rem] leading-relaxed m-0">{question}</p>
+              <p className="text-[0.72rem] font-bold m-0 mb-1" style={{ color: '#764ba2' }}>🔍 새롭게 궁금해진 점</p>
+              <p className="text-[#555] text-[0.82rem] leading-relaxed m-0">{question}</p>
             </div>
           ) : (
-            <p className="text-[#ccc] text-[0.7rem] m-0">새롭게 궁금해진 점이 없습니다.</p>
+            <p className="text-[#ccc] text-[0.78rem] m-0">새롭게 궁금해진 점이 없습니다.</p>
           )}
 
           {/* 의견 남기기 */}
           <div>
-            <p className="text-[0.65rem] font-bold text-[#4a4a6a] m-0 mb-1.5">💬 의견 남기기</p>
+            <p className="text-[0.72rem] font-bold text-[#4a4a6a] m-0 mb-1.5">💬 의견 남기기</p>
 
             {/* 기존 의견 목록 */}
             {comments.length > 0 && (
-              <div className="space-y-1.5 mb-2">
+              <div className="space-y-2 mb-2">
                 {comments.map(c => {
                   const s = COMMENT_TYPE_STYLE[c.comment_type as CommentType] ?? { bg: '#f0f0f8', color: '#667eea', border: '#c5c9f0' };
                   return (
                     <div key={c.id} className="flex gap-1.5 items-start">
-                      <span className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black text-white shrink-0 mt-0.5"
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white shrink-0 mt-0.5"
                         style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
                         {c.student_name[0]}
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1 mb-0.5 flex-wrap">
-                          <span className="text-[0.65rem] font-bold text-[#4a4a6a]">{c.student_name}</span>
-                          <span className="text-[0.6rem] font-bold px-1 py-0.5 rounded-full"
+                          <span className="text-[0.72rem] font-bold text-[#4a4a6a]">{c.student_name}</span>
+                          <span className="text-[0.65rem] font-bold px-1 py-0.5 rounded-full"
                             style={{ background: s.bg, color: s.color }}>{c.comment_type}</span>
                         </div>
-                        <p className="text-[#444] text-[0.68rem] leading-relaxed m-0">{c.comment}</p>
+                        <p className="text-[#444] text-[0.75rem] leading-relaxed m-0">{c.comment}</p>
                       </div>
                     </div>
                   );
@@ -553,7 +552,7 @@ function IdeaCard({ post, isNew, likeCount, userLiked, isLiking, comments, quest
                   const active = commentType === type;
                   return (
                     <button key={type} type="button" onClick={() => { setCommentType(type); setCommentError(''); }}
-                      className="flex-1 py-1 rounded-lg text-[0.65rem] font-bold border-2 cursor-pointer transition-all"
+                      className="flex-1 py-1.5 rounded-lg text-[0.72rem] font-bold border-2 cursor-pointer transition-all"
                       style={active
                         ? { background: s.bg, color: s.color, borderColor: s.border }
                         : { background: '#f8f8ff', color: '#aaa', borderColor: '#e0e0f0' }
@@ -567,10 +566,10 @@ function IdeaCard({ post, isNew, likeCount, userLiked, isLiking, comments, quest
                 value={commentText} onChange={e => { setCommentText(e.target.value.slice(0, 150)); setCommentError(''); }}
                 placeholder={commentType ? COMMENT_PLACEHOLDER[commentType] : '유형을 먼저 선택해 주세요.'}
                 disabled={!commentType} rows={2} maxLength={150}
-                className="w-full border-2 border-[#c5c9f0] rounded-xl p-2 text-[0.7rem] text-gray-700 focus:outline-none focus:border-[#667eea] resize-none leading-relaxed transition-colors disabled:bg-[#f8f8f8] disabled:cursor-not-allowed" />
-              {commentError && <span className="text-red-500 text-[0.65rem] block">{commentError}</span>}
+                className="w-full border-2 border-[#c5c9f0] rounded-xl p-2 text-[0.78rem] text-gray-700 focus:outline-none focus:border-[#667eea] resize-none leading-relaxed transition-colors disabled:bg-[#f8f8f8] disabled:cursor-not-allowed" />
+              {commentError && <span className="text-red-500 text-[0.72rem] block">{commentError}</span>}
               <button type="button" onClick={handleCommentSave} disabled={commentSubmitting}
-                className="w-full text-white font-bold text-[0.7rem] py-1.5 rounded-xl border-none cursor-pointer bg-gradient-to-br from-[#667eea] to-[#764ba2] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                className="w-full text-white font-bold text-[0.78rem] py-1.5 rounded-xl border-none cursor-pointer bg-gradient-to-br from-[#667eea] to-[#764ba2] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
                 {commentSubmitting ? '저장 중...' : '의견 남기기'}
               </button>
             </div>
