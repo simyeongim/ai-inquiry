@@ -2623,44 +2623,44 @@ export default function TeacherPage() {
                   <span className="text-lg">💡</span>
                   <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">아이디어 확산도</h2>
                 </div>
-                <p className="text-[0.73rem] text-[#9ca3af] mb-4 m-0 leading-snug">
+                <p className="text-xs text-[#9ca3af] mb-4 m-0 leading-snug">
                   학생들이 어떤 아이디어에 공감하고 의견을 나누었는지 보여줍니다.
                 </p>
 
                 {/* 수치 요약 */}
                 <div className="grid grid-cols-3 gap-3 mb-4">
                   {[
-                    { label: '아이디어', value: progressStats.postCount, color: '#667eea', bg: '#f0f0ff' },
+                    { label: '아이디어', value: progressStats.postCount,    color: '#667eea', bg: '#f0f0ff' },
                     { label: '공감',     value: progressStats.likeCount,    color: '#ef4444', bg: '#fff5f5' },
                     { label: '의견',     value: progressStats.commentCount, color: '#f59e0b', bg: '#fffbeb' },
                   ].map(({ label, value, color, bg }) => (
                     <div key={label} className="rounded-xl py-3 px-2 text-center" style={{ background: bg }}>
                       <p className="text-2xl font-black m-0" style={{ color }}>{value}</p>
-                      <p className="text-[0.7rem] font-semibold text-[#6b7280] m-0 mt-0.5">{label}</p>
+                      <p className="text-xs font-semibold text-[#6b7280] m-0 mt-0.5">{label}</p>
                     </div>
                   ))}
                 </div>
 
                 {/* 공감 TOP 3 */}
-                <div className="mb-3">
-                  <p className="text-[0.72rem] font-bold text-[#6b7280] mb-1.5 m-0">❤️ 공감 많은 아이디어 TOP 3</p>
+                <div className="mb-4">
+                  <p className="text-xs font-bold text-[#6b7280] mb-2 m-0">❤️ 공감 많은 아이디어 TOP 3</p>
                   {progressStats.topLiked.length === 0 ? (
-                    <p className="text-[0.72rem] text-[#ccc] m-0">공감 데이터가 없습니다.</p>
+                    <p className="text-xs text-[#ccc] m-0">공감 데이터가 없습니다.</p>
                   ) : (
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       {progressStats.topLiked.map((p, i) => (
-                        <div key={p.id} className="flex items-start gap-2 bg-[#fff5f5] rounded-lg px-2.5 py-2">
-                          <span className="text-xs font-black shrink-0 w-5 text-center" style={{ color: ['#ef4444','#f87171','#fca5a5'][i] }}>
+                        <div key={p.id} className="flex items-start gap-2 bg-[#fff5f5] rounded-lg px-3 py-2.5">
+                          <span className="text-sm font-black shrink-0 w-5 text-center" style={{ color: ['#ef4444','#f87171','#fca5a5'][i] }}>
                             {i + 1}
                           </span>
                           <div className="flex-1 min-w-0">
-                            <p className="text-[0.72rem] text-[#374151] m-0 leading-snug"
+                            <p className="text-[0.82rem] text-[#374151] m-0 leading-snug"
                               style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                               {p.content}
                             </p>
-                            <p className="text-[0.67rem] text-[#9ca3af] m-0 mt-0.5">{p.student_name} · {p.grade} {p.class_name}</p>
+                            <p className="text-[0.72rem] text-[#9ca3af] m-0 mt-0.5">{p.student_name} · {p.grade} {p.class_name}</p>
                           </div>
-                          <span className="text-[0.72rem] font-bold text-[#ef4444] shrink-0">❤️ {progressStats.likesPerPost[p.id] ?? 0}</span>
+                          <span className="text-xs font-bold text-[#ef4444] shrink-0">❤️ {progressStats.likesPerPost[p.id] ?? 0}</span>
                         </div>
                       ))}
                     </div>
@@ -2669,24 +2669,24 @@ export default function TeacherPage() {
 
                 {/* 의견 TOP 3 */}
                 <div>
-                  <p className="text-[0.72rem] font-bold text-[#6b7280] mb-1.5 m-0">💬 의견 많은 아이디어 TOP 3</p>
+                  <p className="text-xs font-bold text-[#6b7280] mb-2 m-0">💬 의견 많은 아이디어 TOP 3</p>
                   {progressStats.topCommented.length === 0 ? (
-                    <p className="text-[0.72rem] text-[#ccc] m-0">의견 데이터가 없습니다.</p>
+                    <p className="text-xs text-[#ccc] m-0">의견 데이터가 없습니다.</p>
                   ) : (
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       {progressStats.topCommented.map((p, i) => (
-                        <div key={p.id} className="flex items-start gap-2 bg-[#fffbeb] rounded-lg px-2.5 py-2">
-                          <span className="text-xs font-black shrink-0 w-5 text-center" style={{ color: ['#f59e0b','#fbbf24','#fcd34d'][i] }}>
+                        <div key={p.id} className="flex items-start gap-2 bg-[#fffbeb] rounded-lg px-3 py-2.5">
+                          <span className="text-sm font-black shrink-0 w-5 text-center" style={{ color: ['#f59e0b','#fbbf24','#fcd34d'][i] }}>
                             {i + 1}
                           </span>
                           <div className="flex-1 min-w-0">
-                            <p className="text-[0.72rem] text-[#374151] m-0 leading-snug"
+                            <p className="text-[0.82rem] text-[#374151] m-0 leading-snug"
                               style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                               {p.content}
                             </p>
-                            <p className="text-[0.67rem] text-[#9ca3af] m-0 mt-0.5">{p.student_name} · {p.grade} {p.class_name}</p>
+                            <p className="text-[0.72rem] text-[#9ca3af] m-0 mt-0.5">{p.student_name} · {p.grade} {p.class_name}</p>
                           </div>
-                          <span className="text-[0.72rem] font-bold text-[#f59e0b] shrink-0">💬 {progressStats.cmtsPerPost[p.id] ?? 0}</span>
+                          <span className="text-xs font-bold text-[#f59e0b] shrink-0">💬 {progressStats.cmtsPerPost[p.id] ?? 0}</span>
                         </div>
                       ))}
                     </div>
@@ -2694,26 +2694,81 @@ export default function TeacherPage() {
                 </div>
               </div>
 
-              {/* 카드 2: 새로운 탐구 질문 현황 */}
+              {/* 카드 2: 의견 유형 분포 */}
+              {(() => {
+                const postIdSet = new Set(filteredProgressPosts.map(p => p.id));
+                const filtCmts  = progressComments.filter(c => postIdSet.has(c.post_id));
+                const goodCnt   = filtCmts.filter(c => c.comment_type === '좋은 점').length;
+                const curioCnt  = filtCmts.filter(c => c.comment_type === '더 궁금한 점').length;
+                const total     = goodCnt + curioCnt;
+                const goodPct   = total > 0 ? Math.round((goodCnt  / total) * 100) : 0;
+                const curioPct  = total > 0 ? Math.round((curioCnt / total) * 100) : 0;
+                const cultureMsg = total === 0 ? null
+                  : curioPct >= 60 ? '친구 아이디어에서 새로운 질문을 많이 만들고 있어요. 탐구 지향적 학급 문화가 형성되고 있습니다.'
+                  : goodPct  >= 60 ? '친구 아이디어의 좋은 점을 잘 찾고 있어요. 협력적·수용적 학급 분위기입니다.'
+                  : '좋은 점과 질문이 고르게 나타나고 있어요. 균형 잡힌 토의 문화입니다.';
+                return (
+                  <div className="bg-white rounded-2xl p-5 shadow-sm">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg">📊</span>
+                      <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">의견 유형 분포</h2>
+                    </div>
+                    <p className="text-xs text-[#9ca3af] mb-4 m-0 leading-snug">
+                      학생들이 어떤 방식으로 친구 아이디어에 반응하는지 보여줍니다.
+                    </p>
+                    {total === 0 ? (
+                      <p className="text-xs text-[#ccc] text-center py-6 m-0">의견 데이터가 없습니다.</p>
+                    ) : (
+                      <>
+                        {/* 가로 비율 바 */}
+                        <div className="flex rounded-full overflow-hidden h-5 mb-3">
+                          {goodPct  > 0 && <div style={{ width: `${goodPct}%`,  background: '#4caf50' }} className="flex items-center justify-center text-[10px] font-bold text-white">{goodPct}%</div>}
+                          {curioPct > 0 && <div style={{ width: `${curioPct}%`, background: '#2196f3' }} className="flex items-center justify-center text-[10px] font-bold text-white">{curioPct}%</div>}
+                        </div>
+                        {/* 범례 */}
+                        <div className="flex gap-4 mb-4">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-3 h-3 rounded-full shrink-0" style={{ background: '#4caf50' }} />
+                            <span className="text-xs text-[#374151]">👍 좋은 점 <strong>{goodCnt}개</strong></span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-3 h-3 rounded-full shrink-0" style={{ background: '#2196f3' }} />
+                            <span className="text-xs text-[#374151]">🔍 더 궁금한 점 <strong>{curioCnt}개</strong></span>
+                          </div>
+                        </div>
+                        {/* 학급 문화 해석 */}
+                        {cultureMsg && (
+                          <div className="rounded-xl px-4 py-3" style={{ background: '#f8f9ff', border: '1.5px solid #e0e0f8' }}>
+                            <p className="text-[0.72rem] font-bold text-[#667eea] m-0 mb-1">💬 학급 토의 문화 진단</p>
+                            <p className="text-[0.82rem] text-[#374151] m-0 leading-snug">{cultureMsg}</p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* 카드 3: 새로운 탐구 질문 현황 */}
               <div className="bg-white rounded-2xl p-5 shadow-sm">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-lg">🔍</span>
                   <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">새로운 탐구 질문</h2>
                 </div>
-                <p className="text-[0.73rem] text-[#9ca3af] mb-4 m-0 leading-snug">
+                <p className="text-xs text-[#9ca3af] mb-4 m-0 leading-snug">
                   확장 공유 이후 학생들이 새롭게 궁금해한 질문을 보여줍니다.
                 </p>
 
                 {/* 총 질문 수 */}
                 <div className="rounded-xl py-3 px-4 mb-4 text-center" style={{ background: '#f0f4ff' }}>
                   <p className="text-3xl font-black m-0" style={{ color: '#667eea' }}>{progressStats.questionCount}</p>
-                  <p className="text-[0.7rem] font-semibold text-[#6b7280] m-0 mt-0.5">전체 새로운 탐구 질문</p>
+                  <p className="text-xs font-semibold text-[#6b7280] m-0 mt-0.5">전체 새로운 탐구 질문</p>
                 </div>
 
                 {/* 프로젝트별 질문 수 */}
                 {Object.keys(progressStats.qByProject).length > 0 && (
                   <div className="mb-4">
-                    <p className="text-[0.72rem] font-bold text-[#6b7280] mb-2 m-0">프로젝트별 탐구 질문</p>
+                    <p className="text-xs font-bold text-[#6b7280] mb-2 m-0">프로젝트별 탐구 질문</p>
                     <div className="space-y-2">
                       {(Object.entries(progressStats.qByProject) as [string, number][])
                         .sort((a, b) => b[1] - a[1])
@@ -2722,13 +2777,13 @@ export default function TeacherPage() {
                           const pct  = progressStats.questionCount > 0 ? Math.round((cnt / progressStats.questionCount) * 100) : 0;
                           return (
                             <div key={proj}>
-                              <div className="flex items-center justify-between mb-0.5">
-                                <span className="text-[0.72rem] text-[#4a4a6a] font-semibold">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs text-[#4a4a6a] font-semibold">
                                   {info.emoji} {info.short}
                                 </span>
-                                <span className="text-[0.72rem] font-bold" style={{ color: '#667eea' }}>{cnt}개</span>
+                                <span className="text-xs font-bold" style={{ color: '#667eea' }}>{cnt}개</span>
                               </div>
-                              <div className="w-full h-1.5 bg-[#e0e0f0] rounded-full overflow-hidden">
+                              <div className="w-full h-2 bg-[#e0e0f0] rounded-full overflow-hidden">
                                 <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #667eea, #764ba2)' }} />
                               </div>
                             </div>
@@ -2740,18 +2795,18 @@ export default function TeacherPage() {
 
                 {/* 최근 질문 5개 */}
                 <div>
-                  <p className="text-[0.72rem] font-bold text-[#6b7280] mb-1.5 m-0">최근 탐구 질문</p>
+                  <p className="text-xs font-bold text-[#6b7280] mb-2 m-0">최근 탐구 질문</p>
                   {progressStats.recentQuestions.length === 0 ? (
-                    <p className="text-[0.72rem] text-[#ccc] m-0">질문 데이터가 없습니다.</p>
+                    <p className="text-xs text-[#ccc] m-0">질문 데이터가 없습니다.</p>
                   ) : (
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       {progressStats.recentQuestions.map(q => (
-                        <div key={q.id} className="bg-[#f8f8ff] border-l-[3px] border-[#667eea] pl-2.5 pr-2 py-1.5 rounded-r-lg">
-                          <p className="text-[0.72rem] text-[#374151] m-0 leading-snug"
+                        <div key={q.id} className="bg-[#f8f8ff] border-l-[3px] border-[#667eea] pl-3 pr-2 py-2 rounded-r-lg">
+                          <p className="text-[0.82rem] text-[#374151] m-0 leading-snug"
                             style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                             {q.question}
                           </p>
-                          <p className="text-[0.67rem] text-[#9ca3af] m-0 mt-0.5">{q.student_name} · {q.grade} {q.class_name}</p>
+                          <p className="text-[0.72rem] text-[#9ca3af] m-0 mt-0.5">{q.student_name} · {q.grade} {q.class_name}</p>
                         </div>
                       ))}
                     </div>
