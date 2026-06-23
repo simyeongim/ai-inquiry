@@ -2703,10 +2703,6 @@ export default function TeacherPage() {
                 const total     = goodCnt + curioCnt;
                 const goodPct   = total > 0 ? Math.round((goodCnt  / total) * 100) : 0;
                 const curioPct  = total > 0 ? Math.round((curioCnt / total) * 100) : 0;
-                const cultureMsg = total === 0 ? null
-                  : curioPct >= 60 ? '친구 아이디어에서 새로운 질문을 많이 만들고 있어요. 탐구 지향적 학급 문화가 형성되고 있습니다.'
-                  : goodPct  >= 60 ? '친구 아이디어의 좋은 점을 잘 찾고 있어요. 협력적·수용적 학급 분위기입니다.'
-                  : '좋은 점과 질문이 고르게 나타나고 있어요. 균형 잡힌 토의 문화입니다.';
                 return (
                   <div className="bg-white rounded-2xl p-5 shadow-sm">
                     <div className="flex items-center gap-2 mb-1">
@@ -2736,13 +2732,6 @@ export default function TeacherPage() {
                             <span className="text-xs text-[#374151]">🔍 더 궁금한 점 <strong>{curioCnt}개</strong></span>
                           </div>
                         </div>
-                        {/* 학급 문화 해석 */}
-                        {cultureMsg && (
-                          <div className="rounded-xl px-4 py-3" style={{ background: '#f8f9ff', border: '1.5px solid #e0e0f8' }}>
-                            <p className="text-[0.72rem] font-bold text-[#667eea] m-0 mb-1">💬 학급 토의 문화 진단</p>
-                            <p className="text-[0.82rem] text-[#374151] m-0 leading-snug">{cultureMsg}</p>
-                          </div>
-                        )}
                       </>
                     )}
                   </div>
