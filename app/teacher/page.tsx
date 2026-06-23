@@ -2813,10 +2813,12 @@ export default function TeacherPage() {
                       <div className="flex items-center gap-1.5 px-3 py-2.5">
                         <input type="checkbox" checked={isChecked} onChange={toggleSel} onClick={e => e.stopPropagation()}
                           className="w-3.5 h-3.5 shrink-0 cursor-pointer accent-[#667eea]" />
-                        <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold shrink-0 whitespace-nowrap"
-                          style={{ background: '#ede9fe', color: '#667eea' }}>
-                          {PROJECT_SHORT[post.project] ?? post.project}
-                        </span>
+                        {(() => { const p = PROJECT_SHORT[post.project]; return p ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold shrink-0 whitespace-nowrap"
+                            style={{ background: '#ede9fe', color: '#667eea' }}>
+                            {p.emoji} {p.short}
+                          </span>
+                        ) : null; })()}
                         <span className="text-[11px] text-[#9ca3af] shrink-0">{post.grade} {post.class_name}</span>
                         <span className="text-sm font-black text-[#1a1a2e] shrink-0">{post.student_name}</span>
                         <div className="flex-1" />
