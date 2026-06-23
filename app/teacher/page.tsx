@@ -2615,7 +2615,7 @@ export default function TeacherPage() {
 
           {/* ── 분석 카드 영역 ── */}
           {!loadingProgress && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
               {/* 카드 1: 아이디어 확산도 */}
               <div className="bg-white rounded-2xl p-5 shadow-sm">
