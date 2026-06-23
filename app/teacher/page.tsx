@@ -2696,13 +2696,17 @@ export default function TeacherPage() {
 
               {/* 카드 2: 의견 유형 분포 */}
               {(() => {
-                const postIdSet = new Set(filteredProgressPosts.map(p => p.id));
-                const filtCmts  = progressComments.filter(c => postIdSet.has(c.post_id));
-                const goodCnt   = filtCmts.filter(c => c.comment_type === '좋은 점').length;
-                const curioCnt  = filtCmts.filter(c => c.comment_type === '더 궁금한 점').length;
-                const total     = goodCnt + curioCnt;
-                const goodPct   = total > 0 ? Math.round((goodCnt  / total) * 100) : 0;
-                const curioPct  = total > 0 ? Math.round((curioCnt / total) * 100) : 0;
+                const postIdSet  = new Set(filteredProgressPosts.map(p => p.id));
+                const filtCmts   = progressComments.filter(c => postIdSet.has(c.post_id));
+                const goodCmts   = filtCmts.filter(c => c.comment_type === '좋은 점');
+                const curioCmts  = filtCmts.filter(c => c.comment_type === '더 궁금한 점');
+                const goodCnt    = goodCmts.length;
+                const curioCnt   = curioCmts.length;
+                const total      = goodCnt + curioCnt;
+                const goodPct    = total > 0 ? Math.round((goodCnt  / total) * 100) : 0;
+                const curioPct   = total > 0 ? Math.round((curioCnt / total) * 100) : 0;
+                const sampleGood  = goodCmts[Math.floor(Math.random() * goodCmts.length)];
+                const sampleCurio = curioCmts[Math.floor(Math.random() * curioCmts.length)];
                 return (
                   <div className="bg-white rounded-2xl p-5 shadow-sm">
                     <div className="flex items-center gap-2 mb-1">
@@ -2731,6 +2735,23 @@ export default function TeacherPage() {
                             <span className="w-3 h-3 rounded-full shrink-0" style={{ background: '#2196f3' }} />
                             <span className="text-xs text-[#374151]">🔍 더 궁금한 점 <strong>{curioCnt}개</strong></span>
                           </div>
+                        </div>
+                        {/* 대표 의견 */}
+                        <div className="flex flex-col gap-2">
+                          {sampleGood && (
+                            <div className="rounded-xl px-3 py-2.5" style={{ background: '#f1f8f1', border: '1.5px solid #c8e6c9' }}>
+                              <p className="text-[0.65rem] font-bold m-0 mb-1" style={{ color: '#2e7d32' }}>👍 좋은 점 대표 의견</p>
+                              <p className="text-[0.82rem] text-[#374151] m-0 leading-snug">"{sampleGood.comment}"</p>
+                              <p className="text-[0.7rem] text-[#9ca3af] m-0 mt-1">{sampleGood.student_name} · {sampleGood.grade} {sampleGood.class_name}</p>
+                            </div>
+                          )}
+                          {sampleCurio && (
+                            <div className="rounded-xl px-3 py-2.5" style={{ background: '#e8f4fd', border: '1.5px solid #bbdefb' }}>
+                              <p className="text-[0.65rem] font-bold m-0 mb-1" style={{ color: '#1565c0' }}>🔍 더 궁금한 점 대표 의견</p>
+                              <p className="text-[0.82rem] text-[#374151] m-0 leading-snug">"{sampleCurio.comment}"</p>
+                              <p className="text-[0.7rem] text-[#9ca3af] m-0 mt-1">{sampleCurio.student_name} · {sampleCurio.grade} {sampleCurio.class_name}</p>
+                            </div>
+                          )}
                         </div>
                       </>
                     )}
