@@ -475,9 +475,14 @@ export default function TeacherPage() {
   const [fetchErrProgress,  setFetchErrProgress]  = useState('');
   const [deletingProgress,  setDeletingProgress]  = useState(false);
   const [deleteMsg,         setDeleteMsg]         = useState('');
-  const [fPrProject, setFPrProject] = useState('');
-  const [fPrGrade,   setFPrGrade]   = useState('');
-  const [fPrClass,   setFPrClass]   = useState('');
+  const [fPrProject, setFPrProject] = useState<string[]>([]);
+  const [fPrClass,   setFPrClass]   = useState<string[]>([]);
+
+  // 학생 아이디어 목록 상태
+  const [searchPrAuthor,      setSearchPrAuthor]      = useState('');
+  const [selProgress,         setSelProgress]         = useState<Set<string>>(new Set());
+  const [expandedProgressIds, setExpandedProgressIds] = useState<Set<string>>(new Set());
+  const [showDeleteProgress,  setShowDeleteProgress]  = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true); setFetchErr('');
@@ -820,16 +825,22 @@ export default function TeacherPage() {
   async function deleteProgressPost(id: string) {
     if (!confirm('정말 삭제하시겠습니까? 삭제한 내용은 되돌릴 수 없습니다.')) return;
     setDeletingProgress(true);
+    const H = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Prefer: 'return=minimal' };
     try {
-      await fetch(`${SUPABASE_URL}/rest/v1/progress_likes?post_id=eq.${id}`, {
-        method: 'DELETE',
-        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Prefer: 'return=minimal' },
-      });
+      // 자식 행(댓글·좋아요)을 먼저 삭제해야 FK 제약 통과
+      await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/progress_comments?post_id=eq.${id}`, { method: 'DELETE', headers: H }),
+        fetch(`${SUPABASE_URL}/rest/v1/progress_likes?post_id=eq.${id}`,    { method: 'DELETE', headers: H }),
+      ]);
       const res = await fetch(`${SUPABASE_URL}/rest/v1/progress_posts?id=eq.${id}`, {
         method: 'DELETE',
-        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Prefer: 'return=minimal' },
+        headers: { ...H, Prefer: 'return=representation' },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const deleted = await res.json();
+      if (!Array.isArray(deleted) || deleted.length === 0) {
+        throw new Error('삭제 권한이 없습니다. Supabase SQL Editor에서\nCREATE POLICY "allow delete" ON progress_posts FOR DELETE USING (true);\n을 실행해 주세요.');
+      }
       setProgressPosts(p => p.filter(r => r.id !== id));
       setDeleteMsg('삭제되었습니다.');
       setTimeout(() => setDeleteMsg(''), 2500);
@@ -892,6 +903,63 @@ export default function TeacherPage() {
     const a = document.createElement('a');
     a.href = url; a.download = `탐구결과_${new Date().toLocaleDateString('ko-KR').replace(/\. /g,'-').replace('.','')}.csv`;
     a.click(); URL.revokeObjectURL(url);
+  }
+
+  async function deleteProgressPosts(ids: string[]) {
+    if (!ids.length) return;
+    setDeletingProgress(true);
+    const H = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Prefer: 'return=minimal' };
+    try {
+      await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/progress_comments?post_id=in.(${ids.join(',')})`, { method: 'DELETE', headers: H }),
+        fetch(`${SUPABASE_URL}/rest/v1/progress_likes?post_id=in.(${ids.join(',')})`,    { method: 'DELETE', headers: H }),
+      ]);
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/progress_posts?id=in.(${ids.join(',')})`, {
+        method: 'DELETE',
+        headers: { ...H, Prefer: 'return=representation' },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const deleted = await res.json();
+      if (!Array.isArray(deleted) || deleted.length === 0) {
+        throw new Error('삭제 권한이 없습니다. Supabase SQL Editor에서\nCREATE POLICY "allow delete" ON progress_posts FOR DELETE USING (true);\n을 실행해 주세요.');
+      }
+      setProgressPosts(p => p.filter(r => !ids.includes(r.id)));
+      setSelProgress(new Set());
+      setDeleteMsg(`${deleted.length}개 삭제되었습니다.`);
+      setTimeout(() => setDeleteMsg(''), 2500);
+    } catch (err) { alert(`삭제에 실패했습니다.\n${err instanceof Error ? err.message : ''}`); }
+    setDeletingProgress(false);
+    setShowDeleteProgress(false);
+  }
+
+  function exportProgress() {
+    const esc = (s: string) => `"${(s ?? '').replace(/"/g, '""')}"`;
+    const rows: string[] = [];
+    if (filteredProgressPosts.length > 0) {
+      rows.push(['제출시각','학년','반','이름','프로젝트','아이디어','공감수','의견수'].join(','));
+      filteredProgressPosts.forEach(p => {
+        const likeCount = progressLikes.filter(l => l.post_id === p.id).length;
+        const cmtCount  = progressComments.filter(c => c.post_id === p.id).length;
+        rows.push([esc(p.created_at?.slice(0,16)??''), esc(p.grade), esc(p.class_name), esc(p.student_name),
+          esc(p.project), esc(p.content), String(likeCount), String(cmtCount)].join(','));
+      });
+    }
+    if (filteredProgressQuestions.length > 0) {
+      if (rows.length) rows.push('');
+      rows.push(['제출시각','학년','반','이름','프로젝트','탐구질문'].join(','));
+      filteredProgressQuestions.forEach(q => {
+        rows.push([esc(q.created_at?.slice(0,16)??''), esc(q.grade), esc(q.class_name), esc(q.student_name),
+          esc(q.project), esc(q.question)].join(','));
+      });
+    }
+    if (!rows.length) return;
+    const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `확장공유_${new Date().toLocaleDateString('ko-KR').replace(/\. /g,'-').replace('.','')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   function tog<T>(a: T[], v: T): T[] { return a.includes(v) ? a.filter(x=>x!==v) : [...a,v]; }
@@ -970,18 +1038,23 @@ export default function TeacherPage() {
 
   // ── 확장공유 필터 & 분석 ──
   const filteredProgressPosts = useMemo(() => progressPosts.filter(p => {
-    if (fPrProject && p.project !== fPrProject) return false;
-    if (fPrGrade   && p.grade !== fPrGrade)     return false;
-    if (fPrClass   && p.class_name !== fPrClass) return false;
+    const classKey = `${p.grade} ${p.class_name}`.trim();
+    if (fPrProject.length && !fPrProject.includes(p.project)) return false;
+    if (fPrClass.length   && !fPrClass.includes(classKey))    return false;
     return true;
-  }), [progressPosts, fPrProject, fPrGrade, fPrClass]);
+  }), [progressPosts, fPrProject, fPrClass]);
 
   const filteredProgressQuestions = useMemo(() => progressQuestions.filter(q => {
-    if (fPrProject && q.project !== fPrProject)  return false;
-    if (fPrGrade   && q.grade !== fPrGrade)       return false;
-    if (fPrClass   && q.class_name !== fPrClass)  return false;
+    const classKey = `${q.grade} ${q.class_name}`.trim();
+    if (fPrProject.length && !fPrProject.includes(q.project)) return false;
+    if (fPrClass.length   && !fPrClass.includes(classKey))    return false;
     return true;
-  }), [progressQuestions, fPrProject, fPrGrade, fPrClass]);
+  }), [progressQuestions, fPrProject, fPrClass]);
+
+  const displayedProgressPosts = useMemo(() => {
+    if (!searchPrAuthor.trim()) return filteredProgressPosts;
+    return filteredProgressPosts.filter(p => p.student_name.includes(searchPrAuthor.trim()));
+  }, [filteredProgressPosts, searchPrAuthor]);
 
   const progressStats = useMemo(() => {
     const postIdSet  = new Set(filteredProgressPosts.map(p => p.id));
@@ -1019,19 +1092,6 @@ export default function TeacherPage() {
     };
   }, [filteredProgressPosts, filteredProgressQuestions, progressLikes, progressComments]);
 
-  const prGradeList = useMemo(() => {
-    const s = new Set(progressPosts.map(p => p.grade));
-    return Array.from(s).sort();
-  }, [progressPosts]);
-
-  const prClassList = useMemo(() => {
-    const s = new Set(
-      progressPosts
-        .filter(p => !fPrGrade || p.grade === fPrGrade)
-        .map(p => p.class_name)
-    );
-    return Array.from(s).sort();
-  }, [progressPosts, fPrGrade]);
 
   const filteredExplorations = useMemo(() => {
     return explorationRows.filter(r => {
@@ -2518,31 +2578,26 @@ export default function TeacherPage() {
           )}
 
           {/* ── 필터 바 ── */}
-          <div className="bg-white rounded-2xl px-4 py-3 shadow-sm">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-[#6b7280] whitespace-nowrap">필터</span>
-              <select value={fPrProject} onChange={e => setFPrProject(e.target.value)}
-                className="border border-[#e0e0f0] rounded-lg px-2.5 py-1.5 text-xs text-[#4a4a6a] bg-white cursor-pointer focus:outline-none focus:border-[#667eea]">
-                <option value="">전체 프로젝트</option>
-                {PROJECT_LIST.map(p => <option key={p}>{p}</option>)}
-              </select>
-              <select value={fPrGrade} onChange={e => { setFPrGrade(e.target.value); setFPrClass(''); }}
-                className="border border-[#e0e0f0] rounded-lg px-2.5 py-1.5 text-xs text-[#4a4a6a] bg-white cursor-pointer focus:outline-none focus:border-[#667eea]">
-                <option value="">전체 학년</option>
-                {prGradeList.map(g => <option key={g}>{g}</option>)}
-              </select>
-              <select value={fPrClass} onChange={e => setFPrClass(e.target.value)}
-                className="border border-[#e0e0f0] rounded-lg px-2.5 py-1.5 text-xs text-[#4a4a6a] bg-white cursor-pointer focus:outline-none focus:border-[#667eea]">
-                <option value="">전체 반</option>
-                {prClassList.map(c => <option key={c}>{c}</option>)}
-              </select>
-              {(fPrProject || fPrGrade || fPrClass) && (
-                <button onClick={() => { setFPrProject(''); setFPrGrade(''); setFPrClass(''); }}
-                  className="text-xs font-semibold text-[#667eea] border border-[#667eea]/30 bg-[#667eea]/5 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-[#667eea]/10 transition-colors">
-                  초기화
-                </button>
-              )}
+          <div className="bg-white rounded-2xl px-4 py-2.5 shadow-sm flex items-center gap-2">
+            <div className="grid grid-cols-2 gap-2 flex-1">
+              <ClassDropdown opts={CLASS_LIST} sel={fPrClass} onToggle={v => setFPrClass(tog(fPrClass, v))} />
+              <FilterDropdown label="프로젝트" opts={PROJECT_LIST} sel={fPrProject}
+                onToggle={v => setFPrProject(tog(fPrProject, v as string))}
+                getLabel={v => v as string} />
             </div>
+            {!loadingProgress && (filteredProgressPosts.length > 0 || filteredProgressQuestions.length > 0) && (
+              <button onClick={exportProgress}
+                className="text-xs px-3 py-1.5 rounded-full font-semibold border-none cursor-pointer shrink-0 whitespace-nowrap"
+                style={{ background: '#667eea', color: 'white' }}>
+                ↓ CSV
+              </button>
+            )}
+            {(fPrProject.length > 0 || fPrClass.length > 0) && (
+              <button onClick={() => { setFPrProject([]); setFPrClass([]); }}
+                className="text-xs text-[#667eea] border-none bg-transparent cursor-pointer font-semibold hover:underline whitespace-nowrap shrink-0">
+                초기화
+              </button>
+            )}
           </div>
 
           {/* ── 분석 카드 영역 ── */}
@@ -2696,59 +2751,104 @@ export default function TeacherPage() {
 
           {/* ── 아이디어 목록 ── */}
           <div className="bg-white rounded-2xl p-5 shadow-sm">
-            <h2 className="text-[15px] font-bold text-[#1a1a2e] mb-4 m-0">
-              학생 아이디어
-              <span className="ml-2 text-xs font-medium text-[#9ca3af]">{filteredProgressPosts.length}개</span>
-            </h2>
+            {/* 헤더 */}
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
+              <h2 className="text-[15px] font-bold text-[#1a1a2e] m-0">
+                학생 아이디어
+                <span className="ml-2 text-xs font-medium text-[#9ca3af]">{filteredProgressPosts.length}개</span>
+              </h2>
+              <div className="flex-1" />
+              <input
+                type="text"
+                value={searchPrAuthor}
+                onChange={e => setSearchPrAuthor(e.target.value)}
+                placeholder="👤 작성자 검색..."
+                className="border border-[#e8e8f0] rounded-full px-2.5 py-1 text-xs text-[#333] focus:outline-none focus:border-[#667eea] transition-colors"
+                style={{ width: '120px' }}
+              />
+              <div className="flex items-center gap-2">
+                {(() => {
+                  const allSel = displayedProgressPosts.length > 0 && displayedProgressPosts.every(r => selProgress.has(r.id));
+                  return (
+                    <button
+                      onClick={() => setSelProgress(allSel ? new Set() : new Set(displayedProgressPosts.map(r => r.id)))}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-full border-2 cursor-pointer transition-all"
+                      style={allSel
+                        ? { background: '#e8eaf6', color: '#667eea', borderColor: '#667eea' }
+                        : { background: 'white', color: '#777', borderColor: '#e0e0e0' }}>
+                      {allSel ? '전체 해제' : '전체 선택'}
+                    </button>
+                  );
+                })()}
+                <button
+                  onClick={() => { if (selProgress.size > 0) setShowDeleteProgress(true); }}
+                  disabled={deletingProgress || selProgress.size === 0}
+                  className="px-3 py-1.5 rounded-full text-xs font-bold text-white border-none cursor-pointer disabled:opacity-40 transition-all"
+                  style={{ background: '#ef4444' }}>
+                  {deletingProgress ? '삭제 중…' : selProgress.size > 0 ? `삭제 (${selProgress.size})` : '삭제'}
+                </button>
+              </div>
+            </div>
 
             {loadingProgress ? (
               <p className="text-center text-[#ccc] py-10 text-sm">불러오는 중...</p>
-            ) : filteredProgressPosts.length === 0 ? (
-              <p className="text-center text-[#ccc] py-10 text-sm">등록된 아이디어가 없습니다.</p>
+            ) : displayedProgressPosts.length === 0 ? (
+              <p className="text-center text-[#ccc] py-10 text-sm">
+                {searchPrAuthor ? '검색 결과가 없습니다.' : '등록된 아이디어가 없습니다.'}
+              </p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse">
-                  <thead>
-                    <tr style={{ background: '#f0f2f8' }}>
-                      <th className="text-left px-3 py-2.5 text-xs font-bold text-[#6b7280] whitespace-nowrap">학년</th>
-                      <th className="text-left px-3 py-2.5 text-xs font-bold text-[#6b7280] whitespace-nowrap">반</th>
-                      <th className="text-left px-3 py-2.5 text-xs font-bold text-[#6b7280] whitespace-nowrap">이름</th>
-                      <th className="text-left px-3 py-2.5 text-xs font-bold text-[#6b7280] whitespace-nowrap">프로젝트</th>
-                      <th className="text-left px-3 py-2.5 text-xs font-bold text-[#6b7280]">아이디어 내용</th>
-                      <th className="text-left px-3 py-2.5 text-xs font-bold text-[#6b7280] whitespace-nowrap">작성 시간</th>
-                      <th className="px-3 py-2.5"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredProgressPosts.map((post, i) => (
-                      <tr key={post.id}
-                        style={{ background: i % 2 === 0 ? '#fafafa' : 'white', borderBottom: '1px solid #f0f0f8' }}>
-                        <td className="px-3 py-2.5 text-[#4a4a6a] whitespace-nowrap">{post.grade}</td>
-                        <td className="px-3 py-2.5 text-[#4a4a6a] whitespace-nowrap">{post.class_name}</td>
-                        <td className="px-3 py-2.5 font-semibold text-[#1a1a2e] whitespace-nowrap">{post.student_name}</td>
-                        <td className="px-3 py-2.5">
-                          <span className="text-[0.72rem] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
-                            style={{ background: '#f0f0f8', color: '#667eea' }}>
-                            {post.project}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2.5 text-[#374151] max-w-xs">
-                          <p className="m-0 leading-relaxed" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{post.content}</p>
-                        </td>
-                        <td className="px-3 py-2.5 text-[#9ca3af] text-xs whitespace-nowrap">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {displayedProgressPosts.map(post => {
+                  const isChecked  = selProgress.has(post.id);
+                  const isExpanded = expandedProgressIds.has(post.id);
+                  const likeCount  = progressLikes.filter(l => l.post_id === post.id).length;
+                  const cmtCount   = progressComments.filter(c => c.post_id === post.id).length;
+                  const toggleSel  = () => setSelProgress(p => { const n = new Set(p); n.has(post.id) ? n.delete(post.id) : n.add(post.id); return n; });
+                  const toggleExp  = (e: React.MouseEvent) => { e.stopPropagation(); setExpandedProgressIds(p => { const n = new Set(p); n.has(post.id) ? n.delete(post.id) : n.add(post.id); return n; }); };
+                  return (
+                    <div key={post.id} onClick={toggleSel} className="rounded-xl overflow-hidden transition-all cursor-pointer"
+                      style={{ background: isChecked ? '#e8eaf6' : '#f8f8fc', border: `1.5px solid ${isChecked ? '#667eea' : '#e8e8f0'}` }}>
+
+                      {/* 헤더 행 */}
+                      <div className="flex items-center gap-1.5 px-3 py-2.5">
+                        <input type="checkbox" checked={isChecked} onChange={toggleSel} onClick={e => e.stopPropagation()}
+                          className="w-3.5 h-3.5 shrink-0 cursor-pointer accent-[#667eea]" />
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold shrink-0 whitespace-nowrap"
+                          style={{ background: '#ede9fe', color: '#667eea' }}>
+                          {PROJECT_SHORT[post.project] ?? post.project}
+                        </span>
+                        <span className="text-[11px] text-[#9ca3af] shrink-0">{post.grade} {post.class_name}</span>
+                        <span className="text-sm font-black text-[#1a1a2e] shrink-0">{post.student_name}</span>
+                        <div className="flex-1" />
+                        <span className="text-[10px] text-[#ccc] shrink-0">
                           {new Date(post.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </td>
-                        <td className="px-3 py-2.5">
-                          <button onClick={() => deleteProgressPost(post.id)} disabled={deletingProgress}
-                            className="text-xs font-bold px-3 py-1.5 rounded-lg border-none cursor-pointer transition-all disabled:opacity-50 whitespace-nowrap"
-                            style={{ background: '#ffebee', color: '#c62828' }}>
-                            삭제
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </span>
+                        <button onClick={toggleExp}
+                          className="text-sm border-none bg-transparent cursor-pointer shrink-0 px-0.5 hover:opacity-50 transition-opacity"
+                          style={{ color: '#667eea' }}>
+                          {isExpanded ? '▲' : '▼'}
+                        </button>
+                      </div>
+
+                      {/* 아이디어 내용 */}
+                      <div className="px-3 pb-2.5">
+                        <p className="text-sm text-[#374151] m-0 leading-snug"
+                          style={!isExpanded ? { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } : {}}>
+                          {post.content}
+                        </p>
+                      </div>
+
+                      {/* 펼침 시: 공감·의견 수 */}
+                      {isExpanded && (
+                        <div className="flex items-center gap-3 px-3 py-2"
+                          style={{ borderTop: '1px solid #e8e8f0', background: 'rgba(255,255,255,0.6)' }}>
+                          <span className="text-xs text-[#ef4444] font-semibold">❤️ 공감 {likeCount}</span>
+                          <span className="text-xs text-[#667eea] font-semibold">💬 의견 {cmtCount}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -2812,6 +2912,34 @@ export default function TeacherPage() {
             )}
           </div>
 
+        </div>
+      )}
+
+      {/* 확장공유 아이디어 삭제 확인 모달 */}
+      {showDeleteProgress && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{background:'rgba(0,0,0,0.45)'}}>
+          <div className="bg-white rounded-2xl p-6 w-80 shadow-2xl">
+            <div className="text-center mb-4">
+              <div className="text-3xl mb-2">🗑️</div>
+              <h3 className="font-bold text-[#4a4a6a] text-base mb-1">아이디어 삭제</h3>
+              <p className="text-sm text-[#666] m-0">
+                선택한 <span className="font-bold text-[#c62828]">{selProgress.size}개</span>의 아이디어를<br/>
+                삭제하시겠습니까?<br/>
+                <span className="text-xs text-[#bbb]">댓글·공감 포함, 되돌릴 수 없습니다.</span>
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setShowDeleteProgress(false)}
+                className="flex-1 py-2.5 rounded-xl border-2 border-[#e0e0f0] bg-white text-sm font-semibold text-[#666] cursor-pointer">
+                취소
+              </button>
+              <button onClick={() => deleteProgressPosts([...selProgress])} disabled={deletingProgress}
+                className="flex-1 py-2.5 rounded-xl border-none text-sm font-bold text-white cursor-pointer disabled:opacity-50"
+                style={{background:'#c62828'}}>
+                {deletingProgress ? '삭제 중…' : '삭제'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
