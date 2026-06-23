@@ -850,6 +850,19 @@ export default function TeacherPage() {
     setDeletingProgress(false);
   }
 
+  async function deleteProgressComment(id: string) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/progress_comments?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Prefer: 'return=minimal' },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setProgressComments(p => p.filter(c => c.id !== id));
+    } catch (err) {
+      alert(`의견 삭제 실패\n${err instanceof Error ? err.message : ''}`);
+    }
+  }
+
   async function deleteProgressQuestion(id: string) {
     if (!confirm('정말 삭제하시겠습니까? 삭제한 내용은 되돌릴 수 없습니다.')) return;
     setDeletingProgress(true);
@@ -2840,12 +2853,45 @@ export default function TeacherPage() {
                         </p>
                       </div>
 
-                      {/* 펼침 시: 공감·의견 수 */}
+                      {/* 펼침 시: 공감·의견 목록 */}
                       {isExpanded && (
-                        <div className="flex items-center gap-3 px-3 py-2"
-                          style={{ borderTop: '1px solid #e8e8f0', background: 'rgba(255,255,255,0.6)' }}>
-                          <span className="text-xs text-[#ef4444] font-semibold">❤️ 공감 {likeCount}</span>
-                          <span className="text-xs text-[#667eea] font-semibold">💬 의견 {cmtCount}</span>
+                        <div style={{ borderTop: '1px solid #e8e8f0', background: 'rgba(255,255,255,0.6)' }}>
+                          <div className="flex items-center gap-3 px-3 py-2">
+                            <span className="text-xs text-[#ef4444] font-semibold">❤️ 공감 {likeCount}</span>
+                            <span className="text-xs text-[#667eea] font-semibold">💬 의견 {cmtCount}</span>
+                          </div>
+                          {(() => {
+                            const postCmts = progressComments.filter(c => c.post_id === post.id);
+                            if (postCmts.length === 0) return null;
+                            return (
+                              <div className="px-3 pb-2 flex flex-col gap-1.5" onClick={e => e.stopPropagation()}>
+                                {postCmts.map(c => (
+                                  <div key={c.id} className="flex items-start gap-2 rounded-lg px-2 py-1.5"
+                                    style={{ background: '#f8f8fc', border: '1px solid #eeeef8' }}>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                                        <span className="text-[11px] font-bold text-[#4a4a6a]">{c.student_name}</span>
+                                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                                          style={{ background: c.comment_type === '좋은 점' ? '#e8f5e9' : '#e3f2fd',
+                                                   color:      c.comment_type === '좋은 점' ? '#2e7d32' : '#1565c0' }}>
+                                          {c.comment_type}
+                                        </span>
+                                        <span className="text-[10px] text-[#ccc]">
+                                          {new Date(c.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                      </div>
+                                      <p className="text-xs text-[#374151] m-0 leading-snug">{c.comment}</p>
+                                    </div>
+                                    <button onClick={() => deleteProgressComment(c.id)}
+                                      className="text-[10px] font-bold px-1.5 py-0.5 rounded border-none cursor-pointer shrink-0 mt-0.5 transition-all hover:opacity-80"
+                                      style={{ background: '#ffebee', color: '#c62828' }}>
+                                      ✕
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>
