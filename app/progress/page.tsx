@@ -320,9 +320,9 @@ export default function ProgressPage() {
             <Label>탐구를 통해 알게 된 내용을 바탕으로 우리가 해 볼 수 있는 일은 무엇일까요?</Label>
             <textarea
               value={idea} onChange={e => setIdea(e.target.value.slice(0, 300))}
-              placeholder={IDEA_PLACEHOLDER} rows={5} maxLength={300}
+              placeholder={IDEA_PLACEHOLDER} rows={1} maxLength={300}
               className="w-full border-2 border-[#c5c9f0] rounded-xl p-3 text-base text-gray-700 focus:outline-none focus:border-[#667eea] resize-y leading-relaxed transition-colors"
-              style={{ minHeight: '140px' }} />
+              style={{ minHeight: '28px' }} />
             <div className={`text-right text-xs mt-1 mb-4 ${idea.length > 270 ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
               {idea.length} / 300
             </div>

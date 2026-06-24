@@ -2785,34 +2785,6 @@ export default function TeacherPage() {
                   <p className="text-xs font-semibold text-[#6b7280] m-0 mt-0.5">전체 새로운 탐구 질문</p>
                 </div>
 
-                {/* 프로젝트별 질문 수 */}
-                {Object.keys(progressStats.qByProject).length > 0 && (
-                  <div className="mb-4">
-                    <p className="text-xs font-bold text-[#6b7280] mb-2 m-0">프로젝트별 탐구 질문</p>
-                    <div className="space-y-2">
-                      {(Object.entries(progressStats.qByProject) as [string, number][])
-                        .sort((a, b) => b[1] - a[1])
-                        .map(([proj, cnt]) => {
-                          const info = PROJECT_SHORT[proj] ?? { emoji: '📌', short: proj };
-                          const pct  = progressStats.questionCount > 0 ? Math.round((cnt / progressStats.questionCount) * 100) : 0;
-                          return (
-                            <div key={proj}>
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-xs text-[#4a4a6a] font-semibold">
-                                  {info.emoji} {info.short}
-                                </span>
-                                <span className="text-xs font-bold" style={{ color: '#667eea' }}>{cnt}개</span>
-                              </div>
-                              <div className="w-full h-2 bg-[#e0e0f0] rounded-full overflow-hidden">
-                                <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #667eea, #764ba2)' }} />
-                              </div>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </div>
-                )}
-
                 {/* 최근 질문 — 2열 카드 */}
                 <div>
                   <p className="text-xs font-bold text-[#6b7280] mb-2 m-0">최근 탐구 질문</p>
