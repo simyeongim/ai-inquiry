@@ -483,6 +483,7 @@ export default function TeacherPage() {
   const [selProgress,         setSelProgress]         = useState<Set<string>>(new Set());
   const [expandedProgressIds, setExpandedProgressIds] = useState<Set<string>>(new Set());
   const [showDeleteProgress,  setShowDeleteProgress]  = useState(false);
+  const [prSort, setPrSort] = useState<'latest' | 'likes' | 'comments'>('latest');
 
   const load = useCallback(async () => {
     setLoading(true); setFetchErr('');
@@ -1065,9 +1066,21 @@ export default function TeacherPage() {
   }), [progressQuestions, fPrProject, fPrClass]);
 
   const displayedProgressPosts = useMemo(() => {
-    if (!searchPrAuthor.trim()) return filteredProgressPosts;
-    return filteredProgressPosts.filter(p => p.student_name.includes(searchPrAuthor.trim()));
-  }, [filteredProgressPosts, searchPrAuthor]);
+    const list = !searchPrAuthor.trim()
+      ? filteredProgressPosts
+      : filteredProgressPosts.filter(p => p.student_name.includes(searchPrAuthor.trim()));
+    if (prSort === 'likes') {
+      const counts: Record<string, number> = {};
+      progressLikes.forEach(l => { counts[l.post_id] = (counts[l.post_id] ?? 0) + 1; });
+      return [...list].sort((a, b) => (counts[b.id] ?? 0) - (counts[a.id] ?? 0));
+    }
+    if (prSort === 'comments') {
+      const counts: Record<string, number> = {};
+      progressComments.forEach(c => { counts[c.post_id] = (counts[c.post_id] ?? 0) + 1; });
+      return [...list].sort((a, b) => (counts[b.id] ?? 0) - (counts[a.id] ?? 0));
+    }
+    return list;
+  }, [filteredProgressPosts, searchPrAuthor, prSort, progressLikes, progressComments]);
 
   const progressStats = useMemo(() => {
     const postIdSet  = new Set(filteredProgressPosts.map(p => p.id));
@@ -2819,6 +2832,19 @@ export default function TeacherPage() {
                 <span className="ml-2 text-xs font-medium text-[#9ca3af]">{filteredProgressPosts.length}개</span>
               </h2>
               <div className="flex-1" />
+              {/* 정렬 */}
+              <div className="flex items-center gap-0.5 border border-[#e8e8f0] rounded-full p-0.5">
+                {(['latest', 'likes', 'comments'] as const).map(s => {
+                  const label = s === 'latest' ? '최신순' : s === 'likes' ? '❤️ 공감' : '💬 의견';
+                  return (
+                    <button key={s} onClick={() => setPrSort(s)}
+                      className="text-[11px] px-2.5 py-1 rounded-full font-semibold border-none cursor-pointer transition-all"
+                      style={prSort === s ? { background: '#667eea', color: 'white' } : { background: 'transparent', color: '#9ca3af' }}>
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
               <input
                 type="text"
                 value={searchPrAuthor}
@@ -2882,6 +2908,8 @@ export default function TeacherPage() {
                         ) : null; })()}
                         <span className="text-[11px] text-[#9ca3af] shrink-0">{post.grade} {post.class_name}</span>
                         <span className="text-sm font-black text-[#1a1a2e] shrink-0">{post.student_name}</span>
+                        <span className="text-[11px] font-semibold text-[#ef4444] shrink-0">❤️ {likeCount}</span>
+                        <span className="text-[11px] font-semibold text-[#667eea] shrink-0">💬 {cmtCount}</span>
                         <div className="flex-1" />
                         <span className="text-[10px] text-[#ccc] shrink-0">
                           {new Date(post.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -2904,10 +2932,6 @@ export default function TeacherPage() {
                       {/* 펼침 시: 공감·의견 목록 */}
                       {isExpanded && (
                         <div style={{ borderTop: '1px solid #e8e8f0', background: 'rgba(255,255,255,0.6)' }}>
-                          <div className="flex items-center gap-3 px-3 py-2">
-                            <span className="text-xs text-[#ef4444] font-semibold">❤️ 공감 {likeCount}</span>
-                            <span className="text-xs text-[#667eea] font-semibold">💬 의견 {cmtCount}</span>
-                          </div>
                           {(() => {
                             const postCmts = progressComments.filter(c => c.post_id === post.id);
                             if (postCmts.length === 0) return null;
