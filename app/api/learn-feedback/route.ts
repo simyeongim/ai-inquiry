@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { chat } from '@/lib/ai-client';
 
 const SUPABASE_URL = 'https://fsrrtopndcrdnqwnspnp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_z7LexdeBdGJqEy5Z8IAyNA_LEGAxPf_';
@@ -64,11 +65,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '내용이 없습니다.' }, { status: 400 });
   }
 
-  if (process.env.GROQ_API_KEY) {
-    try {
-      const conceptSection = await fetchMatchedConcepts(content);
+  try {
+    const conceptSection = await fetchMatchedConcepts(content);
 
-      const system = `당신은 초등학교 교사입니다. 초등학교 3~6학년 학생의 개념 이해 수준을 진단하는 역할을 합니다.
+    const system = `당신은 초등학교 교사입니다. 초등학교 3~6학년 학생의 개념 이해 수준을 진단하는 역할을 합니다.
 평가 기준: 대학교나 중·고등학교 수준이 아닌, 초등 교과서 수준에서 판단하세요. 초등학생이 배운 내용의 핵심을 자신의 말로 설명했다면 충분합니다.
 절대 금지: 학생 문장 그대로 복사, 새로운 개념 강의, 교과서 밖 내용 제시, 억지 보완점 생성, "학생이"·"학생은"으로 문장 시작.
 문장 시작: "학생이" 또는 "학생은"으로 시작하지 마세요. 개념이나 내용을 주어로 하거나 서술형으로 시작하세요.
@@ -124,36 +124,17 @@ ${content}
 
 JSON으로만 응답: {"status":"...","goodPoint":"...","improvePoint":"...","secondTitle":"...","secondContent":"...","thinkMore":"..."}`;
 
-      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [
-            { role: 'system', content: system },
-            { role: 'user',   content: user },
-          ],
-          temperature: 0,
-          seed: 42,
-          max_tokens: 600,
-        }),
-      });
-
-      if (resp.ok) {
-        const data   = await resp.json();
-        const raw    = data.choices[0].message.content.trim();
-        const text   = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-        const parsed = JSON.parse(text);
-        if (parsed.status && parsed.goodPoint && parsed.improvePoint && parsed.secondTitle && parsed.secondContent && parsed.thinkMore) {
-          return NextResponse.json(parsed);
-        }
-      }
-    } catch (err) {
-      console.warn('[learn-feedback] Groq fallback:', err instanceof Error ? err.message : err);
+    const raw    = await chat(
+      [{ role: 'system', content: system }, { role: 'user', content: user }],
+      { temperature: 0, seed: 42, max_tokens: 600 },
+    );
+    const text   = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    const parsed = JSON.parse(text);
+    if (parsed.status && parsed.goodPoint && parsed.improvePoint && parsed.secondTitle && parsed.secondContent && parsed.thinkMore) {
+      return NextResponse.json(parsed);
     }
+  } catch (err) {
+    console.warn('[learn-feedback] AI fallback:', err instanceof Error ? err.message : err);
   }
 
   return NextResponse.json(fallbackFeedback());

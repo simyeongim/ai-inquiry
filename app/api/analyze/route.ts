@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { chat } from '@/lib/ai-client';
 
 // ─── 주제 감지 ─────────────────────────────────────
 const SUBJECT_KWS: Record<string, string[]> = {
@@ -94,9 +95,8 @@ export async function POST(request: NextRequest) {
 
   let thinkingQuestions: string[] = [...info.defaultThinking];
 
-  if (process.env.GROQ_API_KEY) {
-    try {
-      const prompt = `초등학생의 탐구질문을 분석해주세요.
+  try {
+    const prompt = `초등학생의 탐구질문을 분석해주세요.
 
 질문: "${question}"
 
@@ -111,38 +111,31 @@ export async function POST(request: NextRequest) {
 JSON으로만 응답. thinkingQuestions는 원본 질문을 반복하지 말고, 더 깊이 탐구할 수 있는 새로운 심화 질문 2개.
 {"level": 1~4, "thinkingQuestions": ["질문1", "질문2"]}`;
 
-      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${process.env.GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'llama-3.1-8b-instant', messages: [{ role: 'user', content: prompt }], temperature: 0.1, max_tokens: 400 })
-      });
+    const raw    = await chat(
+      [{ role: 'user', content: prompt }],
+      { model: 'llama-3.1-8b-instant', temperature: 0.1, max_tokens: 400 },
+    );
+    const text   = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    const parsed = JSON.parse(text);
 
-      if (resp.ok) {
-        const data   = await resp.json();
-        const raw    = data.choices[0].message.content.trim();
-        const text   = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-        const parsed = JSON.parse(text);
-
-        if (parsed.level >= 1 && parsed.level <= 4) {
-          level = parsed.level as 1 | 2 | 3 | 4;
-          info  = LEVEL_DATA[level];
-          desc       = info.desc as string;
-          goodPoints = info.goodPoints as string;
-          if (level === 4 && isCompareChoice(question)) {
-            desc = '두 가치를 비교하고 무엇을 더 우선해야 할지 토론할 수 있는 최고 수준의 탐구질문이에요!';
-            goodPoints = '정답이 하나로 정해지지 않는, 두 가치를 비교하고 우선순위를 생각해야 하는 훌륭한 탐구질문이에요!';
-          } else if (level === 4 && isValueTradeoff(question)) {
-            desc = '서로 다른 두 가치가 충돌할 때 무엇을 더 중요하게 봐야 할지 판단하는 깊은 탐구질문이에요!';
-            goodPoints = '사람마다 의견이 다를 수 있는, 찬성과 반대가 모두 가능한 훌륭한 탐구질문이에요!';
-          }
-        }
-        if (Array.isArray(parsed.thinkingQuestions) && parsed.thinkingQuestions.length === 2) {
-          thinkingQuestions = parsed.thinkingQuestions;
-        }
+    if (parsed.level >= 1 && parsed.level <= 4) {
+      level = parsed.level as 1 | 2 | 3 | 4;
+      info  = LEVEL_DATA[level];
+      desc       = info.desc as string;
+      goodPoints = info.goodPoints as string;
+      if (level === 4 && isCompareChoice(question)) {
+        desc = '두 가치를 비교하고 무엇을 더 우선해야 할지 토론할 수 있는 최고 수준의 탐구질문이에요!';
+        goodPoints = '정답이 하나로 정해지지 않는, 두 가치를 비교하고 우선순위를 생각해야 하는 훌륭한 탐구질문이에요!';
+      } else if (level === 4 && isValueTradeoff(question)) {
+        desc = '서로 다른 두 가치가 충돌할 때 무엇을 더 중요하게 봐야 할지 판단하는 깊은 탐구질문이에요!';
+        goodPoints = '사람마다 의견이 다를 수 있는, 찬성과 반대가 모두 가능한 훌륭한 탐구질문이에요!';
       }
-    } catch (err) {
-      console.warn('[analyze] Groq fallback:', err instanceof Error ? err.message : err);
     }
+    if (Array.isArray(parsed.thinkingQuestions) && parsed.thinkingQuestions.length === 2) {
+      thinkingQuestions = parsed.thinkingQuestions;
+    }
+  } catch (err) {
+    console.warn('[analyze] AI fallback:', err instanceof Error ? err.message : err);
   }
 
   return NextResponse.json({

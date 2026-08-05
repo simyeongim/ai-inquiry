@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { chat } from '@/lib/ai-client';
 
 export async function POST(req: NextRequest) {
   const { goodPoints, improvePoints, revisedImprovePoints, statusDist } = await req.json();
@@ -56,35 +57,11 @@ suggestion: 위 오개념을 해소할 수 있도록 교사가 다음 수업에�
 출력 형식(다른 텍스트 없이):
 {"wellUnderstood":"...","misconception":"...","suggestion":"..."}`;
 
-  if (!process.env.GROQ_API_KEY) {
-    return NextResponse.json({ error: 'GROQ_API_KEY가 설정되지 않았습니다.' }, { status: 500 });
-  }
-
   try {
-    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user',   content: user   },
-        ],
-        temperature: 0.1,
-        max_tokens: 600,
-      }),
-    });
-
-    if (!resp.ok) {
-      const errBody = await resp.json().catch(() => ({}));
-      throw new Error(`Groq ${resp.status}: ${JSON.stringify(errBody)}`);
-    }
-
-    const data   = await resp.json();
-    const raw    = data.choices[0].message.content.trim();
+    const raw = await chat(
+      [{ role: 'system', content: system }, { role: 'user', content: user }],
+      { temperature: 0.1, max_tokens: 600 },
+    );
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('JSON not found');
     const parsed = JSON.parse(jsonMatch[0]);

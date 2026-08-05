@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { chat } from '@/lib/ai-client';
 
 interface GroupInput { key: string; label: string; samples: string[]; }
 
@@ -34,25 +35,15 @@ ${list}
 {"key1":"주제명1","key2":"주제명2"}`;
 
   try {
-    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${process.env.GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        temperature: 0.2,
-        max_tokens: 200,
-        messages: [
-          { role: 'system', content: '한국어 초등 교육 탐구 주제명 작성 전문가. JSON만 응답.' },
-          { role: 'user', content: prompt },
-        ],
-      }),
-    });
-
-    if (!resp.ok) return NextResponse.json({});
-
-    const data = await resp.json();
-    const raw = data.choices[0].message.content.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-    const parsed = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? '{}');
+    const raw = await chat(
+      [
+        { role: 'system', content: '한국어 초등 교육 탐구 주제명 작성 전문가. JSON만 응답.' },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.2, max_tokens: 200 },
+    );
+    const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    const parsed = JSON.parse(cleaned.match(/\{[\s\S]*\}/)?.[0] ?? '{}');
     return NextResponse.json(parsed);
   } catch {
     return NextResponse.json({});

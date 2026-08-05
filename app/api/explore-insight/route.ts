@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { chat } from '@/lib/ai-client';
 
 export async function POST(request: NextRequest) {
   const { explorations } = await request.json();
 
   if (!Array.isArray(explorations) || !explorations.length) {
-    return NextResponse.json({ results: [] });
-  }
-  if (!process.env.GROQ_API_KEY) {
     return NextResponse.json({ results: [] });
   }
 
@@ -37,31 +35,14 @@ ${userContent}
 JSON 배열만 응답: [{"id":"...","level":"🟡","comment":"..."},...]`;
 
   try {
-    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user',   content: user },
-        ],
-        temperature: 0.3,
-        max_tokens: 2000,
-      }),
-    });
-
-    if (resp.ok) {
-      const data = await resp.json();
-      const raw  = data.choices[0].message.content.trim();
-      const text = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-      const parsed = JSON.parse(text);
-      if (Array.isArray(parsed)) {
-        return NextResponse.json({ results: parsed });
-      }
+    const raw  = await chat(
+      [{ role: 'system', content: system }, { role: 'user', content: user }],
+      { temperature: 0.3, max_tokens: 2000 },
+    );
+    const text = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+    const parsed = JSON.parse(text);
+    if (Array.isArray(parsed)) {
+      return NextResponse.json({ results: parsed });
     }
   } catch (err) {
     console.warn('[explore-insight] error:', err instanceof Error ? err.message : err);

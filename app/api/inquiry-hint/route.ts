@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { chat } from '@/lib/ai-client';
 
 export async function POST(request: NextRequest) {
   const { explanation } = await request.json();
 
   if (!explanation || explanation.trim().length < 100) {
-    return NextResponse.json({ strength: '', hints: [] });
-  }
-
-  if (!process.env.GROQ_API_KEY) {
     return NextResponse.json({ strength: '', hints: [] });
   }
 
@@ -35,35 +32,18 @@ export async function POST(request: NextRequest) {
 JSON으로만 응답 (다른 말 없이):`;
 
   try {
-    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user',   content: user },
-        ],
-        temperature: 0.5,
-        max_tokens: 400,
-      }),
-    });
+    const raw = await chat(
+      [{ role: 'system', content: system }, { role: 'user', content: user }],
+      { temperature: 0.5, max_tokens: 400 },
+    );
+    const text = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
 
-    if (resp.ok) {
-      const data = await resp.json();
-      const raw  = data.choices[0].message.content.trim();
-      const text = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+    const parsed = JSON.parse(text);
+    const strength: string = typeof parsed.strength === 'string' ? parsed.strength.trim() : '';
+    let hints: string[] = Array.isArray(parsed.hints) ? parsed.hints : [];
+    hints = hints.slice(0, 3).filter((h: unknown) => typeof h === 'string' && (h as string).trim().length > 0);
 
-      const parsed = JSON.parse(text);
-      const strength: string = typeof parsed.strength === 'string' ? parsed.strength.trim() : '';
-      let hints: string[] = Array.isArray(parsed.hints) ? parsed.hints : [];
-      hints = hints.slice(0, 3).filter((h: unknown) => typeof h === 'string' && (h as string).trim().length > 0);
-
-      return NextResponse.json({ strength, hints });
-    }
+    return NextResponse.json({ strength, hints });
   } catch (err) {
     console.warn('[inquiry-hint] error:', err instanceof Error ? err.message : err);
   }
