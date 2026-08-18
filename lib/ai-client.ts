@@ -20,7 +20,7 @@ function getGroqKeys(): string[] {
 
 async function callGroqWithKey(key: string, messages: Message[], opts: CallOptions): Promise<string> {
   const body: Record<string, unknown> = {
-    model: opts.model ?? 'llama-3.3-70b-versatile',
+    model: opts.model ?? 'openai/gpt-oss-120b',
     messages,
     temperature: opts.temperature ?? 0.1,
     max_tokens: opts.max_tokens ?? 500,

@@ -113,7 +113,7 @@ JSON으로만 응답. thinkingQuestions는 원본 질문을 반복하지 말고,
 
     const raw    = await chat(
       [{ role: 'user', content: prompt }],
-      { model: 'llama-3.1-8b-instant', temperature: 0.1, max_tokens: 400 },
+      { model: 'openai/gpt-oss-20b', temperature: 0.1, max_tokens: 400 },
     );
     const text   = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
     const parsed = JSON.parse(text);
