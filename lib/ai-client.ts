@@ -23,7 +23,8 @@ async function callGroqWithKey(key: string, messages: Message[], opts: CallOptio
     model: opts.model ?? 'openai/gpt-oss-120b',
     messages,
     temperature: opts.temperature ?? 0.1,
-    max_tokens: opts.max_tokens ?? 500,
+    max_tokens: Math.max(opts.max_tokens ?? 500, 1200),
+    reasoning_effort: 'low',
   };
   if (opts.seed !== undefined) body.seed = opts.seed;
 
