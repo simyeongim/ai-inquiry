@@ -62,7 +62,8 @@ async function callGemini(messages: Message[], opts: CallOptions): Promise<strin
         contents: [{ role: 'user', parts: [{ text: combined }] }],
         generationConfig: {
           temperature: opts.temperature ?? 0.1,
-          maxOutputTokens: opts.max_tokens ?? 500,
+          maxOutputTokens: Math.max(opts.max_tokens ?? 500, 1500),
+          thinkingConfig: { thinkingBudget: 200 },
         },
       }),
     }
