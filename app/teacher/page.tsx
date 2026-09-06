@@ -162,7 +162,7 @@ function topicComboLabel(topics: string[]): string {
   return `${a}${hasJong ? '과 ' : '와 '}${b}`;
 }
 
-interface Row { id: number; class_room: string; project: string; name: string; question: string; analysis: { level: number; label: string; emoji: string; summary: string } | null; time: string; }
+interface Row { id: number; class_room: string; project: string; name: string; question: string; analysis: { level: number; label: string; emoji: string; summary: string } | null; time: string; is_demo?: boolean; }
 
 interface ConceptRow { id: string; project: string | null; lesson: string | null; keyword: string; key_concept: string; created_at: string; }
 
@@ -175,6 +175,7 @@ interface LearningRow {
   revised_feedback?: Record<string, string> | string | null;
   revised_status?: string | null;
   created_at: string;
+  is_demo?: boolean;
 }
 
 interface ExplorationRow {
@@ -183,16 +184,19 @@ interface ExplorationRow {
   explanation: string; insight: string;
   depth_level: string | null; depth_comment: string | null;
   created_at: string;
+  is_demo?: boolean;
 }
 
 interface ProgressPost {
   id: string; grade: string; class_name: string; student_name: string;
   project: string; content: string; created_at: string;
+  is_demo?: boolean;
 }
 
 interface ProgressQuestion {
   id: string; grade: string; class_name: string; student_name: string;
   project: string; question: string; created_at: string;
+  is_demo?: boolean;
 }
 interface ProgressLike {
   id: string; post_id: string; grade: string; class_name: string; student_name: string;
@@ -402,6 +406,7 @@ function FilterDropdown({ label, opts, sel, onToggle, getLabel, getStyle }: {
 export default function TeacherPage() {
   const [authed,   setAuthed]   = useState(false);
   const [tab,      setTab]      = useState<'questions' | 'learnings' | 'concepts' | 'explorations' | 'progress'>('questions');
+  const [showDemo, setShowDemo] = useState(false); // 샘플(is_demo=true) 데이터 표시 여부 - 기본은 숨김
 
   // ── 개념DB 탭 상태 ──
   const [concepts,          setConcepts]          = useState<ConceptRow[]>([]);
@@ -981,11 +986,12 @@ export default function TeacherPage() {
   const hasFilter = fClass.length > 0 || fProject.length > 0 || fLevel.length > 0;
 
   const filtered = useMemo(() => rows.filter(r => {
+    if (!showDemo && r.is_demo)                                       return false;
     if (fClass.length   && !fClass.includes(r.class_room))           return false;
     if (fProject.length && !fProject.includes(r.project))            return false;
     if (fLevel.length   && !fLevel.includes(r.analysis?.level ?? 0)) return false;
     return true;
-  }), [rows, fClass, fProject, fLevel]);
+  }), [rows, fClass, fProject, fLevel, showDemo]);
 
   const displayed = useMemo(() => {
     const q = searchName.trim();
@@ -996,19 +1002,21 @@ export default function TeacherPage() {
   const uniqueLearnClasses = useMemo(() => {
     const seen = new Set<string>();
     learningRows.forEach(r => {
+      if (!showDemo && r.is_demo) return;
       const label = [r.grade, r.class_name].filter(Boolean).join(' ');
       if (label) seen.add(label);
     });
     return Array.from(seen).sort();
-  }, [learningRows]);
+  }, [learningRows, showDemo]);
 
   const filteredLearnings = useMemo(() => learningRows.filter(r => {
+    if (!showDemo && r.is_demo) return false;
     const classLabel = [r.grade, r.class_name].filter(Boolean).join(' ');
     if (fLearnClass.length  && !fLearnClass.includes(classLabel))            return false;
     if (fLearnLesson.length && !fLearnLesson.includes(r.lesson))             return false;
     if (fLearnStatus.length && !fLearnStatus.includes(getFinalStatus(r))) return false;
     return true;
-  }), [learningRows, fLearnClass, fLearnLesson, fLearnStatus]);
+  }), [learningRows, fLearnClass, fLearnLesson, fLearnStatus, showDemo]);
 
   const learnStats = useMemo(() => {
     const n = filteredLearnings.length;
@@ -1052,18 +1060,20 @@ export default function TeacherPage() {
 
   // ── 확장공유 필터 & 분석 ──
   const filteredProgressPosts = useMemo(() => progressPosts.filter(p => {
+    if (!showDemo && p.is_demo) return false;
     const classKey = `${p.grade} ${p.class_name}`.trim();
     if (fPrProject.length && !fPrProject.includes(p.project)) return false;
     if (fPrClass.length   && !fPrClass.includes(classKey))    return false;
     return true;
-  }), [progressPosts, fPrProject, fPrClass]);
+  }), [progressPosts, fPrProject, fPrClass, showDemo]);
 
   const filteredProgressQuestions = useMemo(() => progressQuestions.filter(q => {
+    if (!showDemo && q.is_demo) return false;
     const classKey = `${q.grade} ${q.class_name}`.trim();
     if (fPrProject.length && !fPrProject.includes(q.project)) return false;
     if (fPrClass.length   && !fPrClass.includes(classKey))    return false;
     return true;
-  }), [progressQuestions, fPrProject, fPrClass]);
+  }), [progressQuestions, fPrProject, fPrClass, showDemo]);
 
   const displayedProgressPosts = useMemo(() => {
     const list = !searchPrAuthor.trim()
@@ -1121,11 +1131,12 @@ export default function TeacherPage() {
 
   const filteredExplorations = useMemo(() => {
     return explorationRows.filter(r => {
+      if (!showDemo && r.is_demo) return false;
       if (fExploreClass.length   && !fExploreClass.includes(r.class_room)) return false;
       if (fExploreProject.length && !fExploreProject.includes(r.project))  return false;
       return true;
     });
-  }, [explorationRows, fExploreClass, fExploreProject]);
+  }, [explorationRows, fExploreClass, fExploreProject, showDemo]);
 
   const exploreStats = useMemo(() => {
     const n = filteredExplorations.length;
@@ -1245,6 +1256,15 @@ export default function TeacherPage() {
         <div className="max-w-[1200px] mx-auto px-4 py-3 flex items-center gap-3">
           <Link href="/" className="text-white/80 text-base font-semibold bg-white/10 border border-white/30 px-4 py-2 rounded-full hover:bg-white/20 no-underline transition-colors shrink-0">← 홈</Link>
           <h1 className="text-xl font-bold m-0 flex-1 text-center">📊 교사용 분석</h1>
+          <button
+            onClick={() => setShowDemo(v => !v)}
+            title="샘플(테스트) 데이터를 목록·통계에 포함할지 전환합니다"
+            className="text-sm font-semibold px-4 py-2 rounded-full cursor-pointer transition-colors shrink-0 border"
+            style={showDemo
+              ? { background: '#fbbf24', borderColor: '#fbbf24', color: '#1a1a2e' }
+              : { background: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.3)', color: 'rgba(255,255,255,0.8)' }}>
+            🧪 샘플 {showDemo ? '포함됨' : '제외됨'}
+          </button>
           <button
             onClick={tab === 'questions' ? load : tab === 'learnings' ? loadLearnings : tab === 'explorations' ? loadExplorations : tab === 'progress' ? loadProgress : loadConcepts}
             disabled={tab === 'questions' ? loading : tab === 'learnings' ? loadingLearn : tab === 'explorations' ? loadingExplore : tab === 'progress' ? loadingProgress : loadingConcepts}
