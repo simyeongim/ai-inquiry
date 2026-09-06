@@ -1232,56 +1232,6 @@ export default function TeacherPage() {
       .catch(() => {});
   }, [stats]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function renderExploreDetail(r: ExplorationRow, info: { label: string; color: string; bg: string }) {
-    return (
-      <div>
-        {(r.question || r.methods) && (
-          <div className="px-3 py-2 flex gap-3 items-start border-b border-[#f4f4fc]" style={{background:'#fafafa'}}>
-            {r.question && (
-              <div className="flex-1 min-w-0">
-                <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">탐구 질문</div>
-                <p className="text-xs text-[#4a4a6a] m-0 leading-snug">{r.question}</p>
-              </div>
-            )}
-            {r.methods && (
-              <div className="shrink-0 max-w-[40%]">
-                <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5 text-right">방법</div>
-                <div className="flex flex-wrap gap-1 justify-end">
-                  {r.methods.split(',').map((m: string, i: number) => (
-                    <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
-                      style={{background:'#ede9fe', color:'#5c35cc'}}>{m.trim()}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-        {r.explanation && (
-          <div className="px-3 py-2 border-b border-[#f4f4fc]" style={{background: info.bg + '55'}}>
-            <div className="text-[10px] font-black mb-1" style={{color: info.color}}>2. 알게 된 점</div>
-            <p className="text-xs text-[#374151] m-0 leading-relaxed whitespace-pre-wrap">{r.explanation}</p>
-          </div>
-        )}
-        {(r.process || r.insight) && (
-          <div className={`px-3 py-2 grid gap-3 ${r.process && r.insight ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            {r.process && (
-              <div>
-                <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">1. 탐구 과정</div>
-                <p className="text-xs text-[#555] m-0 leading-snug whitespace-pre-wrap">{r.process}</p>
-              </div>
-            )}
-            {r.insight && (
-              <div>
-                <div className="text-[10px] font-black text-[#c0c0d0] mb-0.5">3. 생각 변화</div>
-                <p className="text-xs text-[#555] m-0 leading-snug whitespace-pre-wrap">{r.insight}</p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  }
-
   if (!authed) return <PinScreen onOk={() => setAuthed(true)} />;
 
   const selInFil = displayed.filter(r => sel.has(r.id));
@@ -2761,7 +2711,7 @@ export default function TeacherPage() {
                                 <p className="text-[0.65rem] font-bold m-0" style={{ color: '#2e7d32' }}>👍 좋은 점 대표 의견</p>
                                 {fromTopPost(sampleGood) && <span className="text-[0.6rem] px-1.5 py-0.5 rounded-full font-bold" style={{ background: '#fff5f5', color: '#ef4444' }}>❤️ 공감 TOP</span>}
                               </div>
-                              <p className="text-[0.82rem] text-[#374151] m-0 leading-snug">"{sampleGood.comment}"</p>
+                              <p className="text-[0.82rem] text-[#374151] m-0 leading-snug">&quot;{sampleGood.comment}&quot;</p>
                               <p className="text-[0.7rem] text-[#9ca3af] m-0 mt-1">{sampleGood.student_name} · {sampleGood.grade} {sampleGood.class_name}</p>
                             </div>
                           )}
@@ -2771,7 +2721,7 @@ export default function TeacherPage() {
                                 <p className="text-[0.65rem] font-bold m-0" style={{ color: '#1565c0' }}>🔍 더 궁금한 점 대표 의견</p>
                                 {fromTopPost(sampleCurio) && <span className="text-[0.6rem] px-1.5 py-0.5 rounded-full font-bold" style={{ background: '#fff5f5', color: '#ef4444' }}>❤️ 공감 TOP</span>}
                               </div>
-                              <p className="text-[0.82rem] text-[#374151] m-0 leading-snug">"{sampleCurio.comment}"</p>
+                              <p className="text-[0.82rem] text-[#374151] m-0 leading-snug">&quot;{sampleCurio.comment}&quot;</p>
                               <p className="text-[0.7rem] text-[#9ca3af] m-0 mt-1">{sampleCurio.student_name} · {sampleCurio.grade} {sampleCurio.class_name}</p>
                             </div>
                           )}
