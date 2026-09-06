@@ -985,6 +985,14 @@ export default function TeacherPage() {
   function clearFilters() { setFClass([]); setFProject([]); setFLevel([]); }
   const hasFilter = fClass.length > 0 || fProject.length > 0 || fLevel.length > 0;
 
+  // 고정 CLASS_LIST에 없는 학급(예: 샘플 학급)도 샘플 포함 상태일 때만 드롭다운에 추가로 노출
+  const questionClassOptions = useMemo(() => {
+    if (!showDemo) return CLASS_LIST;
+    const extra = Array.from(new Set(rows.filter(r => r.is_demo).map(r => r.class_room)))
+      .filter(c => !(CLASS_LIST as readonly string[]).includes(c));
+    return extra.length ? [...CLASS_LIST, ...extra] : CLASS_LIST;
+  }, [rows, showDemo]);
+
   const filtered = useMemo(() => rows.filter(r => {
     if (!showDemo && r.is_demo)                                       return false;
     if (fClass.length   && !fClass.includes(r.class_room))           return false;
@@ -1059,6 +1067,14 @@ export default function TeacherPage() {
   }, [filteredLearnings, fGrowthType, searchLearnName]);
 
   // ── 확장공유 필터 & 분석 ──
+  const progressClassOptions = useMemo(() => {
+    if (!showDemo) return CLASS_LIST;
+    const extra = Array.from(new Set(
+      progressPosts.filter(p => p.is_demo).map(p => `${p.grade} ${p.class_name}`.trim())
+    )).filter(c => !(CLASS_LIST as readonly string[]).includes(c));
+    return extra.length ? [...CLASS_LIST, ...extra] : CLASS_LIST;
+  }, [progressPosts, showDemo]);
+
   const filteredProgressPosts = useMemo(() => progressPosts.filter(p => {
     if (!showDemo && p.is_demo) return false;
     const classKey = `${p.grade} ${p.class_name}`.trim();
@@ -1128,6 +1144,13 @@ export default function TeacherPage() {
     };
   }, [filteredProgressPosts, filteredProgressQuestions, progressLikes, progressComments]);
 
+
+  const exploreClassOptions = useMemo(() => {
+    if (!showDemo) return CLASS_LIST;
+    const extra = Array.from(new Set(explorationRows.filter(r => r.is_demo).map(r => r.class_room)))
+      .filter(c => !(CLASS_LIST as readonly string[]).includes(c));
+    return extra.length ? [...CLASS_LIST, ...extra] : CLASS_LIST;
+  }, [explorationRows, showDemo]);
 
   const filteredExplorations = useMemo(() => {
     return explorationRows.filter(r => {
@@ -1293,7 +1316,7 @@ export default function TeacherPage() {
         {/* ── 필터 ─────────────────────────────────────── */}
         <div className="bg-white rounded-2xl px-4 py-2.5 shadow-sm flex items-center gap-2">
           <div className="grid grid-cols-3 gap-2 flex-1">
-            <ClassDropdown opts={CLASS_LIST} sel={fClass} onToggle={v => setFClass(tog(fClass, v))} />
+            <ClassDropdown opts={questionClassOptions} sel={fClass} onToggle={v => setFClass(tog(fClass, v))} />
             <FilterDropdown label="프로젝트" opts={PROJECT_LIST} sel={fProject}
               onToggle={v=>setFProject(tog(fProject,v as string))}
               getLabel={v=>v as string}/>
@@ -2223,7 +2246,7 @@ export default function TeacherPage() {
           {/* 필터 */}
           <div className="bg-white rounded-2xl px-4 py-2.5 shadow-sm flex items-center gap-2">
             <div className="grid grid-cols-2 gap-2 flex-1">
-              <ClassDropdown opts={CLASS_LIST} sel={fExploreClass} onToggle={v => setFExploreClass(tog(fExploreClass, v))} />
+              <ClassDropdown opts={exploreClassOptions} sel={fExploreClass} onToggle={v => setFExploreClass(tog(fExploreClass, v))} />
               <FilterDropdown label="프로젝트" opts={PROJECT_LIST} sel={fExploreProject}
                 onToggle={v => setFExploreProject(tog(fExploreProject, v as string))}
                 getLabel={v => v as string} />
@@ -2576,7 +2599,7 @@ export default function TeacherPage() {
           {/* ── 필터 바 ── */}
           <div className="bg-white rounded-2xl px-4 py-2.5 shadow-sm flex items-center gap-2">
             <div className="grid grid-cols-2 gap-2 flex-1">
-              <ClassDropdown opts={CLASS_LIST} sel={fPrClass} onToggle={v => setFPrClass(tog(fPrClass, v))} />
+              <ClassDropdown opts={progressClassOptions} sel={fPrClass} onToggle={v => setFPrClass(tog(fPrClass, v))} />
               <FilterDropdown label="프로젝트" opts={PROJECT_LIST} sel={fPrProject}
                 onToggle={v => setFPrProject(tog(fPrProject, v as string))}
                 getLabel={v => v as string} />
